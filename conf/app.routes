@@ -1,3 +1,5 @@
 # microservice specific routes
 
 GET        /hello-world             uk.gov.hmrc.vatregisteredcompanies.controllers.MicroserviceHelloWorld.hello
+
+POST       /vatregistrations        uk.gov.hmrc.vatregisteredcompanies.controllers.InboundDataController.handle
