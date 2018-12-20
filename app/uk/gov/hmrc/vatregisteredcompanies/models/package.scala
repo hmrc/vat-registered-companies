@@ -14,19 +14,14 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.vatregisteredcompanies.controllers
+package uk.gov.hmrc.vatregisteredcompanies
 
-import javax.inject.Singleton
-import play.api.mvc._
-import uk.gov.hmrc.play.bootstrap.controller.BaseController
+import play.api.libs.json.{Json, OFormat}
 
-import scala.concurrent.Future
+package object models {
 
-@Singleton()
-class MicroserviceHelloWorld extends BaseController {
-
-	def hello() = Action.async { implicit request =>
-		Future.successful(Ok("Hello world"))
-	}
+  // TODO figure out if these type alias' are advantageous or not
+  type CompanyName = String
+  type VatNumber = String
 
 }

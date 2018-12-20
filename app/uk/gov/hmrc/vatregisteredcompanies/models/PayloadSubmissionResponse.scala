@@ -14,19 +14,22 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.vatregisteredcompanies.controllers
+package uk.gov.hmrc.vatregisteredcompanies.models
 
-import javax.inject.Singleton
-import play.api.mvc._
-import uk.gov.hmrc.play.bootstrap.controller.BaseController
+import java.time.LocalDateTime
 
-import scala.concurrent.Future
+import play.api.libs.json.{Json, OFormat}
 
-@Singleton()
-class MicroserviceHelloWorld extends BaseController {
+case class PayloadSubmissionResponse (
+  outcome: String,
+  processingDate: LocalDateTime,
+  code: Option[String]
+)
 
-	def hello() = Action.async { implicit request =>
-		Future.successful(Ok("Hello world"))
-	}
-
+object PayloadSubmissionResponse {
+  implicit val backendResponseFormat: OFormat[PayloadSubmissionResponse] =
+    Json.format[PayloadSubmissionResponse]
+  val failure: String = "FAILURE"
+  val success: String = "SUCCESS"
+  val invalidPayload: String = "INVALID_PAYLOAD"
 }
