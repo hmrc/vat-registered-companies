@@ -18,12 +18,13 @@ package uk.gov.hmrc.vatregisteredcompanies.models
 
 import play.api.libs.json.{Json, OFormat}
 
-case class Payload(
-  createsAndUpdates: List[VatRegisteredCompany],
-  deletes: List[VatNumber]
+case class VatRegisteredCompany(
+  name: CompanyName,
+  vatNumber: VatNumber,
+  address: Address
 )
 
-object Payload {
-  implicit val payloadFormat: OFormat[Payload] =
-    Json.format[Payload]
+object VatRegisteredCompany {
+  implicit val vatRegisteredCompanyFormat: OFormat[VatRegisteredCompany] =
+    Json.format[VatRegisteredCompany]
 }

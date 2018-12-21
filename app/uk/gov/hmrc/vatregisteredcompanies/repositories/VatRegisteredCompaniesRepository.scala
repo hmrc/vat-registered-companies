@@ -19,21 +19,20 @@ package uk.gov.hmrc.vatregisteredcompanies.repositories
 import java.time.Instant
 
 import javax.inject.{Inject, Singleton}
-import play.api.libs.json.{Format, JsResult, JsValue, Json}
+import play.api.libs.json._
 import play.modules.reactivemongo.ReactiveMongoComponent
+import reactivemongo.api.commands.WriteResult
 import reactivemongo.api.indexes.{Index, IndexType}
-import reactivemongo.bson.{BSONDateTime, BSONObjectID}
+import reactivemongo.bson.BSONDateTime
 import reactivemongo.play.json.ImplicitBSONHandlers._
 import uk.gov.hmrc.mongo.ReactiveRepository
-import uk.gov.hmrc.vatregisteredcompanies.models.{VatNumber, VatRegisteredCompany}
+import uk.gov.hmrc.vatregisteredcompanies.models.{Payload, VatNumber, VatRegisteredCompany}
 
-import scala.concurrent.ExecutionContext
+import scala.concurrent.{ExecutionContext, Future}
 
 final case class Wrapper(
   vatNumber: VatNumber,
-  company: VatRegisteredCompany,
-  _id: BSONObjectID = BSONObjectID.generate(),
-  timestamp: Instant = Instant.now
+  company: VatRegisteredCompany
 )
 
 object Wrapper {
@@ -54,10 +53,45 @@ object Wrapper {
 class VatRegisteredCompaniesRepository @Inject()(reactiveMongoComponent: ReactiveMongoComponent)(implicit val executionContext: ExecutionContext)
   extends ReactiveRepository("vatregisteredcompanies", reactiveMongoComponent.mongoConnector.db, Wrapper.format) {
 
+  implicit val format: OFormat[Wrapper] = Json.format[Wrapper]
+
+  private def insertOrUpdate(entry: Wrapper): Future[Unit] = {
+
+    domainFormatImplicit.writes(entry) match {
+      case a@JsObject(_) =>
+        val selector = Json.obj("vatNumber" -> entry.vatNumber)
+        collection.update(selector, entry, upsert = true)
+      case _ =>
+        Future.failed[WriteResult](new Exception("failed insert or update"))
+    }
+  }.map(_ => ())
+
+  private def insert(entries: List[Wrapper])=
+    entries.map(wrapper => insertOrUpdate(wrapper)).head
+
+  private def delete(deletes: List[VatNumber]) =
+    deletes.map{ vatNumber =>
+      remove("vatNumber" -> vatNumber)
+    }.map(_ => Future(())).head
+
+  private def wrap(payload: Payload): List[Wrapper] =
+    payload.createsAndUpdates.map { company =>
+      Wrapper(company.vatNumber, company)
+    }
+
+  // TODO figure out if we need to pass all these Units around
+  def process(payload: Payload): Future[(Unit, Unit)] = {
+    for {
+      insertResult <- insert(wrap(payload))
+      deleteResult <- delete(payload.deletes)
+    } yield (insertResult, deleteResult)
+  }
+
   override def indexes: Seq[Index] = Seq(
     Index(
-      key = Seq("timestamp" -> IndexType.Ascending, "vatNumber" -> IndexType.Text),
+      key = Seq( "vatNumber" -> IndexType.Text),
       unique = true
     )
   )
+
 }

@@ -14,16 +14,21 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.vatregisteredcompanies.models
+package uk.gov.hmrc.vatregisteredcompanies.services
 
-import play.api.libs.json.{Json, OFormat}
+import javax.inject.{Inject, Singleton}
+import uk.gov.hmrc.vatregisteredcompanies.models.Payload
+import uk.gov.hmrc.vatregisteredcompanies.repositories.VatRegisteredCompaniesRepository
 
-case class Payload(
-  createsAndUpdates: List[VatRegisteredCompany],
-  deletes: List[VatNumber]
-)
+import scala.concurrent.{ExecutionContext, Future}
 
-object Payload {
-  implicit val payloadFormat: OFormat[Payload] =
-    Json.format[Payload]
+@Singleton
+class PersistenceService @Inject()(repository: VatRegisteredCompaniesRepository)(implicit executionContext: ExecutionContext) {
+
+  def processData(payload: Payload): Future[(Unit, Unit)] = {
+    repository.process(payload)
+  }
+
 }
+
+

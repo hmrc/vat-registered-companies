@@ -17,27 +17,30 @@
 package uk.gov.hmrc.vatregisteredcompanies.controllers
 
 import java.time.LocalDateTime
+
 import cats.implicits._
-import uk.gov.hmrc.vatregisteredcompanies.services.JsonSchemaChecker
 import javax.inject.{Inject, Singleton}
-import org.reactivestreams.Subscription
 import play.api.libs.json.{JsValue, Json}
-import play.api.mvc.{Action, Result}
-import uk.gov.hmrc.http.HttpResponse
+import play.api.mvc.Action
 import uk.gov.hmrc.play.bootstrap.controller.BaseController
 import uk.gov.hmrc.vatregisteredcompanies.models.{Payload, PayloadSubmissionResponse => Response}
+import uk.gov.hmrc.vatregisteredcompanies.services.{JsonSchemaChecker, PersistenceService}
 
 import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
-class InboundDataController @Inject()(implicit executionContext: ExecutionContext) extends BaseController {
+class InboundDataController @Inject()(persistence: PersistenceService)(implicit executionContext: ExecutionContext) extends BaseController {
 
   def handle: Action[JsValue] =
     Action.async(parse.json) { implicit request =>
       withJsonBody[Payload] {
         case payload if !JsonSchemaChecker[Payload](payload, "mdg-payload") =>
           Future(Ok(Json.toJson(Response(Response.failure, LocalDateTime.now, Response.invalidPayload.some))))
-        case payload => ???
+        case payload =>
+          persistence.processData(payload).map { _ =>
+            Ok(Json.toJson(Response(Response.success, LocalDateTime.now, none)))
+          }
       }
-    }
+    } // TODO send other error code
+
 }
