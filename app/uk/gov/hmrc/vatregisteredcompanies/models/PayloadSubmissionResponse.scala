@@ -16,15 +16,14 @@
 
 package uk.gov.hmrc.vatregisteredcompanies.models
 
-import java.time.LocalDateTime
+import java.time.{LocalDateTime, ZoneId}
 
 import play.api.libs.json.{Json, OFormat}
 
-case class PayloadSubmissionResponse (
+case class PayloadSubmissionResponse(
   outcome: String,
-  processingDate: LocalDateTime,
-  code: Option[String]
-)
+  code: Option[String],
+  processingDate: ProcessingDate = LocalDateTime.now(ZoneId.of("Europe/London")))
 
 object PayloadSubmissionResponse {
   implicit val backendResponseFormat: OFormat[PayloadSubmissionResponse] =

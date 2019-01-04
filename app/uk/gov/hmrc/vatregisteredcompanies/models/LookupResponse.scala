@@ -14,15 +14,19 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.vatregisteredcompanies
+package uk.gov.hmrc.vatregisteredcompanies.models
 
-import java.time.LocalDateTime
+import java.time.{LocalDateTime, ZoneId}
 
-package object models {
+import play.api.libs.json.{Json, OFormat}
 
-  type CompanyName = String
-  type VatNumber = String
-  type ConsultationNumber = String
-  type ProcessingDate = LocalDateTime
+case class LookupResponse(
+  target: Option[VatRegisteredCompany],
+  requester: Option[VatNumber] = None,
+  consultationNumber: Option[ConsultationNumber] = None,
+  processingDate: ProcessingDate = LocalDateTime.now(ZoneId.of("Europe/London"))
+)
 
+object LookupResponse {
+  implicit val lookupResponseFormat: OFormat[LookupResponse] = Json.format[LookupResponse]
 }

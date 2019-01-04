@@ -35,10 +35,10 @@ class InboundDataController @Inject()(persistence: PersistenceService)(implicit 
     Action.async(parse.json) { implicit request =>
       withJsonBody[Payload] {
         case payload if !JsonSchemaChecker[Payload](payload, "mdg-payload") =>
-          Future(Ok(Json.toJson(Response(Response.failure, LocalDateTime.now, Response.invalidPayload.some))))
+          Future(Ok(Json.toJson(Response(Response.failure, Response.invalidPayload.some))))
         case payload =>
           persistence.processData(payload).map { _ =>
-            Ok(Json.toJson(Response(Response.success, LocalDateTime.now, none)))
+            Ok(Json.toJson(Response(Response.success, none)))
           }
       }
     } // TODO send other error code

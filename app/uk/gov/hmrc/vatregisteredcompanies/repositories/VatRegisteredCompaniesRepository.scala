@@ -26,9 +26,12 @@ import reactivemongo.api.indexes.{Index, IndexType}
 import reactivemongo.bson.BSONDateTime
 import reactivemongo.play.json.ImplicitBSONHandlers._
 import uk.gov.hmrc.mongo.ReactiveRepository
-import uk.gov.hmrc.vatregisteredcompanies.models.{Payload, VatNumber, VatRegisteredCompany}
+import uk.gov.hmrc.vatregisteredcompanies.models
+import uk.gov.hmrc.vatregisteredcompanies.models.{LookupResponse, Payload, VatNumber, VatRegisteredCompany}
 
 import scala.concurrent.{ExecutionContext, Future}
+
+import cats.implicits._
 
 final case class Wrapper(
   vatNumber: VatNumber,
@@ -81,10 +84,17 @@ class VatRegisteredCompaniesRepository @Inject()(reactiveMongoComponent: Reactiv
 
   // TODO figure out if we need to pass all these Units around
   def process(payload: Payload): Future[(Unit, Unit)] = {
+    println(s"############################# $payload")
     for {
       insertResult <- insert(wrap(payload))
       deleteResult <- delete(payload.deletes)
     } yield (insertResult, deleteResult)
+  }
+
+  def lookup(target: String): Future[Option[LookupResponse]] = {
+    find("vatNumber" -> target).map {
+      _.headOption.map (x => LookupResponse(x.company.some))
+    }
   }
 
   override def indexes: Seq[Index] = Seq(
