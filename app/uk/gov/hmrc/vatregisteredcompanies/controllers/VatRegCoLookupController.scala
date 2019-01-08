@@ -17,13 +17,14 @@
 package uk.gov.hmrc.vatregisteredcompanies.controllers
 
 import javax.inject.Inject
+
 import play.api.libs.json.Json
 import play.api.mvc.{Action, AnyContent}
 import uk.gov.hmrc.play.bootstrap.controller.BaseController
 import uk.gov.hmrc.vatregisteredcompanies.models.{LookupResponse, VatNumber}
 import uk.gov.hmrc.vatregisteredcompanies.services.PersistenceService
 
-import scala.concurrent.ExecutionContext
+import scala.concurrent.{ExecutionContext, Future}
 
 class VatRegCoLookupController @Inject()(persistence: PersistenceService)(implicit executionContext: ExecutionContext) extends BaseController {
 
@@ -34,6 +35,19 @@ class VatRegCoLookupController @Inject()(persistence: PersistenceService)(implic
       }
     }
 
-  def lookupVerified(target: VatNumber, requester: VatNumber): Action[AnyContent] = ???
+  def lookupVerified(target: VatNumber, requester: VatNumber): Action[AnyContent] = {
+    Action.async { implicit request =>
+      val targetLookup = persistence.lookup(target)
+      val requesterLookup = persistence.lookup(requester)
+      val futureResult: Future[Option[LookupResponse]] = for {
+        a <- targetLookup
+        b <- requesterLookup
+      } yield a.map(_.copy(requester = b.fold(Option.empty[VatNumber])(_ => Some(target))))
+
+      futureResult.map {x =>
+        Ok(Json.toJson(x.getOrElse(LookupResponse(None))))
+      }
+    }
+  }
 
 }
