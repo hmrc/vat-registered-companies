@@ -84,7 +84,6 @@ class VatRegisteredCompaniesRepository @Inject()(reactiveMongoComponent: Reactiv
 
   // TODO figure out if we need to pass all these Units around
   def process(payload: Payload): Future[(Unit, Unit)] = {
-    println(s"############################# $payload")
     for {
       insertResult <- insert(wrap(payload))
       deleteResult <- delete(payload.deletes)

@@ -16,7 +16,9 @@
 
 package uk.gov.hmrc.vatregisteredcompanies
 
-import java.time.LocalDateTime
+import java.time.{Instant, LocalDateTime, LocalTime}
+
+import scala.util.Random
 
 package object models {
 
@@ -24,5 +26,12 @@ package object models {
   type VatNumber = String
   type ConsultationNumber = String
   type ProcessingDate = LocalDateTime
+
+  object ConsultationNumber {
+    def generate(target: VatNumber): ConsultationNumber =
+      new Random(target.toLong).alphanumeric.filter(x =>
+        x.toLower >= 'a' && x.toLower <= 'z'
+      ).take(9).toList.mkString
+  }
 
 }

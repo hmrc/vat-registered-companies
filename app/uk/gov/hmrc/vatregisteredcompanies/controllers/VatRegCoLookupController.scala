@@ -17,11 +17,10 @@
 package uk.gov.hmrc.vatregisteredcompanies.controllers
 
 import javax.inject.Inject
-
 import play.api.libs.json.Json
 import play.api.mvc.{Action, AnyContent}
 import uk.gov.hmrc.play.bootstrap.controller.BaseController
-import uk.gov.hmrc.vatregisteredcompanies.models.{LookupResponse, VatNumber}
+import uk.gov.hmrc.vatregisteredcompanies.models.{ConsultationNumber, LookupResponse, VatNumber}
 import uk.gov.hmrc.vatregisteredcompanies.services.PersistenceService
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -42,8 +41,13 @@ class VatRegCoLookupController @Inject()(persistence: PersistenceService)(implic
       val futureResult: Future[Option[LookupResponse]] = for {
         a <- targetLookup
         b <- requesterLookup
-      } yield a.map(_.copy(requester = b.fold(Option.empty[VatNumber])(_ => Some(target))))
+      } yield a.map(x => x.copy(
+        requester = b.fold(Option.empty[VatNumber])(_ => Some(requester)),
+        consultationNumber = b.fold(Option.empty[ConsultationNumber])(_ => Some(ConsultationNumber.generate(target)))
+      ))
 
+      // TODO audit to splunk
+      
       futureResult.map {x =>
         Ok(Json.toJson(x.getOrElse(LookupResponse(None))))
       }
