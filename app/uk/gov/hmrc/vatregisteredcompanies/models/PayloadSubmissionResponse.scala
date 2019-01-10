@@ -31,4 +31,5 @@ object PayloadSubmissionResponse {
   val failure: String = "FAILURE"
   val success: String = "SUCCESS"
   val invalidPayload: String = "INVALID_PAYLOAD"
+  val serverError: String = "SERVER_ERROR"
 }

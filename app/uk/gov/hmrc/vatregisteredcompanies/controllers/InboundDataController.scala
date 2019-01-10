@@ -16,8 +16,6 @@
 
 package uk.gov.hmrc.vatregisteredcompanies.controllers
 
-import java.time.LocalDateTime
-
 import cats.implicits._
 import javax.inject.{Inject, Singleton}
 import play.api.libs.json.{JsValue, Json}
@@ -35,12 +33,12 @@ class InboundDataController @Inject()(persistence: PersistenceService)(implicit 
     Action.async(parse.json) { implicit request =>
       withJsonBody[Payload] {
         case payload if !JsonSchemaChecker[Payload](payload, "mdg-payload") =>
-          Future(Ok(Json.toJson(Response(Response.failure, Response.invalidPayload.some))))
+          Future.successful(Ok(Json.toJson(Response(Response.failure, Response.invalidPayload.some))))
         case payload =>
           persistence.processData(payload).map { _ =>
             Ok(Json.toJson(Response(Response.success, none)))
-          }
+          }.recover{ case _ => Ok(Json.toJson(Response(Response.failure, Response.serverError.some))) }
       }
-    } // TODO send other error code
+    }
 
 }

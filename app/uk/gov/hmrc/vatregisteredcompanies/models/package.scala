@@ -28,8 +28,8 @@ package object models {
   type ProcessingDate = LocalDateTime
 
   object ConsultationNumber {
-    def generate(target: VatNumber): ConsultationNumber =
-      new Random(target.toLong).alphanumeric.filter(x =>
+    def generate: ConsultationNumber =
+      new Random().alphanumeric.filter(x =>
         x.toLower >= 'a' && x.toLower <= 'z'
       ).take(9).toList.mkString
   }

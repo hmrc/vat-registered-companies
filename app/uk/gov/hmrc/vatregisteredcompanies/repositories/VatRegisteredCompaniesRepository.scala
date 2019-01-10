@@ -82,7 +82,6 @@ class VatRegisteredCompaniesRepository @Inject()(reactiveMongoComponent: Reactiv
       Wrapper(company.vatNumber, company)
     }
 
-  // TODO figure out if we need to pass all these Units around
   def process(payload: Payload): Future[(Unit, Unit)] = {
     for {
       insertResult <- insert(wrap(payload))
