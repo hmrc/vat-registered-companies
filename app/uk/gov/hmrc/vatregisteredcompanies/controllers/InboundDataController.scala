@@ -18,6 +18,8 @@ package uk.gov.hmrc.vatregisteredcompanies.controllers
 
 import cats.implicits._
 import javax.inject.{Inject, Singleton}
+import play.api.{Configuration, Environment}
+import play.api.Mode.Mode
 import play.api.libs.json.{JsValue, Json}
 import play.api.mvc.Action
 import uk.gov.hmrc.play.bootstrap.controller.BaseController
@@ -27,18 +29,22 @@ import uk.gov.hmrc.vatregisteredcompanies.services.{JsonSchemaChecker, Persisten
 import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
-class InboundDataController @Inject()(persistence: PersistenceService)(implicit executionContext: ExecutionContext) extends BaseController {
+class InboundDataController @Inject()(persistence: PersistenceService)(implicit executionContext: ExecutionContext, conf: Configuration, environment: Environment)
+  extends BaseController with ExtraActions {
 
   def handle: Action[JsValue] =
-    Action.async(parse.json) { implicit request =>
+    InboundDataAction.async(parse.json) { implicit request =>
       withJsonBody[Payload] {
         case payload if !JsonSchemaChecker[Payload](payload, "mdg-payload") =>
           Future.successful(Ok(Json.toJson(Response(Response.failure, Response.invalidPayload.some))))
         case payload =>
           persistence.processData(payload).map { _ =>
             Ok(Json.toJson(Response(Response.success, none)))
-          }.recover{ case _ => Ok(Json.toJson(Response(Response.failure, Response.serverError.some))) }
+          }.recover{ case _ => InternalServerError(Json.toJson(Response(Response.failure, Response.serverError.some))) }
       }
     }
 
+  override protected def mode: Mode = environment.mode
+
+  override protected def runModeConfiguration: Configuration = conf
 }
