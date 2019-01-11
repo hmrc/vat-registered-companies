@@ -34,7 +34,7 @@ trait ExtraActions extends ServicesConfig {
           Some(Unauthorized(""))
         } {
           a =>
-            if (a.matches(s"Bearer ${getConfString("inboundData.token", "")}"))
+            if (a.matches(s"Bearer ${getConfString("mdg.inboundData.token", "")}"))
               None
             else
               Some(Unauthorized(""))
