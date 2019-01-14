@@ -21,15 +21,25 @@ import java.time.{LocalDateTime, ZoneId}
 import play.api.libs.json.{Json, OFormat}
 
 case class PayloadSubmissionResponse(
-  outcome: String,
-  code: Option[String],
+  outcome: PayloadSubmissionResponse.Outcome.Value,
+  code: Option[PayloadSubmissionResponse.Code.Value],
   processingDate: ProcessingDate = LocalDateTime.now(ZoneId.of("Europe/London")))
 
 object PayloadSubmissionResponse {
   implicit val backendResponseFormat: OFormat[PayloadSubmissionResponse] =
     Json.format[PayloadSubmissionResponse]
-  val failure: String = "FAILURE"
-  val success: String = "SUCCESS"
-  val invalidPayload: String = "INVALID_PAYLOAD"
-  val serverError: String = "SERVER_ERROR"
+
+  object Outcome extends Enumeration {
+    val SUCCESS, FAILURE = Value
+  }
+
+  object Code extends Enumeration {
+    val INVALID_PAYLOAD, SERVER_ERROR = Value
+  }
+
+
+  //  val failure: String = "FAILURE"
+  //  val success: String = "SUCCESS"
+  //  val invalidPayload: String = "INVALID_PAYLOAD"
+  //  val serverError: String = "SERVER_ERROR"
 }
