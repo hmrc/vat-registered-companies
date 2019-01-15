@@ -17,8 +17,9 @@
 package uk.gov.hmrc.vatregisteredcompanies.repositories
 
 import java.time.Instant
-
 import javax.inject.{Inject, Singleton}
+
+import cats.implicits._
 import play.api.libs.json._
 import play.modules.reactivemongo.ReactiveMongoComponent
 import reactivemongo.api.commands.WriteResult
@@ -26,12 +27,9 @@ import reactivemongo.api.indexes.{Index, IndexType}
 import reactivemongo.bson.BSONDateTime
 import reactivemongo.play.json.ImplicitBSONHandlers._
 import uk.gov.hmrc.mongo.ReactiveRepository
-import uk.gov.hmrc.vatregisteredcompanies.models
 import uk.gov.hmrc.vatregisteredcompanies.models.{LookupResponse, Payload, VatNumber, VatRegisteredCompany}
 
 import scala.concurrent.{ExecutionContext, Future}
-
-import cats.implicits._
 
 final case class Wrapper(
   vatNumber: VatNumber,
@@ -53,7 +51,7 @@ object Wrapper {
 }
 
 @Singleton
-class VatRegisteredCompaniesRepository @Inject()(reactiveMongoComponent: ReactiveMongoComponent)(implicit val executionContext: ExecutionContext)
+class   VatRegisteredCompaniesRepository @Inject()(reactiveMongoComponent: ReactiveMongoComponent)(implicit val executionContext: ExecutionContext)
   extends ReactiveRepository("vatregisteredcompanies", reactiveMongoComponent.mongoConnector.db, Wrapper.format) {
 
   implicit val format: OFormat[Wrapper] = Json.format[Wrapper]
@@ -73,20 +71,15 @@ class VatRegisteredCompaniesRepository @Inject()(reactiveMongoComponent: Reactiv
     entries.map(wrapper => insertOrUpdate(wrapper)).head
 
   private def delete(deletes: List[VatNumber]) =
-    deletes.map{ vatNumber =>
-      remove("vatNumber" -> vatNumber)
-    }.map(_ => Future(())).head
+    deletes.traverse_{ vatNumber => remove("vatNumber" -> vatNumber)}
 
   private def wrap(payload: Payload): List[Wrapper] =
     payload.createsAndUpdates.map { company =>
       Wrapper(company.vatNumber, company)
     }
 
-  def process(payload: Payload): Future[(Unit, Unit)] = {
-    for {
-      insertResult <- insert(wrap(payload))
-      deleteResult <- delete(payload.deletes)
-    } yield (insertResult, deleteResult)
+  def process(payload: Payload): Future[Unit] = {
+    insert(wrap(payload)) >> delete(payload.deletes)
   }
 
   def lookup(target: String): Future[Option[LookupResponse]] = {

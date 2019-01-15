@@ -34,13 +34,14 @@ class InboundDataController @Inject()(persistence: PersistenceService)(implicit 
 
   def handle: Action[JsValue] =
     InboundDataAction.async(parse.json) { implicit request =>
-      withJsonBody[Payload] {
-        case payload if !JsonSchemaChecker[Payload](payload, "mdg-payload") =>
-          Future.successful(Ok(Json.toJson(Response(Response.Outcome.FAILURE, Response.Code.INVALID_PAYLOAD.some))))
-        case payload =>
+      withJsonBody[Payload] { payload: Payload =>
+        if (!JsonSchemaChecker[Payload](payload, "mdg-payload")) {
+          Future.successful(Ok(Json.toJson(Response(Response.failure, Response.invalidPayload.some))))
+        } else {
           persistence.processData(payload).map { _ =>
-            Ok(Json.toJson(Response(Response.Outcome.SUCCESS, none)))
-          }.recover{ case _ => InternalServerError(Json.toJson(Response(Response.Outcome.FAILURE, Response.Code.SERVER_ERROR.some))) }
+            Ok(Json.toJson(Response(Response.success, none)))
+          }.recover{ case _ => InternalServerError(Json.toJson(Response(Response.failure, Response.serverError.some))) }
+        }
       }
     }
 

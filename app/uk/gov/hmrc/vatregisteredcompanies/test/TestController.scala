@@ -21,19 +21,20 @@ import play.api.mvc.{Action, AnyContent}
 import uk.gov.hmrc.play.bootstrap.controller.FrontendController
 
 import scala.concurrent.Future
+import cats.implicits._
 
 class TestController @Inject()(
   connector: TestConnector
 ) extends FrontendController {
 
   def triggerDataImport: Action[AnyContent] = Action.async { implicit request =>
-    connector.trigger("trigger-mdg-data-post") flatMap (_ =>
-      Future.successful(Ok("w00t - data import ")))
+    connector.trigger("trigger-mdg-data-post") >>
+      Future.successful(Ok("w00t - data import "))
   }
 
   def triggerDataUpdate: Action[AnyContent] = Action.async { implicit request =>
-    connector.trigger("trigger-mdg-data-update") flatMap (_ =>
-      Future.successful(Ok("w00t - data update")))
+    connector.trigger("trigger-mdg-data-update") >>
+      Future.successful(Ok("w00t - data update"))
   }
 
 }

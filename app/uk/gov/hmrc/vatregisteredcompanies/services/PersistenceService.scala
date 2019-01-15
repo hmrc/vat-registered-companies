@@ -29,7 +29,7 @@ class PersistenceService @Inject()(repository: VatRegisteredCompaniesRepository)
   def lookup(target: VatNumber): Future[Option[LookupResponse]] =
     repository.lookup(target)
 
-  def processData(payload: Payload): Future[(Unit, Unit)] = {
+  def processData(payload: Payload): Future[Unit] = {
     repository.process(payload)
   }
 
