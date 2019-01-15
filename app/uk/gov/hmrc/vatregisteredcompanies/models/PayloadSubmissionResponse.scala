@@ -20,21 +20,24 @@ import java.time.{LocalDateTime, ZoneId}
 
 import play.api.libs.json.{Json, OFormat}
 
-// TODO convert outcome and code to enumerations
-
 case class PayloadSubmissionResponse(
-  outcome: String,
-  code: Option[String],
-  processingDate: ProcessingDate = LocalDateTime.now(ZoneId.of("Europe/London")))
+  outcome: PayloadSubmissionResponse.Outcome.Value,
+  code: Option[PayloadSubmissionResponse.Code.Value],
+  processingDate: ProcessingDate = LocalDateTime.now(ZoneId.of("Europe/London"))
+)
 
 object PayloadSubmissionResponse {
 
+  object Outcome extends Enumeration {
+    val SUCCESS, FAILURE = Value
+    implicit val format = EnumUtils.enumFormat(Outcome)
+  }
+
+  object Code extends Enumeration {
+    val INVALID_PAYLOAD, SERVER_ERROR = Value
+    implicit val format = EnumUtils.enumFormat(Code)
+  }
+
   implicit val backendResponseFormat: OFormat[PayloadSubmissionResponse] =
     Json.format[PayloadSubmissionResponse]
-
-  val failure: String = "FAILURE"
-  val success: String = "SUCCESS"
-  val invalidPayload: String = "INVALID_PAYLOAD"
-  val serverError: String = "SERVER_ERROR"
-
 }

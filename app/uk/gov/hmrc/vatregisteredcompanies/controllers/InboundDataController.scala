@@ -29,18 +29,20 @@ import uk.gov.hmrc.vatregisteredcompanies.services.{JsonSchemaChecker, Persisten
 import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
-class InboundDataController @Inject()(persistence: PersistenceService)(implicit executionContext: ExecutionContext, conf: Configuration, environment: Environment)
+class InboundDataController @Inject()(persistence: PersistenceService)
+ (implicit executionContext: ExecutionContext, conf: Configuration, environment: Environment)
   extends BaseController with ExtraActions {
 
   def handle: Action[JsValue] =
     InboundDataAction.async(parse.json) { implicit request =>
       withJsonBody[Payload] { payload: Payload =>
         if (!JsonSchemaChecker[Payload](payload, "mdg-payload")) {
-          Future.successful(Ok(Json.toJson(Response(Response.failure, Response.invalidPayload.some))))
+          Future.successful(Ok(Json.toJson(Response(Response.Outcome.FAILURE, Response.Code.INVALID_PAYLOAD.some))))
         } else {
           persistence.processData(payload).map { _ =>
-            Ok(Json.toJson(Response(Response.success, none)))
-          }.recover{ case _ => InternalServerError(Json.toJson(Response(Response.failure, Response.serverError.some))) }
+            Ok(Json.toJson(Response(Response.Outcome.SUCCESS, none)))
+          }.recover{ case _ =>
+            InternalServerError(Json.toJson(Response(Response.Outcome.FAILURE, Response.Code.SERVER_ERROR.some))) }
         }
       }
     }
