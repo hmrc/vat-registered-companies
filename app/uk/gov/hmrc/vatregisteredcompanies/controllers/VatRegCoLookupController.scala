@@ -41,9 +41,11 @@ class VatRegCoLookupController @Inject()(persistence: PersistenceService, auditC
 
   def lookupVerified(target: VatNumber, requester: VatNumber): Action[AnyContent] = {
     Action.async { implicit request =>
+      val targetLookup = persistence.lookup(target)
+      val requesterLookup = persistence.lookup(requester)
       (
-        persistence.lookup(target),
-        persistence.lookup(requester)
+        targetLookup,
+        requesterLookup
       ).mapN { case (a,b) =>
         a.map(x => x.copy(
           requester = b.fold(Option.empty[VatNumber])(_ => Some(requester)),
