@@ -1,0 +1,72 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "title": "VAT Lookup - Data Delta",
+  "type": "object",
+  "properties": {
+    "createsAndUpdates": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "description": "Company Name",
+            "type": "string"
+          },
+          "address": {
+            "description": "Primary place of Business (possibly non-domestic)",
+            "type": "object",
+            "properties": {
+              "line1" : {"type": "string"},
+              "line2" : {"type": "string"},
+              "line3" : {"type": "string"},
+              "line4" : {"type": "string"},
+              "line5" : {"type": "string"},
+              "postcode" : {"type": "string"},
+              "countryCode" : {
+                "type": "string",
+                "description": "2 character country code (ISO 3166-1 alpha-2 format)",
+                "minLength": 2,
+                "maxLength": 2
+              }
+            },
+            "required": [
+              "line1",
+              "countryCode"
+            ]
+          },
+          "vatNumber": {
+            "$ref": "#/definitions/vatNumber"
+          }
+        },
+        "required": [
+          "name",
+          "address",
+          "vatNumber"
+        ]
+      }
+    },
+    "deletes": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "properties": {
+          "vatNumber": {
+            "$ref": "#/definitions/vatNumber"
+          }
+        },
+        "required": [
+          "vatNumber"
+        ]
+      }
+    }
+  },
+  "definitions": {
+    "vatNumber": {
+      "type": "string",
+      "pattern": "^[0-9]{9}|[0-9]{12}$"
+    }
+  },
+  "required": ["createsAndUpdates", "deletes"]
+}

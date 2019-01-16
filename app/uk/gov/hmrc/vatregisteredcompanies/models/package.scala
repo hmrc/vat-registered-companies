@@ -14,24 +14,24 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.vatregisteredcompanies.controllers
+package uk.gov.hmrc.vatregisteredcompanies
 
-import org.scalatest.{Matchers, WordSpec}
-import org.scalatestplus.play.guice.GuiceOneAppPerSuite
-import play.api.http.Status
-import play.api.test.FakeRequest
-import play.api.test.Helpers._
+import java.time.{Instant, LocalDateTime, LocalTime}
 
-class MicroserviceHelloWorldControllerSpec extends WordSpec with Matchers with GuiceOneAppPerSuite {
+import scala.util.Random
 
-  val fakeRequest = FakeRequest("GET", "/")
+package object models {
 
-  "GET /" should {
-    "return 200" in {
-      val controller = new MicroserviceHelloWorld()
-      val result = controller.hello()(fakeRequest)
-      status(result) shouldBe Status.OK
-    }
+  type CompanyName = String
+  type VatNumber = String
+  type ConsultationNumber = String
+  type ProcessingDate = LocalDateTime
+
+  object ConsultationNumber {
+    def generate: ConsultationNumber =
+      new Random().alphanumeric.filter(x =>
+        x.toLower >= 'a' && x.toLower <= 'z'
+      ).take(9).toList.mkString
   }
 
 }

@@ -14,24 +14,19 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.vatregisteredcompanies.controllers
+package uk.gov.hmrc.vatregisteredcompanies.models
 
-import org.scalatest.{Matchers, WordSpec}
-import org.scalatestplus.play.guice.GuiceOneAppPerSuite
-import play.api.http.Status
-import play.api.test.FakeRequest
-import play.api.test.Helpers._
+import java.time.{LocalDateTime, ZoneId}
 
-class MicroserviceHelloWorldControllerSpec extends WordSpec with Matchers with GuiceOneAppPerSuite {
+import play.api.libs.json.{Json, OFormat}
 
-  val fakeRequest = FakeRequest("GET", "/")
+case class LookupResponse(
+  target: Option[VatRegisteredCompany],
+  requester: Option[VatNumber] = None,
+  consultationNumber: Option[ConsultationNumber] = None,
+  processingDate: ProcessingDate = LocalDateTime.now(ZoneId.of("Europe/London"))
+)
 
-  "GET /" should {
-    "return 200" in {
-      val controller = new MicroserviceHelloWorld()
-      val result = controller.hello()(fakeRequest)
-      status(result) shouldBe Status.OK
-    }
-  }
-
+object LookupResponse {
+  implicit val lookupResponseFormat: OFormat[LookupResponse] = Json.format[LookupResponse]
 }
