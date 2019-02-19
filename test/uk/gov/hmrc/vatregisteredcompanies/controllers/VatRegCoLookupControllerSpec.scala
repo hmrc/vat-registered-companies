@@ -98,6 +98,21 @@ class VatRegCoLookupControllerSpec extends WordSpec
     }
   }
 
+  "GET of unknown VAT number with requester supplied " should {
+    "return 200, a target VAT registered company and a consultation number" in {
+      when(mockPersistence.lookup(any())).thenReturn(
+        Future(
+          None
+        )
+      )
+      val result = controller.lookupVerified(testVatNo, testVatNo)(fakeVerifiedRequest)
+      status(result) shouldBe Status.OK
+      Json.fromJson[LookupResponse](contentAsJson(result)).map { lr =>
+        lr.target shouldBe Option.empty[VatNumber]
+      }
+    }
+  }
+
   "GET of known VAT number with unknown requester supplied " should {
     "return 200, a target VAT registered company and no consultation number" in {
       when(mockPersistence.lookup(any())).thenReturn(
@@ -120,10 +135,8 @@ class VatRegCoLookupControllerSpec extends WordSpec
         lr.requester shouldBe Option.empty[VatNumber]
         lr.consultationNumber shouldBe Option.empty[ConsultationNumber]
       }
-
     }
   }
-
 
 
 }
