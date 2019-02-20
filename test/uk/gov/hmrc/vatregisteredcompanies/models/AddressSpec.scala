@@ -14,24 +14,17 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.vatregisteredcompanies.controllers
+package uk.gov.hmrc.vatregisteredcompanies.models
 
-import org.scalatest.{Matchers, WordSpec}
-import org.scalatestplus.play.guice.GuiceOneAppPerSuite
-import play.api.http.Status
-import play.api.test.FakeRequest
-import play.api.test.Helpers._
+import org.scalatest.prop.PropertyChecks
+import org.scalatest.{FlatSpec, Matchers}
+import play.api.libs.json.Json
 
-class MicroserviceHelloWorldControllerSpec extends WordSpec with Matchers with GuiceOneAppPerSuite {
+class AddressSpec extends FlatSpec with Matchers with PropertyChecks {
 
-  val fakeRequest = FakeRequest("GET", "/")
-
-  "GET /" should {
-    "return 200" in {
-      val controller = new MicroserviceHelloWorld()
-      val result = controller.hello()(fakeRequest)
-      status(result) shouldBe Status.OK
-    }
+  "An Address" should "be serialisable" in {
+    val item = new Address(line1 = "line 1", None, None, None, None, None, countryCode = "GB")
+    Json.toJson(item).as[Address] should be (item)
   }
 
 }
