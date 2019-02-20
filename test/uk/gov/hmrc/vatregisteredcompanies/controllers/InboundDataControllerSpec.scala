@@ -19,7 +19,7 @@ package uk.gov.hmrc.vatregisteredcompanies.controllers
 import org.mockito.ArgumentMatchers
 import org.mockito.Mockito._
 import org.scalatest.mockito.MockitoSugar
-import org.scalatest.{AsyncWordSpec, Matchers, WordSpec}
+import org.scalatest.{Matchers, WordSpec}
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 import play.api.http.{HeaderNames, Status}
 import play.api.inject.guice.GuiceApplicationBuilder
@@ -28,7 +28,6 @@ import play.api.mvc.Result
 import play.api.test.Helpers.{status, _}
 import play.api.test.{FakeHeaders, FakeRequest}
 import play.api.{Application, Configuration, Environment}
-import uk.gov.hmrc.play.config.ServicesConfig
 import uk.gov.hmrc.vatregisteredcompanies.services.PersistenceService
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -39,19 +38,17 @@ class InboundDataControllerSpec extends WordSpec
   with Matchers
   with GuiceOneAppPerSuite {
 
+  val token = "foobar"
   override def fakeApplication(): Application =
     new GuiceApplicationBuilder().configure(
       Map(
         "auditing.enabled" -> "false",
-        "microservice.services.mdg.inboundData.token" -> "foobar"
+        "microservice.services.mdg.inboundData.token" -> token
       )
     ).build()
 
-  implicit val materializer = app.materializer
-  implicit val environment = Environment.simple()
-  implicit val configuration = app.configuration
-
-  val token = "foobar"
+  implicit val environment: Environment = Environment.simple()
+  implicit val configuration: Configuration = app.configuration
 
   val fakeHeaders =
     FakeHeaders(
@@ -60,7 +57,6 @@ class InboundDataControllerSpec extends WordSpec
         HeaderNames.AUTHORIZATION -> s"Bearer $token"
       )
     )
-
   val fakeBadHeaders =
     FakeHeaders(
       Seq(
@@ -68,32 +64,29 @@ class InboundDataControllerSpec extends WordSpec
         HeaderNames.AUTHORIZATION -> s"Bearer barfoo"
       )
     )
-
   val fakeMissingHeaders =
     FakeHeaders(
       Seq(
         "Content-type" -> "application/json"
       )
     )
-
   val fakeBody: JsValue = Json.parse("""{
-                   |  "createsAndUpdates": [
-                   |    {
-                   |      "name": "veniam nisi Lorem laboris",
-                   |      "address": {
-                   |        "line1": "qui ex",
-                   |        "countryCode": "au"
-                   |      },
-                   |      "vatNumber": "993064963231"
-                   |    }
-                   |  ],
-                   |  "deletes": []
-                   |}""".stripMargin)
+                                       |  "createsAndUpdates": [
+                                       |    {
+                                       |      "name": "veniam nisi Lorem laboris",
+                                       |      "address": {
+                                       |        "line1": "qui ex",
+                                       |        "countryCode": "au"
+                                       |      },
+                                       |      "vatNumber": "993064963231"
+                                       |    }
+                                       |  ],
+                                       |  "deletes": []
+                                       |}""".stripMargin)
 
   val fakeRequest = FakeRequest("POST", "/vat-registered-companies/vatregistrations", fakeHeaders, fakeBody)
   val fakeBadRequest = FakeRequest("POST", "/vat-registered-companies/vatregistrations", fakeBadHeaders, fakeBody)
   val fakeBadRequest2 = FakeRequest("POST", "/vat-registered-companies/vatregistrations", fakeMissingHeaders, fakeBody)
-
   val mockPersistence: PersistenceService = mock[PersistenceService]
 
   "POST of valid json with valid headers to /vat-registered-companies/vatregistrations" should {
@@ -122,7 +115,5 @@ class InboundDataControllerSpec extends WordSpec
       status(result) shouldBe Status.UNAUTHORIZED
     }
   }
-
-
 
 }

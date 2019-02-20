@@ -16,8 +16,8 @@
 
 package uk.gov.hmrc.vatregisteredcompanies.models
 
-import org.scalatest.{FlatSpec, Matchers}
 import org.scalatest.prop.PropertyChecks
+import org.scalatest.{FlatSpec, Matchers}
 import play.api.libs.json.Json
 
 class AddressSpec extends FlatSpec with Matchers with PropertyChecks {

@@ -16,20 +16,18 @@
 
 package uk.gov.hmrc.vatregisteredcompanies.controllers
 
-import org.mockito.Mockito._
 import org.mockito.ArgumentMatchers._
+import org.mockito.Mockito._
 import org.scalatest.mockito.MockitoSugar
 import org.scalatest.{Matchers, OptionValues, WordSpec}
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 import play.api.http.Status
 import play.api.libs.json.Json
 import play.api.test.FakeRequest
-import play.api.test.Helpers.status
+import play.api.test.Helpers.{contentAsJson, status, _}
 import uk.gov.hmrc.play.audit.http.connector.AuditConnector
 import uk.gov.hmrc.vatregisteredcompanies.models._
 import uk.gov.hmrc.vatregisteredcompanies.services.PersistenceService
-import play.api.test.Helpers._
-import play.api.test.Helpers.contentAsJson
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
