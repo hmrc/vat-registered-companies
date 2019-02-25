@@ -16,12 +16,12 @@
 
 package uk.gov.hmrc.vatregisteredcompanies.test
 
+import cats.implicits._
 import javax.inject.Inject
 import play.api.mvc.{Action, AnyContent}
 import uk.gov.hmrc.play.bootstrap.controller.FrontendController
 
 import scala.concurrent.Future
-import cats.implicits._
 
 class TestController @Inject()(
   connector: TestConnector

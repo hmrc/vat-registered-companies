@@ -18,10 +18,10 @@ package uk.gov.hmrc.vatregisteredcompanies.controllers
 
 import cats.implicits._
 import javax.inject.{Inject, Singleton}
-import play.api.{Configuration, Environment}
 import play.api.Mode.Mode
 import play.api.libs.json.{JsValue, Json}
 import play.api.mvc.Action
+import play.api.{Configuration, Environment}
 import uk.gov.hmrc.play.bootstrap.controller.BaseController
 import uk.gov.hmrc.vatregisteredcompanies.models.{Payload, PayloadSubmissionResponse => Response}
 import uk.gov.hmrc.vatregisteredcompanies.services.{JsonSchemaChecker, PersistenceService}
