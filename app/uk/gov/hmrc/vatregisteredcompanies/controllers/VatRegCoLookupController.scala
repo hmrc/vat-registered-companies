@@ -16,9 +16,8 @@
 
 package uk.gov.hmrc.vatregisteredcompanies.controllers
 
-import javax.inject.Inject
-
 import cats.implicits._
+import javax.inject.Inject
 import play.api.libs.json.Json
 import play.api.mvc.{Action, AnyContent}
 import uk.gov.hmrc.http.HeaderCarrier

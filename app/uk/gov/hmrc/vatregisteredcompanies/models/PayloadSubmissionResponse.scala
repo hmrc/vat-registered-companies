@@ -16,14 +16,14 @@
 
 package uk.gov.hmrc.vatregisteredcompanies.models
 
-import java.time.{LocalDateTime, ZoneId}
+import java.time.{OffsetDateTime, ZoneOffset}
 
 import play.api.libs.json.{Json, OFormat}
 
 case class PayloadSubmissionResponse(
   outcome: PayloadSubmissionResponse.Outcome.Value,
   code: Option[PayloadSubmissionResponse.Code.Value],
-  processingDate: ProcessingDate = LocalDateTime.now(ZoneId.of("Europe/London"))
+  processingDate: OffsetDateTime = OffsetDateTime.now(ZoneOffset.UTC)
 )
 
 object PayloadSubmissionResponse {

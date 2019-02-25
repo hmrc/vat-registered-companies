@@ -17,9 +17,9 @@
 package uk.gov.hmrc.vatregisteredcompanies.repositories
 
 import java.time.Instant
-import javax.inject.{Inject, Singleton}
 
 import cats.implicits._
+import javax.inject.{Inject, Singleton}
 import play.api.libs.json._
 import play.modules.reactivemongo.ReactiveMongoComponent
 import reactivemongo.api.commands.WriteResult

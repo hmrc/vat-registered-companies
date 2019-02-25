@@ -17,7 +17,6 @@
 package uk.gov.hmrc.vatregisteredcompanies.services
 
 import javax.inject.{Inject, Singleton}
-import play.api.mvc.Result
 import uk.gov.hmrc.vatregisteredcompanies.models.{LookupResponse, Payload, VatNumber}
 import uk.gov.hmrc.vatregisteredcompanies.repositories.VatRegisteredCompaniesRepository
 
