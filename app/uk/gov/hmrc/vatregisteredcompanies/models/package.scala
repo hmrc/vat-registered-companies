@@ -18,8 +18,6 @@ package uk.gov.hmrc.vatregisteredcompanies
 
 import java.time._
 
-import play.api.libs.json._
-
 import scala.util.Random
 
 package object models {
@@ -34,21 +32,6 @@ package object models {
       new Random().alphanumeric.filter(x =>
         x.toLower >= 'a' && x.toLower <= 'z'
       ).take(9).toList.mkString
-  }
-
-  object ProcessingDate {
-    val temporalReads: Reads[OffsetDateTime] = new Reads[OffsetDateTime] {
-      override def reads(json: JsValue): JsResult[OffsetDateTime] = {
-        (json \ "$date").validate[Long] map (millis =>
-          OffsetDateTime.ofInstant(Instant.ofEpochMilli(millis), ZoneId.systemDefault()))
-      }
-    }
-
-    val temporalWrites: Writes[OffsetDateTime] = new Writes[OffsetDateTime] {
-      override def writes(o: OffsetDateTime): JsValue = Json.obj("$date" -> Instant.from(o).toEpochMilli)
-    }
-
-    implicit val processingDateTimeFormat: Format[ProcessingDate] = Format(temporalReads, temporalWrites)
   }
 
 }
