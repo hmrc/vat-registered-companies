@@ -67,7 +67,7 @@ class VatRegCoLookupController @Inject()(persistence: PersistenceService, auditC
           consultationNumber,
           processingDate)
         auditConnector.sendExplicitAudit(
-          "Verified VAT registered company check",
+          "verifiedVATRegisteredCompanyCheck",
           Json.toJson(auditDetails)
         )
       case _ => ()
