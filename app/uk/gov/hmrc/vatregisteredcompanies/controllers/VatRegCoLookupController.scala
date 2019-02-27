@@ -23,7 +23,7 @@ import play.api.mvc.{Action, AnyContent}
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.audit.http.connector.AuditConnector
 import uk.gov.hmrc.play.bootstrap.controller.BaseController
-import uk.gov.hmrc.vatregisteredcompanies.models.{ConsultationNumber, LookupResponse, VatNumber}
+import uk.gov.hmrc.vatregisteredcompanies.models.{AuditDetails, ConsultationNumber, LookupResponse, VatNumber}
 import uk.gov.hmrc.vatregisteredcompanies.services.PersistenceService
 
 import scala.concurrent.ExecutionContext
@@ -59,16 +59,16 @@ class VatRegCoLookupController @Inject()(persistence: PersistenceService, auditC
 
   private def auditVerifiedLookup(result: Option[LookupResponse])(implicit headerCarrier: HeaderCarrier): Unit = {
     result match {
-      case Some(LookupResponse(Some(a),Some(b),Some(c),d)) =>
-        val details = Map[String, String](
-          "check on VAT number: " -> a.vatNumber,
-          "check by company with VAT number: " -> b,
-          "generated consultation number: " -> c,
-          "processing date" -> d.toString
-        )
+      case Some(LookupResponse(Some(targetCompany),Some(requesterVatNumber),Some(consultationNumber),processingDate)) =>
+        val auditDetails = AuditDetails(
+          requesterVatNumber,
+          targetCompany.vatNumber,
+          targetCompany,
+          consultationNumber,
+          processingDate)
         auditConnector.sendExplicitAudit(
           "Verified VAT registered company check",
-          details
+          Json.toJson(auditDetails)
         )
       case _ => ()
     }
