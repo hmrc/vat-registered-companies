@@ -24,7 +24,7 @@ import play.api.libs.json._
 import play.modules.reactivemongo.ReactiveMongoComponent
 import reactivemongo.api.commands.WriteResult
 import reactivemongo.api.indexes.{Index, IndexType}
-import reactivemongo.bson.BSONDateTime
+import reactivemongo.bson.{BSONDateTime, BSONDocument}
 import reactivemongo.play.json.ImplicitBSONHandlers._
 import uk.gov.hmrc.mongo.ReactiveRepository
 import uk.gov.hmrc.vatregisteredcompanies.models.{LookupResponse, Payload, VatNumber, VatRegisteredCompany}
@@ -56,22 +56,27 @@ class   VatRegisteredCompaniesRepository @Inject()(reactiveMongoComponent: React
 
   implicit val format: OFormat[Wrapper] = Json.format[Wrapper]
 
-  private def insertOrUpdate(entry: Wrapper): Future[Unit] = {
+  private def update(entry: Wrapper): Future[Unit] = {
 
     domainFormatImplicit.writes(entry) match {
       case a@JsObject(_) =>
         val selector = Json.obj("vatNumber" -> entry.vatNumber)
-        collection.update(selector, entry, upsert = true)
+        collection.update(selector, entry)
       case _ =>
         Future.failed[WriteResult](new Exception("failed insert or update"))
     }
   }.map(_ => ())
 
-  private def insert(entries: List[Wrapper])=
-    entries.map(wrapper => insertOrUpdate(wrapper)).head
+  private def upsert(entries: List[Wrapper]) = {
+    bulkInsert(entries) map { x =>
+      x.writeErrors.foreach(e => if (e.code == 11000) {
+        entries.get(e.index).fold((()))(update)
+      })
+    }
+  }
 
   private def delete(deletes: List[VatNumber]) =
-    deletes.traverse_{ vatNumber => remove("vatNumber" -> vatNumber)}
+    remove("vatNumber" -> BSONDocument("$in" -> deletes)).map {_=> (())}
 
   private def wrap(payload: Payload): List[Wrapper] =
     payload.createsAndUpdates.map { company =>
@@ -79,7 +84,12 @@ class   VatRegisteredCompaniesRepository @Inject()(reactiveMongoComponent: React
     }
 
   def process(payload: Payload): Future[Unit] = {
-    insert(wrap(payload)) >> delete(payload.deletes)
+    val upserts = upsert(wrap(payload))
+    val deletes = delete(payload.deletes)
+    for {
+      a <- upserts
+      b <- deletes
+    } yield (())
   }
 
   def lookup(target: String): Future[Option[LookupResponse]] = {

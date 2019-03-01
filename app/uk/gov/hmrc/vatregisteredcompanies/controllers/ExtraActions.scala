@@ -27,6 +27,8 @@ trait ExtraActions extends ServicesConfig {
 
   val InboundDataAction: ActionBuilder[Request] = AuthorisedFilterAction
 
+  val bearerToken = s"Bearer ${getConfString("mdg.inboundData.token", "")}"
+
   object AuthorisedFilterAction extends ActionBuilder[Request] with ActionFilter[Request] {
     override protected def filter[A](request: Request[A]): Future[Option[Result]] = {
       Future.successful(
@@ -34,7 +36,7 @@ trait ExtraActions extends ServicesConfig {
           Some(Unauthorized(""))
         } {
           a =>
-            if (a.matches(s"Bearer ${getConfString("mdg.inboundData.token", "")}"))
+            if (a.matches(bearerToken))
               None
             else
               Some(Unauthorized(""))
