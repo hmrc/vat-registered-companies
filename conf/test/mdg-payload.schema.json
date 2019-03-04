@@ -51,17 +51,7 @@
     "deletes": {
       "type": "array",
       "uniqueItems": true,
-      "items": {
-        "type": "string",
-        "properties": {
-          "vatNumber": {
-            "$ref": "#/definitions/vatNumber"
-          }
-        },
-        "required": [
-          "vatNumber"
-        ]
-      }
+      "items": {"$ref": "#/definitions/vatNumber"}
     }
   },
   "definitions": {
