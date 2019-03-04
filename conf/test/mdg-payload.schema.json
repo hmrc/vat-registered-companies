@@ -24,7 +24,7 @@
               "line3" : {"type": "string", "minLength": 1, "maxLength": 35},
               "line4" : {"type": "string", "minLength": 1, "maxLength": 35},
               "line5" : {"type": "string", "minLength": 1, "maxLength": 35},
-              "postcode" : {"type": "string"},
+              "postcode" : {"type": "string","minLength": 1, "maxLength": 8},
               "countryCode" : {
                 "type": "string",
                 "description": "2 character country code (ISO 3166-1 alpha-2 format)",
