@@ -57,7 +57,7 @@
   "definitions": {
     "vatNumber": {
       "type": "string",
-      "pattern": "^[0-9]{9}|[0-9]{12}$"
+      "pattern": "^[0-9]{9}$|^[0-9]{12}$"
     }
   },
   "required": ["createsAndUpdates", "deletes"]
