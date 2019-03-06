@@ -37,7 +37,7 @@ class InboundDataController @Inject()(persistence: PersistenceService)
     InboundDataAction.async(parse.json) { implicit request =>
       withJsonBody[Payload] { payload: Payload =>
         if (!JsonSchemaChecker[Payload](payload, "mdg-payload")) {
-          Future.successful(Ok(Json.toJson(Response(Response.Outcome.FAILURE, Response.Code.INVALID_PAYLOAD.some))))
+          Future.successful(BadRequest(Json.toJson(Response(Response.Outcome.FAILURE, Response.Code.INVALID_PAYLOAD.some))))
         } else {
           persistence.processData(payload).map { _ =>
             Ok(Json.toJson(Response(Response.Outcome.SUCCESS, none)))
