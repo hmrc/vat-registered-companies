@@ -54,6 +54,13 @@ object Wrapper {
 class   VatRegisteredCompaniesRepository @Inject()(reactiveMongoComponent: ReactiveMongoComponent)(implicit val executionContext: ExecutionContext)
   extends ReactiveRepository("vatregisteredcompanies", reactiveMongoComponent.mongoConnector.db, Wrapper.format) {
 
+  def process(bd: List[PayloadWrapper]): Future[Unit] = {
+    for {
+      _ <- bd.map(x => process(x.payload))
+    } yield (())
+    Future.successful(())
+  }
+
   implicit val format: OFormat[Wrapper] = Json.format[Wrapper]
 
   private def update(entry: Wrapper): Future[Unit] = {
@@ -83,7 +90,7 @@ class   VatRegisteredCompaniesRepository @Inject()(reactiveMongoComponent: React
       Wrapper(company.vatNumber, company)
     }
 
-  def process(payload: Payload): Future[Unit] = {
+  private def process(payload: Payload): Future[Unit] = {
     val upserts = upsert(wrap(payload))
     val deletes = delete(payload.deletes)
     for {

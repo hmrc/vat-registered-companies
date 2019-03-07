@@ -18,19 +18,32 @@ package uk.gov.hmrc.vatregisteredcompanies.services
 
 import javax.inject.{Inject, Singleton}
 import uk.gov.hmrc.vatregisteredcompanies.models.{LookupResponse, Payload, VatNumber}
-import uk.gov.hmrc.vatregisteredcompanies.repositories.VatRegisteredCompaniesRepository
+import uk.gov.hmrc.vatregisteredcompanies.repositories.{PayloadBufferRepository, PayloadWrapper, VatRegisteredCompaniesRepository}
 
 import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
-class PersistenceService @Inject()(repository: VatRegisteredCompaniesRepository)(implicit executionContext: ExecutionContext) {
+class PersistenceService @Inject()(repository: VatRegisteredCompaniesRepository, buffer: PayloadBufferRepository)(implicit executionContext: ExecutionContext) {
 
   def lookup(target: VatNumber): Future[Option[LookupResponse]] =
     repository.lookup(target)
 
-  def processData(payload: Payload): Future[Unit] = {
-    repository.process(payload)
+  def processData: Future[Unit] =  {
+    for {
+      bd <- retrieveBufferData
+      _  <- repository.process(bd)
+      _  <- cleanBuffer(bd)
+    } yield {}
   }
+
+  def bufferData(payload: Payload): Future[Unit] =
+    buffer.insert(payload)
+
+  def retrieveBufferData: Future[List[PayloadWrapper]] =
+    buffer.list
+
+  def cleanBuffer(payloadWrapperList: List[PayloadWrapper]): Future[Unit] =
+    buffer.delete(payloadWrapperList)
 
 }
 
