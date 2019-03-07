@@ -41,7 +41,6 @@ class   PayloadBufferRepository@Inject()(reactiveMongoComponent: ReactiveMongoCo
 
   implicit val format: OFormat[PayloadWrapper] = Json.format[PayloadWrapper]
 
-
   def insert(payload: Payload): Future[Unit] =
     collection.insert(PayloadWrapper(payload = payload)).map(_ => ())
 
