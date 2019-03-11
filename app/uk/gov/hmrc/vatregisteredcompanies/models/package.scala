@@ -31,7 +31,7 @@ package object models {
     def generate: ConsultationNumber =
       new Random().alphanumeric.filter(x =>
         x.toLower >= 'a' && x.toLower <= 'z'
-      ).take(9).toList.mkString
+      ).take(9).toList.mkString.replaceAll("...(?!$)", "$0-")
   }
 
 }
