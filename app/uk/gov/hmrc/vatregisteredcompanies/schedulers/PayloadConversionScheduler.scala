@@ -18,17 +18,16 @@ package uk.gov.hmrc.vatregisteredcompanies.schedulers
 
 import java.util.concurrent.TimeUnit
 
-import akka.actor.{ActorSystem, Cancellable}
+import akka.actor.ActorSystem
 import com.google.inject.{AbstractModule, Provides}
 import javax.inject.{Inject, Named, Singleton}
-
 import play.api.Mode.Mode
 import play.api.{Configuration, Environment, Logger}
 import uk.gov.hmrc.play.config.ServicesConfig
 import uk.gov.hmrc.vatregisteredcompanies.services.PersistenceService
 
-import scala.concurrent.{Await, ExecutionContext}
-import scala.concurrent.duration.{Duration, FiniteDuration}
+import scala.concurrent.ExecutionContext
+import scala.concurrent.duration.FiniteDuration
 
 @Singleton
 class PayloadConversionScheduler @Inject()(
