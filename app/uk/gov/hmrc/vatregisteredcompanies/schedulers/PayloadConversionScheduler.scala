@@ -19,34 +19,48 @@ package uk.gov.hmrc.vatregisteredcompanies.schedulers
 import java.util.concurrent.TimeUnit
 
 import akka.actor.ActorSystem
-import com.google.inject.AbstractModule
-import javax.inject.{Inject, Singleton}
-import play.api.Logger
+import com.google.inject.{AbstractModule, Provides}
+import javax.inject.{Inject, Named, Singleton}
+import play.api.Mode.Mode
+import play.api.{Configuration, Environment, Logger}
+import uk.gov.hmrc.play.config.ServicesConfig
 import uk.gov.hmrc.vatregisteredcompanies.services.PersistenceService
 
 import scala.concurrent.ExecutionContext
 import scala.concurrent.duration.FiniteDuration
 
 @Singleton
-class PayloadConversionScheduler @Inject()(persistenceService: PersistenceService, actorSystem: ActorSystem)(
+class PayloadConversionScheduler @Inject()(
+  persistenceService: PersistenceService,
+  actorSystem: ActorSystem,
+  @Named("interval") interval: FiniteDuration)(
   implicit val ec: ExecutionContext) {
 
   private val logger = Logger(getClass)
 
-  // TODO make configurable
-  val interval = FiniteDuration(30, TimeUnit.SECONDS)
-
   logger.info(s"Initialising update every $interval")
 
+  // TODO port to Actor to avoid job stopping on failure or overlapping
   actorSystem.scheduler.schedule(FiniteDuration(10, TimeUnit.SECONDS), interval) {
-    logger.info("Scheduling a mongo counter")
-    persistenceService.processData
+    logger.info(s"Scheduling inbound data processing, next run in $interval")
+    persistenceService.processData.recover {
+      case e: RuntimeException => Logger.error(s"Error processing vat registration data: $e")
+    }
   }
 
 }
 
-class PayloadConversionSchedulerModule extends AbstractModule {
+class PayloadConversionSchedulerModule(environment: Environment, val runModeConfiguration: Configuration) extends
+  AbstractModule with ServicesConfig {
+  override protected def mode: Mode = environment.mode
+
+  @Provides
+  @Named("interval")
+  def interval(): FiniteDuration =
+    new FiniteDuration(getConfInt("schedulers.payload.conversion.interval.seconds", 600).toLong, TimeUnit.SECONDS)
+
   override def configure(): Unit = {
     bind(classOf[PayloadConversionScheduler]).asEagerSingleton()
   }
+
 }
