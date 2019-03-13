@@ -43,7 +43,7 @@ class PayloadConversionScheduler @Inject()(
   // TODO port to Actor to avoid job stopping on failure or overlapping
   actorSystem.scheduler.schedule(FiniteDuration(10, TimeUnit.SECONDS), interval) {
     logger.info(s"Scheduling inbound data processing, next run in $interval")
-    persistenceService.processData.recover {
+    persistenceService.processOneData.recover {
       case e: RuntimeException => Logger.error(s"Error processing vat registration data: $e")
     }
   }
