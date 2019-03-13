@@ -21,7 +21,9 @@ import org.mockito.Mockito._
 import org.scalatest.mockito.MockitoSugar
 import org.scalatest.{Matchers, OptionValues, WordSpec}
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
+import play.api.Application
 import play.api.http.Status
+import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.libs.json.Json
 import play.api.test.FakeRequest
 import play.api.test.Helpers.{contentAsJson, status, _}
@@ -38,6 +40,14 @@ class VatRegCoLookupControllerSpec extends WordSpec
   with MockitoSugar
   with OptionValues
 {
+
+  override def fakeApplication(): Application =
+    new GuiceApplicationBuilder().configure(
+      Map(
+        "auditing.enabled" -> "false",
+        "microservice.services.schedulers.payload.conversion.enabled" -> false
+      )
+    ).build()
 
   val mockPersistence: PersistenceService = mock[PersistenceService]
   val mockAudiConnector: AuditConnector = mock[AuditConnector]
