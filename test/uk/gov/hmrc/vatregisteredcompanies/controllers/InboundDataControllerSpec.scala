@@ -43,6 +43,7 @@ class InboundDataControllerSpec extends WordSpec
     new GuiceApplicationBuilder().configure(
       Map(
         "auditing.enabled" -> "false",
+        "microservice.services.schedulers.payload.conversion.enabled" -> false,
         "microservice.services.mdg.inboundData.token" -> token
       )
     ).build()

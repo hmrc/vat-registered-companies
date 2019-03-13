@@ -33,7 +33,8 @@ import scala.concurrent.duration.FiniteDuration
 class PayloadConversionScheduler @Inject()(
   persistenceService: PersistenceService,
   actorSystem: ActorSystem,
-  @Named("interval") interval: FiniteDuration)(
+  @Named("interval") interval: FiniteDuration,
+  @Named("enabled") enabled: Boolean)(
   implicit val ec: ExecutionContext) {
 
   private val logger = Logger(getClass)
@@ -41,10 +42,12 @@ class PayloadConversionScheduler @Inject()(
   logger.info(s"Initialising update every $interval")
 
   // TODO port to Actor to avoid job stopping on failure or overlapping
-  actorSystem.scheduler.schedule(FiniteDuration(10, TimeUnit.SECONDS), interval) {
-    logger.info(s"Scheduling inbound data processing, next run in $interval")
-    persistenceService.processOneData.recover {
-      case e: RuntimeException => Logger.error(s"Error processing vat registration data: $e")
+  if (enabled) {
+    actorSystem.scheduler.schedule(FiniteDuration(10, TimeUnit.SECONDS), interval) {
+      logger.info(s"Scheduling inbound data processing, next run in $interval")
+      persistenceService.processOneData.recover {
+        case e: RuntimeException => Logger.error(s"Error processing vat registration data: $e")
+      }
     }
   }
 
@@ -58,6 +61,11 @@ class PayloadConversionSchedulerModule(environment: Environment, val runModeConf
   @Named("interval")
   def interval(): FiniteDuration =
     new FiniteDuration(getConfInt("schedulers.payload.conversion.interval.seconds", 600).toLong, TimeUnit.SECONDS)
+
+  @Provides
+  @Named("enabled")
+  def enabled(): Boolean =
+    getConfBool("schedulers.payload.conversion.enabled", true)
 
   override def configure(): Unit = {
     bind(classOf[PayloadConversionScheduler]).asEagerSingleton()
