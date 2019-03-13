@@ -47,9 +47,16 @@ class   PayloadBufferRepository@Inject()(reactiveMongoComponent: ReactiveMongoCo
   def list: Future[List[PayloadWrapper]] =
     findAll()
 
-  def delete(payloadWrapperList: List[PayloadWrapper]): Future[Unit] = {
+  def one: Future[PayloadWrapper] =
+    findAll().map(_.head)
+
+  def deleteMany(payloadWrapperList: List[PayloadWrapper]): Future[Unit] = {
     val ids: Seq[BSONObjectID] = payloadWrapperList.map(_._id)
     remove("_id" -> BSONDocument("$in" -> ids)).map { _ => (()) }
+  }
+
+  def deleteOne(payload: PayloadWrapper): Future[Unit] = {
+    remove("_id" -> payload._id).map { _ => (())}
   }
 
 }

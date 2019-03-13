@@ -31,8 +31,16 @@ class PersistenceService @Inject()(repository: VatRegisteredCompaniesRepository,
   def processData: Future[Unit] =  {
     for {
       bd <- retrieveBufferData
-      _  <- repository.process(bd)
+      _  <- repository.processList(bd)
       _  <- cleanBuffer(bd)
+    } yield {}
+  }
+
+  def processOneData: Future[Unit] = {
+    for {
+      bp <- buffer.one
+      _  <- repository.process(bp.payload)
+      _  <- buffer.deleteOne(bp)
     } yield {}
   }
 
@@ -43,7 +51,7 @@ class PersistenceService @Inject()(repository: VatRegisteredCompaniesRepository,
     buffer.list
 
   def cleanBuffer(payloadWrapperList: List[PayloadWrapper]): Future[Unit] =
-    buffer.delete(payloadWrapperList)
+    buffer.deleteMany(payloadWrapperList)
 
 }
 
