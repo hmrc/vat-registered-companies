@@ -74,7 +74,7 @@ class   VatRegisteredCompaniesRepository @Inject()(reactiveMongoComponent: React
     }
   }.map(_ => ())
 
-  private def upsert(entries: List[Wrapper]) = {
+  private def upsert(entries: List[Wrapper]): Future[Unit] = {
     bulkInsert(entries) map { x =>
       x.writeErrors.foreach(e => if (e.code == 11000) {
         entries.get(e.index).fold((()))(update)
@@ -82,7 +82,7 @@ class   VatRegisteredCompaniesRepository @Inject()(reactiveMongoComponent: React
     }
   }
 
-  private def delete(deletes: List[VatNumber]) =
+  private def delete(deletes: List[VatNumber]): Future[Unit] =
     remove("vatNumber" -> BSONDocument("$in" -> deletes)).map {_=> (())}
 
   private def wrap(payload: Payload): List[Wrapper] =
