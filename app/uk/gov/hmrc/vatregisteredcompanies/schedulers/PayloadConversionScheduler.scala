@@ -18,13 +18,12 @@ package uk.gov.hmrc.vatregisteredcompanies.schedulers
 
 import java.util.concurrent.TimeUnit
 
-import akka.actor.{Actor, ActorLogging, ActorSystem, Props}
+import akka.actor.ActorSystem
 import com.google.inject.{AbstractModule, Provides}
 import javax.inject.{Inject, Named, Singleton}
 import play.api.Mode.Mode
 import play.api.{Configuration, Environment, Logger}
 import uk.gov.hmrc.play.config.ServicesConfig
-import uk.gov.hmrc.vatregisteredcompanies.models.Payload
 import uk.gov.hmrc.vatregisteredcompanies.services.PersistenceService
 
 import scala.concurrent.ExecutionContext
@@ -40,7 +39,6 @@ class PayloadConversionScheduler @Inject()(
 
   private val logger = Logger(getClass)
 
-
   logger.info(s"Initialising update every $interval")
 
   // TODO port to Actor to avoid job stopping on failure or overlapping
@@ -53,35 +51,7 @@ class PayloadConversionScheduler @Inject()(
     }
   }
 
-  // start of Akka stuff
-//  class ProcessOnePayload extends Actor with ActorLogging {
-//    import ProcessOnePayload._
-//
-//    override def receive: Receive = {
-//      case OnePayload =>
-//        persistenceService.processOneData
-//    }
-//  }
-//
-//  object ProcessOnePayload {
-//    def props = Props[ProcessOnePayload]
-//
-//    case object OnePayload
-//  }
-//
-//object Akka extends App {
-//  import ProcessOnePayload._
-//  val processOnePayloadActor = actorSystem.actorOf(ProcessOnePayload.props, "processOnePayloadActor")
-//  processOnePayloadActor ! OnePayload
-//}
-
-
-  // TODO we need to beable to cancel e.g.
-//  actorSystem.stop(processOnePayloadActor)
-  // end of Akka stuff
-
 }
-
 
 class PayloadConversionSchedulerModule(environment: Environment, val runModeConfiguration: Configuration) extends
   AbstractModule with ServicesConfig {

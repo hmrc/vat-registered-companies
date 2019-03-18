@@ -49,7 +49,8 @@ class VatRegCoLookupController @Inject()(persistence: PersistenceService, auditC
         b <- requesterLookup
       } yield (a,b) match {
         case (Some(t), None) => t
-        case (Some(t), Some(r)) => t.copy(requester = r.target.map(x => x.vatNumber), consultationNumber = Some(ConsultationNumber.generate))
+        case (Some(t), Some(r)) =>
+          t.copy(requester = r.target.map(x => x.vatNumber), consultationNumber = Some(ConsultationNumber.generate))
         case (_, Some(r)) => LookupResponse(None, r.target.map(x => x.vatNumber))
         case _ => LookupResponse(None)
       }
@@ -57,19 +58,6 @@ class VatRegCoLookupController @Inject()(persistence: PersistenceService, auditC
         auditVerifiedLookup(x.some)
         Ok(Json.toJson(x))
       }
-
-//      (
-//        targetLookup,
-//        requesterLookup
-//      ).mapN { case (a,b) =>
-//        a.map(x => x.copy(
-//          requester = b.fold(Option.empty[VatNumber])(_ => Some(requester)),
-//          consultationNumber = b.fold(Option.empty[ConsultationNumber])(_ => Some(ConsultationNumber.generate))
-//        ))
-//      }.map {x =>
-//        auditVerifiedLookup(x)
-//        Ok(Json.toJson(x.getOrElse(LookupResponse(None))))
-//      }
     }
   }
 
