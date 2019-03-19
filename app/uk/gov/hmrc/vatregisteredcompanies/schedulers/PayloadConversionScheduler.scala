@@ -62,6 +62,8 @@ class PayloadConversionSchedulerModule(environment: Environment, val runModeConf
   def interval(): FiniteDuration =
     new FiniteDuration(getConfInt("schedulers.payload.conversion.interval.seconds", 600).toLong, TimeUnit.SECONDS)
 
+
+  // TODO ditch ServicesConfig and talk directly to runModeConfiguration
   @Provides
   @Named("enabled")
   def enabled(): Boolean =
