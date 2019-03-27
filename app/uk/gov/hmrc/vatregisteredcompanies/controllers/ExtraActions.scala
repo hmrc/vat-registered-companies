@@ -16,6 +16,7 @@
 
 package uk.gov.hmrc.vatregisteredcompanies.controllers
 
+import play.api.Logger
 import play.api.http.HeaderNames
 import play.api.mvc.Results.Unauthorized
 import play.api.mvc.{ActionBuilder, ActionFilter, Request, Result}
@@ -29,6 +30,8 @@ trait ExtraActions extends ServicesConfig {
 
   val bearerToken = s"Bearer ${getConfString("mdg.inboundData.token", "")}"
 
+  private val logger = Logger(getClass)
+
   object AuthorisedFilterAction extends ActionBuilder[Request] with ActionFilter[Request] {
     override protected def filter[A](request: Request[A]): Future[Option[Result]] = {
       Future.successful(
@@ -38,8 +41,16 @@ trait ExtraActions extends ServicesConfig {
           a =>
             if (a.matches(bearerToken))
               None
-            else
+            else {
+              Logger.info(s"config token ends with ${bearerToken.toList.takeRight(3).mkString}")
+              Logger.info(s"config token is ${bearerToken.length} characters long")
+              Logger.info(s"config token starts with 'Bearer ' ${bearerToken.startsWith("Bearer ")}")
+              Logger.info(s"supplied token starts with 'Bearer ' ${a.startsWith("Bearer ")}")
+              Logger.info(s"supplied token ends with ${a.toList.takeRight(3).mkString}")
+              Logger.info(s"supplied token is ${a.length} characters long")
+
               Some(Unauthorized("Supplied bearer token does not match config"))
+            }
         }
       )
     }
