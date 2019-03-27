@@ -33,13 +33,13 @@ trait ExtraActions extends ServicesConfig {
     override protected def filter[A](request: Request[A]): Future[Option[Result]] = {
       Future.successful(
         request.headers.get(HeaderNames.AUTHORIZATION).fold[Option[Result]] {
-          Some(Unauthorized(""))
+          Some(Unauthorized(s"No ${HeaderNames.AUTHORIZATION} present"))
         } {
           a =>
             if (a.matches(bearerToken))
               None
             else
-              Some(Unauthorized(""))
+              Some(Unauthorized("Supplied bearer token does not match config"))
         }
       )
     }
