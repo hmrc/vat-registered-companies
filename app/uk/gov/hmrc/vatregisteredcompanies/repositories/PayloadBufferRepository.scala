@@ -19,6 +19,8 @@ package uk.gov.hmrc.vatregisteredcompanies.repositories
 import javax.inject.{Inject, Singleton}
 import play.api.libs.json._
 import play.modules.reactivemongo.ReactiveMongoComponent
+import reactivemongo.api.{QueryOpts, Cursor}
+import reactivemongo.api.collections.GenericQueryBuilder
 import reactivemongo.bson.{BSONDocument, BSONObjectID}
 import reactivemongo.play.json.ImplicitBSONHandlers._
 import uk.gov.hmrc.mongo.ReactiveRepository
@@ -47,8 +49,17 @@ class   PayloadBufferRepository@Inject()(reactiveMongoComponent: ReactiveMongoCo
   def list: Future[List[PayloadWrapper]] =
     findAll()
 
-  def one: Future[PayloadWrapper] =
-    findAll().map(_.head)
+  def getOne: Future[List[PayloadWrapper]] = {
+    val query = BSONDocument()
+    collection
+      .find(query, Option.empty[JsObject])
+      .sort(Json.obj("_id" -> 1))
+      .cursor[PayloadWrapper]()
+      .collect[List](1, Cursor.FailOnError[List[PayloadWrapper]]())
+  }
+
+  def one: Future[Option[PayloadWrapper]] = getOne.map(_.headOption)
+
 
   def deleteMany(payloadWrapperList: List[PayloadWrapper]): Future[Unit] = {
     val ids: Seq[BSONObjectID] = payloadWrapperList.map(_._id)

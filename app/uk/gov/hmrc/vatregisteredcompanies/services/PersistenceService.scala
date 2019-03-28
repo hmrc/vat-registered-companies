@@ -16,6 +16,8 @@
 
 package uk.gov.hmrc.vatregisteredcompanies.services
 
+import cats.data.OptionT
+import cats.implicits._
 import javax.inject.{Inject, Singleton}
 import uk.gov.hmrc.vatregisteredcompanies.models.{LookupResponse, Payload, VatNumber}
 import uk.gov.hmrc.vatregisteredcompanies.repositories.{PayloadBufferRepository, PayloadWrapper, VatRegisteredCompaniesRepository}
@@ -37,11 +39,13 @@ class PersistenceService @Inject()(repository: VatRegisteredCompaniesRepository,
   }
 
   def processOneData: Future[Unit] = {
-    for {
-      bp <- buffer.one
-      _  <- repository.process(bp.payload)
-      _  <- buffer.deleteOne(bp)
+    val x = for {
+      bp <- OptionT(buffer.one)
+      _  <- OptionT.liftF(repository.process(bp.payload))
+      _  <- OptionT.liftF(buffer.deleteOne(bp))
     } yield {}
+
+    x.fold((())) {_=> (())}
   }
 
   def bufferData(payload: Payload): Future[Unit] =
