@@ -22,9 +22,9 @@ import cats.implicits._
 import javax.inject.{Inject, Singleton}
 import play.api.libs.json._
 import play.modules.reactivemongo.ReactiveMongoComponent
-import reactivemongo.api.commands.WriteResult
+import reactivemongo.api.Cursor
 import reactivemongo.api.indexes.{Index, IndexType}
-import reactivemongo.bson.{BSONDateTime, BSONDocument}
+import reactivemongo.bson.{BSONDateTime, BSONDocument, _}
 import reactivemongo.play.json.ImplicitBSONHandlers._
 import uk.gov.hmrc.mongo.ReactiveRepository
 import uk.gov.hmrc.vatregisteredcompanies.models.{LookupResponse, Payload, VatNumber, VatRegisteredCompany}
@@ -63,27 +63,56 @@ class   VatRegisteredCompaniesRepository @Inject()(reactiveMongoComponent: React
 
   implicit val format: OFormat[Wrapper] = Json.format[Wrapper]
 
-  private def update(entry: Wrapper): Future[Unit] = {
-
-    domainFormatImplicit.writes(entry) match {
-      case a@JsObject(_) =>
-        val selector = Json.obj("vatNumber" -> entry.vatNumber)
-        collection.update(selector, entry)
-      case _ =>
-        Future.failed[WriteResult](new Exception("failed insert or update"))
-    }
-  }.map(_ => ())
-
-  private def upsert(entries: List[Wrapper]): Future[Unit] = {
-    bulkInsert(entries) map { x =>
-      x.writeErrors.foreach(e => if (e.code == 11000) {
-        entries.get(e.index).fold((()))(update)
-      })
-    }
+  private def insert(entries: List[Wrapper]): Future[Unit] = {
+    bulkInsert(entries).map(_ => (()))
+    //    map { x =>
+    //      x.writeErrors.foreach(e => if (e.code == 11000) {
+    //        println(s"################################## about to do an update !!!!!")
+    //        entries.get(e.index).fold((()))(update)
+    //      })
+    //    }
   }
 
-  private def delete(deletes: List[VatNumber]): Future[Unit] =
-    remove("vatNumber" -> BSONDocument("$in" -> deletes)).map {_=> (())}
+  private def delete(deletes: List[VatNumber]): Future[Unit] = {
+    val deleteBuilder = collection.delete(false)
+    val ds: Future[List[collection.DeleteCommand.DeleteElement]] =
+       Future.sequence(
+         deletes.map { vatNumber =>
+           deleteBuilder.element(
+             q = BSONDocument("vatNumber" -> vatNumber),
+             limit = None,
+             collation = None)
+         }
+       )
+    ds.flatMap { ops => deleteBuilder.many(ops) }.map(_=> (()))
+  }
+
+  def deleteOld(n: Int) = {
+    import collection.BatchCommands.AggregationFramework.{Group, Match, MinField, SumAll}
+    collection.aggregatorContext[BSONDocument](
+      Group(JsString("$vatNumber"))( "count" -> SumAll, "oldest" -> MinField("_id")),
+      List(Match(Json.obj("count" -> Json.obj("$gt" -> 1L))))
+    ).
+      prepared.cursor.
+      collect[List](n, Cursor.FailOnError[List[BSONDocument]]())
+  }.map(x => x.map(y => y.get("oldest").get)).map { d =>
+    deleteB(d)
+  }.map(_=>(()))
+
+  private def deleteB(deletes: List[BSONValue]): Future[Unit] = {
+    val deleteBuilder = collection.delete(false)
+    val ds: Future[List[collection.DeleteCommand.DeleteElement]] =
+      Future.sequence(
+        deletes.map { id =>
+          println(s"YYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYY BSONValue is $id")
+          deleteBuilder.element(
+            q = BSONDocument("_id" -> id),
+            limit = None,
+            collation = None)
+        }
+      )
+    ds.flatMap { ops => deleteBuilder.many(ops) }.map(_=> (()))
+  }
 
   private def wrap(payload: Payload): List[Wrapper] =
     payload.createsAndUpdates.map { company =>
@@ -91,7 +120,7 @@ class   VatRegisteredCompaniesRepository @Inject()(reactiveMongoComponent: React
     }
 
   def process(payload: Payload): Future[Unit] = {
-    val upserts = upsert(wrap(payload))
+    val upserts = insert(wrap(payload))
     val deletes = delete(payload.deletes)
     for {
       a <- upserts
@@ -100,15 +129,20 @@ class   VatRegisteredCompaniesRepository @Inject()(reactiveMongoComponent: React
   }
 
   def lookup(target: String): Future[Option[LookupResponse]] = {
-    find("vatNumber" -> target).map {
-      _.headOption.map (x => LookupResponse(x.company.some))
-    }
+    collection
+      .find(BSONDocument("vatNumber" -> target), Option.empty[JsObject])
+      .sort(Json.obj("_id" -> -1))
+      .cursor[Wrapper]()
+      .collect[List](1, Cursor.FailOnError[List[Wrapper]]())
+      .map {
+        _.headOption.map(x => LookupResponse(x.company.some))
+      }
   }
 
   override def indexes: Seq[Index] = Seq(
     Index(
       key = Seq( "vatNumber" -> IndexType.Text),
-      unique = true
+      unique = false
     )
   )
 

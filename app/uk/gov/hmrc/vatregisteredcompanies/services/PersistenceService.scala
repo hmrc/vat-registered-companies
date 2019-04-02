@@ -30,6 +30,10 @@ class PersistenceService @Inject()(repository: VatRegisteredCompaniesRepository,
   def lookup(target: VatNumber): Future[Option[LookupResponse]] =
     repository.lookup(target)
 
+  def processData(payload: Payload): Future[Unit] =
+    repository.process(payload)
+
+/*
   def processData: Future[Unit] =  {
     for {
       bd <- retrieveBufferData
@@ -37,25 +41,28 @@ class PersistenceService @Inject()(repository: VatRegisteredCompaniesRepository,
       _  <- cleanBuffer(bd)
     } yield {}
   }
+*/
 
-  def processOneData: Future[Unit] = {
-    val x = for {
-      bp <- OptionT(buffer.one)
-      _  <- OptionT.liftF(repository.process(bp.payload))
-      _  <- OptionT.liftF(buffer.deleteOne(bp))
-    } yield {}
+//  def processOneData: Future[Unit] = {
+//    val x = for {
+//      bp <- OptionT(buffer.one)
+//      _  <- OptionT.liftF(repository.process(bp.payload))
+//      _  <- OptionT.liftF(buffer.deleteOne(bp))
+//    } yield {}
+//
+//    x.fold((())) {_=> (())}
+//  }
 
-    x.fold((())) {_=> (())}
-  }
+//  def bufferData(payload: Payload): Future[Unit] =
+//    buffer.insert(payload)
+//
+//  def retrieveBufferData: Future[List[PayloadWrapper]] =
+//    buffer.list
 
-  def bufferData(payload: Payload): Future[Unit] =
-    buffer.insert(payload)
+//  def cleanBuffer(payloadWrapperList: List[PayloadWrapper]): Future[Unit] =
+//    buffer.deleteMany(payloadWrapperList)
 
-  def retrieveBufferData: Future[List[PayloadWrapper]] =
-    buffer.list
-
-  def cleanBuffer(payloadWrapperList: List[PayloadWrapper]): Future[Unit] =
-    buffer.deleteMany(payloadWrapperList)
+  def deleteOld(n: Int) = repository.deleteOld(10)
 
 }
 

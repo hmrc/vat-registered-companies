@@ -45,7 +45,7 @@ class PayloadConversionScheduler @Inject()(
   if (enabled) {
     actorSystem.scheduler.schedule(FiniteDuration(10, TimeUnit.SECONDS), interval) {
       logger.info(s"Scheduling inbound data processing, next run in $interval")
-      persistenceService.processOneData.recover {
+      persistenceService.deleteOld(10).recover {
         case e: RuntimeException => Logger.error(s"Error processing vat registration data: $e")
       }
     }
