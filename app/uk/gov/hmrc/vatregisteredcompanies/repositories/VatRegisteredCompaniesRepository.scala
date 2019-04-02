@@ -54,25 +54,13 @@ object Wrapper {
 class   VatRegisteredCompaniesRepository @Inject()(reactiveMongoComponent: ReactiveMongoComponent)(implicit val executionContext: ExecutionContext)
   extends ReactiveRepository("vatregisteredcompanies", reactiveMongoComponent.mongoConnector.db, Wrapper.format) {
 
-  def processList(bd: List[PayloadWrapper]): Future[Unit] = {
-    for {
-      _ <- bd.map(x => process(x.payload))
-    } yield (())
-    Future.successful(())
-  }
-
   implicit val format: OFormat[Wrapper] = Json.format[Wrapper]
 
   private def insert(entries: List[Wrapper]): Future[Unit] = {
     bulkInsert(entries).map(_ => (()))
-    //    map { x =>
-    //      x.writeErrors.foreach(e => if (e.code == 11000) {
-    //        println(s"################################## about to do an update !!!!!")
-    //        entries.get(e.index).fold((()))(update)
-    //      })
-    //    }
   }
 
+  // TODO see if we can merge delete and deleteB
   private def delete(deletes: List[VatNumber]): Future[Unit] = {
     val deleteBuilder = collection.delete(false)
     val ds: Future[List[collection.DeleteCommand.DeleteElement]] =
@@ -87,24 +75,11 @@ class   VatRegisteredCompaniesRepository @Inject()(reactiveMongoComponent: React
     ds.flatMap { ops => deleteBuilder.many(ops) }.map(_=> (()))
   }
 
-  def deleteOld(n: Int) = {
-    import collection.BatchCommands.AggregationFramework.{Group, Match, MinField, SumAll}
-    collection.aggregatorContext[BSONDocument](
-      Group(JsString("$vatNumber"))( "count" -> SumAll, "oldest" -> MinField("_id")),
-      List(Match(Json.obj("count" -> Json.obj("$gt" -> 1L))))
-    ).
-      prepared.cursor.
-      collect[List](n, Cursor.FailOnError[List[BSONDocument]]())
-  }.map(x => x.map(y => y.get("oldest").get)).map { d =>
-    deleteB(d)
-  }.map(_=>(()))
-
   private def deleteB(deletes: List[BSONValue]): Future[Unit] = {
     val deleteBuilder = collection.delete(false)
     val ds: Future[List[collection.DeleteCommand.DeleteElement]] =
       Future.sequence(
         deletes.map { id =>
-          println(s"YYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYY BSONValue is $id")
           deleteBuilder.element(
             q = BSONDocument("_id" -> id),
             limit = None,
@@ -112,6 +87,23 @@ class   VatRegisteredCompaniesRepository @Inject()(reactiveMongoComponent: React
         }
       )
     ds.flatMap { ops => deleteBuilder.many(ops) }.map(_=> (()))
+  }
+
+  private def findOld(n: Int) = {
+    import collection.BatchCommands.AggregationFramework.{Group, Limit, Match, MinField, SumAll}
+    collection.aggregatorContext[BSONDocument](
+      Group(JsString("$vatNumber"))( "count" -> SumAll, "oldest" -> MinField("_id")),
+      List(
+        Match(Json.obj("count" -> Json.obj("$gt" -> 1L))),
+        Limit(n)
+      )
+    ).
+      prepared.cursor.
+      collect[List](-1, Cursor.FailOnError[List[BSONDocument]]())
+  }
+
+  def deleteOld(n: Int): Future[Unit] = {
+    findOld(n).flatMap(x => deleteB(x.flatMap(y => y.get("oldest"))))
   }
 
   private def wrap(payload: Payload): List[Wrapper] =
