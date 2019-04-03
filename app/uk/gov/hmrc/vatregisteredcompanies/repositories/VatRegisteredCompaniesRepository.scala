@@ -20,11 +20,13 @@ import java.time.Instant
 
 import cats.implicits._
 import javax.inject.{Inject, Singleton}
+import play.api.Logger
 import play.api.libs.json._
 import play.modules.reactivemongo.ReactiveMongoComponent
 import reactivemongo.api.Cursor
 import reactivemongo.api.indexes.{Index, IndexType}
 import reactivemongo.bson.{BSONDateTime, BSONDocument, _}
+import reactivemongo.core.nodeset.ProtocolMetadata
 import reactivemongo.play.json.ImplicitBSONHandlers._
 import uk.gov.hmrc.mongo.ReactiveRepository
 import uk.gov.hmrc.vatregisteredcompanies.models.{LookupResponse, Payload, VatNumber, VatRegisteredCompany}
@@ -51,8 +53,9 @@ object Wrapper {
 }
 
 @Singleton
-class   VatRegisteredCompaniesRepository @Inject()(reactiveMongoComponent: ReactiveMongoComponent)(implicit val executionContext: ExecutionContext)
-  extends ReactiveRepository("vatregisteredcompanies", reactiveMongoComponent.mongoConnector.db, Wrapper.format) {
+class   VatRegisteredCompaniesRepository @Inject()(reactiveMongoComponent: ReactiveMongoComponent)
+  (implicit val executionContext: ExecutionContext) extends
+  ReactiveRepository("vatregisteredcompanies", reactiveMongoComponent.mongoConnector.db, Wrapper.format) {
 
   implicit val format: OFormat[Wrapper] = Json.format[Wrapper]
 
@@ -60,19 +63,30 @@ class   VatRegisteredCompaniesRepository @Inject()(reactiveMongoComponent: React
     bulkInsert(entries).map(_ => (()))
   }
 
-  // TODO see if we can merge delete and deleteB
   private def delete(deletes: List[VatNumber]): Future[Unit] = {
-    val deleteBuilder = collection.delete(false)
-    val ds: Future[List[collection.DeleteCommand.DeleteElement]] =
-       Future.sequence(
-         deletes.map { vatNumber =>
-           deleteBuilder.element(
-             q = BSONDocument("vatNumber" -> vatNumber),
-             limit = None,
-             collation = None)
-         }
-       )
-    ds.flatMap { ops => deleteBuilder.many(ops) }.map(_=> (()))
+    val bulkSize = ProtocolMetadata.Default.maxBulkSize - 1
+    val it = deletes.sliding(bulkSize,bulkSize)
+    while (it.hasNext) {
+      val chunk = it.next
+      val deleteBuilder = collection.delete(false)
+      val ds: Future[List[collection.DeleteCommand.DeleteElement]] =
+        Future.sequence(
+          chunk.map { vatNumber =>
+            deleteBuilder.element(
+              q = BSONDocument("vatNumber" -> vatNumber),
+              limit = None,
+              collation = None)
+          }
+        )
+      ds.flatMap { ops =>
+        deleteBuilder.many(ops)
+      }.map {
+        multiBulkWriteResult => multiBulkWriteResult.errmsg.foreach( e =>
+          Logger.error(s"$e")
+        )
+      }
+    }
+    Future.successful((()))
   }
 
   private def deleteB(deletes: List[BSONValue]): Future[Unit] = {
@@ -89,7 +103,7 @@ class   VatRegisteredCompaniesRepository @Inject()(reactiveMongoComponent: React
     ds.flatMap { ops => deleteBuilder.many(ops) }.map(_=> (()))
   }
 
-  private def findOld(n: Int) = {
+  private def findOld(n: Int): Future[List[BSONDocument]] = {
     import collection.BatchCommands.AggregationFramework.{Group, Limit, Match, MinField, SumAll}
     collection.aggregatorContext[BSONDocument](
       Group(JsString("$vatNumber"))( "count" -> SumAll, "oldest" -> MinField("_id")),
