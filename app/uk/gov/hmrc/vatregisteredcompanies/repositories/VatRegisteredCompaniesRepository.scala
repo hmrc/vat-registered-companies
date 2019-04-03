@@ -59,12 +59,13 @@ class   VatRegisteredCompaniesRepository @Inject()(reactiveMongoComponent: React
 
   implicit val format: OFormat[Wrapper] = Json.format[Wrapper]
 
+  val bulkSize = ProtocolMetadata.Default.maxBulkSize - 1
+
   private def insert(entries: List[Wrapper]): Future[Unit] = {
     bulkInsert(entries).map(_ => (()))
   }
 
   private def delete(deletes: List[VatNumber]): Future[Unit] = {
-    val bulkSize = ProtocolMetadata.Default.maxBulkSize - 1
     val it = deletes.sliding(bulkSize,bulkSize)
     while (it.hasNext) {
       val chunk = it.next
@@ -89,18 +90,29 @@ class   VatRegisteredCompaniesRepository @Inject()(reactiveMongoComponent: React
     Future.successful((()))
   }
 
-  private def deleteB(deletes: List[BSONValue]): Future[Unit] = {
-    val deleteBuilder = collection.delete(false)
-    val ds: Future[List[collection.DeleteCommand.DeleteElement]] =
-      Future.sequence(
-        deletes.map { id =>
-          deleteBuilder.element(
-            q = BSONDocument("_id" -> id),
-            limit = None,
-            collation = None)
-        }
-      )
-    ds.flatMap { ops => deleteBuilder.many(ops) }.map(_=> (()))
+  private def deleteById(deletes: List[BSONValue]): Future[Unit] = {
+    val it = deletes.sliding(bulkSize,bulkSize)
+    while (it.hasNext) {
+      val chunk = it.next
+      val deleteBuilder = collection.delete(false)
+      val ds: Future[List[collection.DeleteCommand.DeleteElement]] =
+        Future.sequence(
+          chunk.map { id =>
+            deleteBuilder.element(
+              q = BSONDocument("_id" -> id),
+              limit = None,
+              collation = None)
+          }
+        )
+      ds.flatMap { ops =>
+        deleteBuilder.many(ops)
+      }.map { multiBulkWriteResult =>
+          multiBulkWriteResult.errmsg.foreach(e =>
+            Logger.error(s"$e")
+          )
+      }
+    }
+    Future.successful((()))
   }
 
   private def findOld(n: Int): Future[List[BSONDocument]] = {
@@ -117,7 +129,7 @@ class   VatRegisteredCompaniesRepository @Inject()(reactiveMongoComponent: React
   }
 
   def deleteOld(n: Int): Future[Unit] = {
-    findOld(n).flatMap(x => deleteB(x.flatMap(y => y.get("oldest"))))
+    findOld(n).flatMap(x => deleteById(x.flatMap(y => y.get("oldest"))))
   }
 
   private def wrap(payload: Payload): List[Wrapper] =
@@ -126,10 +138,10 @@ class   VatRegisteredCompaniesRepository @Inject()(reactiveMongoComponent: React
     }
 
   def process(payload: Payload): Future[Unit] = {
-    val upserts = insert(wrap(payload))
+    val inserts = insert(wrap(payload))
     val deletes = delete(payload.deletes)
     for {
-      a <- upserts
+      a <- inserts
       b <- deletes
     } yield (())
   }

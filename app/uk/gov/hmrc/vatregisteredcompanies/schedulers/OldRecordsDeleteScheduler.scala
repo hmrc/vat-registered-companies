@@ -47,7 +47,6 @@ class OldRecordsDeleteScheduler @Inject()(
       }
     }
   }
-
 }
 
 class OldRecordsDeleteSchedulerModule(environment: Environment, val runModeConfiguration: Configuration) extends
@@ -75,7 +74,7 @@ class OldRecordsDeleteSchedulerModule(environment: Environment, val runModeConfi
   @Named("rowCount")
   def size(): Int =
     runModeConfiguration.getInt("microservice.services.schedulers.old-data-deletion.rowCount")
-      .getOrElse(10)
+      .getOrElse(100)
 
   override def configure(): Unit = {
     bind(classOf[OldRecordsDeleteScheduler]).asEagerSingleton()
