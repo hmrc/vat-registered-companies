@@ -45,7 +45,7 @@ class VatRegCoLookupControllerSpec extends WordSpec
     new GuiceApplicationBuilder().configure(
       Map(
         "auditing.enabled" -> "false",
-        "microservice.services.schedulers.payload.conversion.enabled" -> false
+        "microservice.services.schedulers.old-data-deletion.enabled" -> false
       )
     ).build()
 

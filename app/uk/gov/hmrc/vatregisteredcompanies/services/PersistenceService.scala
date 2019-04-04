@@ -16,46 +16,22 @@
 
 package uk.gov.hmrc.vatregisteredcompanies.services
 
-import cats.data.OptionT
-import cats.implicits._
 import javax.inject.{Inject, Singleton}
 import uk.gov.hmrc.vatregisteredcompanies.models.{LookupResponse, Payload, VatNumber}
-import uk.gov.hmrc.vatregisteredcompanies.repositories.{PayloadBufferRepository, PayloadWrapper, VatRegisteredCompaniesRepository}
+import uk.gov.hmrc.vatregisteredcompanies.repositories.VatRegisteredCompaniesRepository
 
 import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
-class PersistenceService @Inject()(repository: VatRegisteredCompaniesRepository, buffer: PayloadBufferRepository)(implicit executionContext: ExecutionContext) {
+class PersistenceService @Inject()(repository: VatRegisteredCompaniesRepository)(implicit executionContext: ExecutionContext) {
 
   def lookup(target: VatNumber): Future[Option[LookupResponse]] =
     repository.lookup(target)
 
-  def processData: Future[Unit] =  {
-    for {
-      bd <- retrieveBufferData
-      _  <- repository.processList(bd)
-      _  <- cleanBuffer(bd)
-    } yield {}
-  }
+  def processData(payload: Payload): Future[Unit] =
+    repository.process(payload)
 
-  def processOneData: Future[Unit] = {
-    val x = for {
-      bp <- OptionT(buffer.one)
-      _  <- OptionT.liftF(repository.process(bp.payload))
-      _  <- OptionT.liftF(buffer.deleteOne(bp))
-    } yield {}
-
-    x.fold((())) {_=> (())}
-  }
-
-  def bufferData(payload: Payload): Future[Unit] =
-    buffer.insert(payload)
-
-  def retrieveBufferData: Future[List[PayloadWrapper]] =
-    buffer.list
-
-  def cleanBuffer(payloadWrapperList: List[PayloadWrapper]): Future[Unit] =
-    buffer.deleteMany(payloadWrapperList)
+  def deleteOld(n: Int) = repository.deleteOld(n)
 
 }
 

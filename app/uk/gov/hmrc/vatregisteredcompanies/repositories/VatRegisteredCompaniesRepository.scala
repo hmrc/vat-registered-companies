@@ -18,13 +18,18 @@ package uk.gov.hmrc.vatregisteredcompanies.repositories
 
 import java.time.Instant
 
+import akka.NotUsed
+import akka.stream.Materializer
+import akka.stream.scaladsl.{RunnableGraph, Sink, Source}
 import cats.implicits._
 import javax.inject.{Inject, Singleton}
+import play.api.Logger
 import play.api.libs.json._
 import play.modules.reactivemongo.ReactiveMongoComponent
-import reactivemongo.api.commands.WriteResult
+import reactivemongo.api.Cursor
 import reactivemongo.api.indexes.{Index, IndexType}
-import reactivemongo.bson.{BSONDateTime, BSONDocument}
+import reactivemongo.bson.{BSONDateTime, BSONDocument, _}
+import reactivemongo.core.nodeset.ProtocolMetadata
 import reactivemongo.play.json.ImplicitBSONHandlers._
 import uk.gov.hmrc.mongo.ReactiveRepository
 import uk.gov.hmrc.vatregisteredcompanies.models.{LookupResponse, Payload, VatNumber, VatRegisteredCompany}
@@ -51,39 +56,72 @@ object Wrapper {
 }
 
 @Singleton
-class   VatRegisteredCompaniesRepository @Inject()(reactiveMongoComponent: ReactiveMongoComponent)(implicit val executionContext: ExecutionContext)
-  extends ReactiveRepository("vatregisteredcompanies", reactiveMongoComponent.mongoConnector.db, Wrapper.format) {
+class   VatRegisteredCompaniesRepository @Inject()(
+  reactiveMongoComponent: ReactiveMongoComponent
+)(implicit val executionContext: ExecutionContext, mat: Materializer) extends
+  ReactiveRepository("vatregisteredcompanies", reactiveMongoComponent.mongoConnector.db, Wrapper.format) {
 
-  def processList(bd: List[PayloadWrapper]): Future[Unit] = {
-    for {
-      _ <- bd.map(x => process(x.payload))
-    } yield (())
-    Future.successful(())
-  }
 
   implicit val format: OFormat[Wrapper] = Json.format[Wrapper]
 
-  private def update(entry: Wrapper): Future[Unit] = {
+  val bulkSize = ProtocolMetadata.Default.maxBulkSize - 1
 
-    domainFormatImplicit.writes(entry) match {
-      case a@JsObject(_) =>
-        val selector = Json.obj("vatNumber" -> entry.vatNumber)
-        collection.update(selector, entry)
-      case _ =>
-        Future.failed[WriteResult](new Exception("failed insert or update"))
-    }
-  }.map(_ => ())
-
-  private def upsert(entries: List[Wrapper]): Future[Unit] = {
-    bulkInsert(entries) map { x =>
-      x.writeErrors.foreach(e => if (e.code == 11000) {
-        entries.get(e.index).fold((()))(update)
-      })
-    }
+  private def insert(entries: List[Wrapper]): Future[Unit] = {
+    bulkInsert(entries).map(_ => (()))
   }
 
-  private def delete(deletes: List[VatNumber]): Future[Unit] =
-    remove("vatNumber" -> BSONDocument("$in" -> deletes)).map {_=> (())}
+  private def streamingDelete(deletes: List[VatNumber]) = {
+    if (deletes.nonEmpty) {
+      val source = Source(deletes)
+      val stage: RunnableGraph[NotUsed] = source.to(Sink.foreach[VatNumber] ( vrn =>
+        collection.findAndRemove(Json.obj("vatNumber" -> vrn)).map(_.result[VatNumber])))
+      stage.run()
+    }
+    Future.successful((()))
+  }
+
+  // TODO - port deleteById and findOld to akka
+  private def deleteById(deletes: List[BSONValue]): Future[Unit] = {
+    val it = deletes.sliding(bulkSize,bulkSize)
+    while (it.hasNext) {
+      val chunk = it.next
+      val deleteBuilder = collection.delete(false)
+      val ds: Future[List[collection.DeleteCommand.DeleteElement]] =
+        Future.sequence(
+          chunk.map { id =>
+            deleteBuilder.element(
+              q = BSONDocument("_id" -> id),
+              limit = None,
+              collation = None)
+          }
+        )
+      ds.flatMap { ops =>
+        deleteBuilder.many(ops)
+      }.map { multiBulkWriteResult =>
+          multiBulkWriteResult.errmsg.foreach(e =>
+            Logger.error(s"$e")
+          )
+      }
+    }
+    Future.successful((()))
+  }
+
+  private def findOld(n: Int): Future[List[BSONDocument]] = {
+    import collection.BatchCommands.AggregationFramework.{Group, Limit, Match, MinField, SumAll}
+    collection.aggregatorContext[BSONDocument](
+      Group(JsString("$vatNumber"))( "count" -> SumAll, "oldest" -> MinField("_id")),
+      List(
+        Match(Json.obj("count" -> Json.obj("$gt" -> 1L))),
+        Limit(n)
+      )
+    ).
+      prepared.cursor.
+      collect[List](-1, Cursor.FailOnError[List[BSONDocument]]())
+  }
+
+  def deleteOld(n: Int): Future[Unit] = {
+    findOld(n).flatMap(x => deleteById(x.flatMap(y => y.get("oldest"))))
+  }
 
   private def wrap(payload: Payload): List[Wrapper] =
     payload.createsAndUpdates.map { company =>
@@ -91,24 +129,29 @@ class   VatRegisteredCompaniesRepository @Inject()(reactiveMongoComponent: React
     }
 
   def process(payload: Payload): Future[Unit] = {
-    val upserts = upsert(wrap(payload))
-    val deletes = delete(payload.deletes)
+    val inserts = insert(wrap(payload))
+    val deletes = streamingDelete(payload.deletes)
     for {
-      a <- upserts
+      a <- inserts
       b <- deletes
     } yield (())
   }
 
   def lookup(target: String): Future[Option[LookupResponse]] = {
-    find("vatNumber" -> target).map {
-      _.headOption.map (x => LookupResponse(x.company.some))
-    }
+    collection
+      .find(BSONDocument("vatNumber" -> target), Option.empty[JsObject])
+      .sort(Json.obj("_id" -> -1))
+      .cursor[Wrapper]()
+      .collect[List](1, Cursor.FailOnError[List[Wrapper]]())
+      .map {
+        _.headOption.map(x => LookupResponse(x.company.some))
+      }
   }
 
   override def indexes: Seq[Index] = Seq(
     Index(
       key = Seq( "vatNumber" -> IndexType.Text),
-      unique = true
+      unique = false
     )
   )
 

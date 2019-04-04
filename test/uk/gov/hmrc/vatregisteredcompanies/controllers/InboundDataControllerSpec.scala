@@ -43,7 +43,7 @@ class InboundDataControllerSpec extends WordSpec
     new GuiceApplicationBuilder().configure(
       Map(
         "auditing.enabled" -> "false",
-        "microservice.services.schedulers.payload.conversion.enabled" -> false,
+        "microservice.services.schedulers.old-data-deletion.enabled" -> false,
         "microservice.services.mdg.inboundData.token" -> token
       )
     ).build()
@@ -85,23 +85,47 @@ class InboundDataControllerSpec extends WordSpec
                                        |  "deletes": []
                                        |}""".stripMargin)
 
+  val malformedBody: JsValue = Json.parse("""{
+                                            |  "createsAndUpdates": [
+                                            |    {
+                                            |      "name": "",
+                                            |      "address": {
+                                            |        "line1": "qui ex",
+                                            |        "countryCode": "au"
+                                            |      },
+                                            |      "vatNumber": "993064963231"
+                                            |    }
+                                            |  ],
+                                            |  "deletes": []
+                                            |}""".stripMargin)
+
   val fakeRequest = FakeRequest("POST", "/vat-registered-companies/vatregistrations", fakeHeaders, fakeBody)
+  val fakeInvalidPayloadRequest = FakeRequest("POST", "/vat-registered-companies/vatregistrations", fakeHeaders, malformedBody)
   val fakeBadRequest = FakeRequest("POST", "/vat-registered-companies/vatregistrations", fakeBadHeaders, fakeBody)
   val fakeBadRequest2 = FakeRequest("POST", "/vat-registered-companies/vatregistrations", fakeMissingHeaders, fakeBody)
   val mockPersistence: PersistenceService = mock[PersistenceService]
 
   "POST of valid json with valid headers to /vat-registered-companies/vatregistrations" should {
     "return 200" in {
-      when(mockPersistence.bufferData(ArgumentMatchers.any())).thenReturn(Future(()))
+      when(mockPersistence.processData(ArgumentMatchers.any())).thenReturn(Future(()))
       val controller = new InboundDataController(mockPersistence)
       val result: Future[Result] = controller.handle().apply(fakeRequest)
       status(result) shouldBe Status.OK
     }
   }
 
+  "POST of invalid json with valid headers to /vat-registered-companies/vatregistrations" should {
+    "return 400" in {
+      when(mockPersistence.processData(ArgumentMatchers.any())).thenReturn(Future(()))
+      val controller = new InboundDataController(mockPersistence)
+      val result: Future[Result] = controller.handle().apply(fakeInvalidPayloadRequest)
+      status(result) shouldBe Status.BAD_REQUEST
+    }
+  }
+
   "POST of valid json with invalid bearer token headers to /vat-registered-companies/vatregistrations" should {
     "return 200" in {
-      when(mockPersistence.bufferData(ArgumentMatchers.any())).thenReturn(Future(()))
+      when(mockPersistence.processData(ArgumentMatchers.any())).thenReturn(Future(()))
       val controller = new InboundDataController(mockPersistence)
       val result: Future[Result] = controller.handle().apply(fakeBadRequest)
       status(result) shouldBe Status.UNAUTHORIZED
@@ -110,7 +134,7 @@ class InboundDataControllerSpec extends WordSpec
 
   "POST of valid json with missing bearer token headers to /vat-registered-companies/vatregistrations" should {
     "return 200" in {
-      when(mockPersistence.bufferData(ArgumentMatchers.any())).thenReturn(Future(()))
+      when(mockPersistence.processData(ArgumentMatchers.any())).thenReturn(Future(()))
       val controller = new InboundDataController(mockPersistence)
       val result: Future[Result] = controller.handle().apply(fakeBadRequest2)
       status(result) shouldBe Status.UNAUTHORIZED
