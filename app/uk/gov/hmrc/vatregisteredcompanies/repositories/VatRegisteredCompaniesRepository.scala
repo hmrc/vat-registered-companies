@@ -18,6 +18,9 @@ package uk.gov.hmrc.vatregisteredcompanies.repositories
 
 import java.time.Instant
 
+import akka.NotUsed
+import akka.stream.Materializer
+import akka.stream.scaladsl.{RunnableGraph, Sink, Source}
 import cats.implicits._
 import javax.inject.{Inject, Singleton}
 import play.api.Logger
@@ -53,9 +56,11 @@ object Wrapper {
 }
 
 @Singleton
-class   VatRegisteredCompaniesRepository @Inject()(reactiveMongoComponent: ReactiveMongoComponent)
-  (implicit val executionContext: ExecutionContext) extends
+class   VatRegisteredCompaniesRepository @Inject()(
+  reactiveMongoComponent: ReactiveMongoComponent
+)(implicit val executionContext: ExecutionContext, mat: Materializer) extends
   ReactiveRepository("vatregisteredcompanies", reactiveMongoComponent.mongoConnector.db, Wrapper.format) {
+
 
   implicit val format: OFormat[Wrapper] = Json.format[Wrapper]
 
@@ -65,31 +70,17 @@ class   VatRegisteredCompaniesRepository @Inject()(reactiveMongoComponent: React
     bulkInsert(entries).map(_ => (()))
   }
 
-  private def delete(deletes: List[VatNumber]): Future[Unit] = {
-    val it = deletes.sliding(bulkSize,bulkSize)
-    while (it.hasNext) {
-      val chunk = it.next
-      val deleteBuilder = collection.delete(false)
-      val ds: Future[List[collection.DeleteCommand.DeleteElement]] =
-        Future.sequence(
-          chunk.map { vatNumber =>
-            deleteBuilder.element(
-              q = BSONDocument("vatNumber" -> vatNumber),
-              limit = None,
-              collation = None)
-          }
-        )
-      ds.flatMap { ops =>
-        deleteBuilder.many(ops)
-      }.map {
-        multiBulkWriteResult => multiBulkWriteResult.errmsg.foreach( e =>
-          Logger.error(s"$e")
-        )
-      }
+  private def streamingDelete(deletes: List[VatNumber]) = {
+    if (deletes.nonEmpty) {
+      val source = Source(deletes)
+      val stage: RunnableGraph[NotUsed] = source.to(Sink.foreach[VatNumber] ( vrn =>
+        collection.findAndRemove(Json.obj("vatNumber" -> vrn)).map(_.result[VatNumber])))
+      stage.run()
     }
     Future.successful((()))
   }
 
+  // TODO - port deleteById and findOld to akka
   private def deleteById(deletes: List[BSONValue]): Future[Unit] = {
     val it = deletes.sliding(bulkSize,bulkSize)
     while (it.hasNext) {
@@ -139,7 +130,7 @@ class   VatRegisteredCompaniesRepository @Inject()(reactiveMongoComponent: React
 
   def process(payload: Payload): Future[Unit] = {
     val inserts = insert(wrap(payload))
-    val deletes = delete(payload.deletes)
+    val deletes = streamingDelete(payload.deletes)
     for {
       a <- inserts
       b <- deletes
