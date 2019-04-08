@@ -16,23 +16,50 @@
 
 package uk.gov.hmrc.vatregisteredcompanies.services
 
+import cats.data.OptionT
+import cats.implicits._
 import javax.inject.{Inject, Singleton}
+import play.api.Logger
 import uk.gov.hmrc.vatregisteredcompanies.models.{LookupResponse, Payload, VatNumber}
-import uk.gov.hmrc.vatregisteredcompanies.repositories.VatRegisteredCompaniesRepository
+import uk.gov.hmrc.vatregisteredcompanies.repositories.{PayloadBufferRepository, PayloadWrapper, VatRegisteredCompaniesRepository}
 
 import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
-class PersistenceService @Inject()(repository: VatRegisteredCompaniesRepository)(implicit executionContext: ExecutionContext) {
+class PersistenceService @Inject()(
+  repository: VatRegisteredCompaniesRepository,
+  buffer: PayloadBufferRepository
+)(implicit executionContext: ExecutionContext) {
+
+  val logger = Logger(getClass)
 
   def lookup(target: VatNumber): Future[Option[LookupResponse]] =
     repository.lookup(target)
 
-  def processData(payload: Payload): Future[Unit] =
-    repository.process(payload)
-
   def deleteOld(n: Int) = repository.deleteOld(n)
 
+
+  def processOneData: Future[Unit] = {
+    val x = for {
+      bp <- OptionT(buffer.one)
+      _  <- OptionT.liftF(repository.process(bp.payload))
+      _  <- OptionT.liftF(buffer.deleteOne(bp))
+    } yield {}
+
+    x.fold((())) {_=> (())}
+  }
+
+  def bufferData(payload: Payload): Future[Unit] =
+    buffer.insert(payload)
+
+  def retrieveBufferData: Future[List[PayloadWrapper]] =
+    buffer.list
+
+  def reportIndexes = {
+    for {
+      list <- repository.collection.indexesManager.list()
+    } yield list.foreach(index => logger.warn(s"Found mongo index ${index.name}"))
+  }
 }
 
 

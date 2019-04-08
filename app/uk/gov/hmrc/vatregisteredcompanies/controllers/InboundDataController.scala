@@ -39,7 +39,7 @@ class InboundDataController @Inject()(persistence: PersistenceService)
         if (!JsonSchemaChecker[Payload](payload, "mdg-payload")) {
           Future.successful(BadRequest(Json.toJson(Response(Response.Outcome.FAILURE, Response.Code.INVALID_PAYLOAD.some))))
         } else {
-          persistence.processData(payload).map { _ =>
+          persistence.bufferData(payload).map { _ =>
             Ok(Json.toJson(Response(Response.Outcome.SUCCESS, none)))
           }.recover{ case _ =>
             InternalServerError(Json.toJson(Response(Response.Outcome.FAILURE, Response.Code.SERVER_ERROR.some))) }
