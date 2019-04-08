@@ -18,9 +18,9 @@ package uk.gov.hmrc.vatregisteredcompanies.repositories
 
 import java.time.Instant
 
-import akka.NotUsed
+import akka.{Done, NotUsed}
 import akka.stream.Materializer
-import akka.stream.scaladsl.{RunnableGraph, Sink, Source}
+import akka.stream.scaladsl.{Flow, RunnableGraph, Sink, Source}
 import cats.implicits._
 import javax.inject.{Inject, Singleton}
 import play.api.Logger
@@ -31,10 +31,12 @@ import reactivemongo.api.indexes.{CollectionIndexesManager, Index, IndexType}
 import reactivemongo.bson.{BSONDateTime, BSONDocument, _}
 import reactivemongo.core.nodeset.ProtocolMetadata
 import reactivemongo.play.json.ImplicitBSONHandlers._
+import reactivemongo.play.json.collection.JSONBatchCommands.FindAndModifyCommand
 import uk.gov.hmrc.mongo.ReactiveRepository
 import uk.gov.hmrc.vatregisteredcompanies.models.{LookupResponse, Payload, VatNumber, VatRegisteredCompany}
 
 import scala.concurrent.{ExecutionContext, Future}
+import scala.util.Try
 
 final case class Wrapper(
   vatNumber: VatNumber,
@@ -57,7 +59,8 @@ object Wrapper {
 
 @Singleton
 class   VatRegisteredCompaniesRepository @Inject()(
-  reactiveMongoComponent: ReactiveMongoComponent
+  reactiveMongoComponent: ReactiveMongoComponent,
+  bufferRepository: PayloadBufferRepository
 )(implicit val executionContext: ExecutionContext, mat: Materializer) extends
   ReactiveRepository("vatregisteredcompanies", reactiveMongoComponent.mongoConnector.db, Wrapper.format) {
 
@@ -72,13 +75,20 @@ class   VatRegisteredCompaniesRepository @Inject()(
     bulkInsert(entries).map(_ => (()))
   }
 
-  private def streamingDelete(deletes: List[VatNumber]) = {
+  private def streamingDelete(deletes: List[VatNumber], payload: PayloadWrapper) = {
     if (deletes.nonEmpty) {
       logger.info(s"deleting ${deletes.length} records")
       val source = Source(deletes)
-      val stage: RunnableGraph[NotUsed] = source.to(Sink.foreach[VatNumber] ( vrn =>
-        collection.findAndRemove(Json.obj("vatNumber" -> vrn)).map(_.result[VatNumber])))
-      stage.run()
+      val sink = Flow[VatNumber]
+        .map(vrn =>
+          collection.findAndRemove(Json.obj("vatNumber" -> vrn)).map {_.result[VatNumber]}
+        ).to(Sink.onComplete{x =>
+        logger.info("End of deletion stream")
+        bufferRepository.deleteOne(payload)
+      })
+      source.to(sink).run()
+    } else {
+      bufferRepository.deleteOne(payload)
     }
     Future.successful((()))
   }
@@ -132,9 +142,9 @@ class   VatRegisteredCompaniesRepository @Inject()(
       Wrapper(company.vatNumber, company)
     }
 
-  def process(payload: Payload): Future[Unit] = {
-    val inserts = insert(wrap(payload))
-    val deletes = streamingDelete(payload.deletes)
+  def process(payload: PayloadWrapper): Future[Unit] = {
+    val inserts = insert(wrap(payload.payload))
+    val deletes = streamingDelete(payload.payload.deletes, payload)
     for {
       a <- inserts
       b <- deletes
