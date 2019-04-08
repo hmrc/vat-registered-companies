@@ -148,21 +148,20 @@ class   VatRegisteredCompaniesRepository @Inject()(
       }
   }
 
-  private val index =
+  override def indexes: Seq[Index] = Seq(
     Index(
       name = "vatNumberIndex".some,
       key = Seq( "vatNumber" -> IndexType.Text),
-      background = true,
       unique = false
     )
+  )
 
   private val im: CollectionIndexesManager = collection.indexesManager
   private val setIndexes: Future[Unit] = {
     for {
-      _ <- im.create(index)
       list <- im.list()
-    } yield list.filterNot(_.name === index.name).foreach{ x =>
-      im.drop(x.eventualName)
+    } yield list.filterNot(y => y.name === "vatNumberIndex".some || y.name === "_id_".some).foreach{ x =>
+      im.drop(x.name.getOrElse(""))
     }
   }
 }
