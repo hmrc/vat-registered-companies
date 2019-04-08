@@ -12,7 +12,7 @@ object AppDependencies {
     "uk.gov.hmrc"             %% "bootstrap-play-25"        % "4.8.0",
     "org.typelevel"           %% "cats-core"                % "1.1.0",
     "com.github.fge"          %  "json-schema-validator"    % "2.2.6",
-    "com.typesafe.akka"       %% "akka-stream"              % "2.5.21"
+    "com.typesafe.akka"       %% "akka-stream"              % "2.5.18"
   )
 
   val test = Seq(

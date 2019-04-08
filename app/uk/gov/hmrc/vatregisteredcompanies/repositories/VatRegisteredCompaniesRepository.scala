@@ -61,17 +61,27 @@ class   VatRegisteredCompaniesRepository @Inject()(
 )(implicit val executionContext: ExecutionContext, mat: Materializer) extends
   ReactiveRepository("vatregisteredcompanies", reactiveMongoComponent.mongoConnector.db, Wrapper.format) {
 
+  private val im: CollectionIndexesManager = collection.indexesManager
 
   implicit val format: OFormat[Wrapper] = Json.format[Wrapper]
 
   val bulkSize: Int = ProtocolMetadata.Default.maxBulkSize - 1
 
   private def insert(entries: List[Wrapper]): Future[Unit] = {
+    logger.info(s"inserting ${entries.length} entries")
     bulkInsert(entries).map(_ => (()))
+  }
+
+  def processList(bd: List[PayloadWrapper]): Future[Unit] = {
+    for {
+      _ <- bd.map(x => process(x.payload))
+    } yield (())
+    Future.successful(())
   }
 
   private def streamingDelete(deletes: List[VatNumber]) = {
     if (deletes.nonEmpty) {
+      logger.info(s"deleting ${deletes.length} records")
       val source = Source(deletes)
       val stage: RunnableGraph[NotUsed] = source.to(Sink.foreach[VatNumber] ( vrn =>
         collection.findAndRemove(Json.obj("vatNumber" -> vrn)).map(_.result[VatNumber])))
@@ -85,6 +95,7 @@ class   VatRegisteredCompaniesRepository @Inject()(
     val it = deletes.sliding(bulkSize,bulkSize)
     while (it.hasNext) {
       val chunk = it.next
+      logger.info(s"deleting ${chunk.length} old entries")
       val deleteBuilder = collection.delete(false)
       val ds: Future[List[collection.DeleteCommand.DeleteElement]] =
         Future.sequence(
@@ -156,7 +167,6 @@ class   VatRegisteredCompaniesRepository @Inject()(
     )
   )
 
-  private val im: CollectionIndexesManager = collection.indexesManager
   private val setIndexes: Future[Unit] = {
     for {
       list <- im.list()
@@ -164,4 +174,13 @@ class   VatRegisteredCompaniesRepository @Inject()(
       im.drop(x.name.getOrElse(""))
     }
   }
+
+  val getIndexes: Future[Unit] = {
+    for {
+      list <- im.list()
+    } yield list.foreach { x =>
+      logger.info(s"Found index ${x.name}")
+    }
+  }
+
 }

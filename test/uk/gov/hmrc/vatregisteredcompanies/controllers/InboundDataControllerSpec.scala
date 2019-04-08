@@ -44,6 +44,7 @@ class InboundDataControllerSpec extends WordSpec
       Map(
         "auditing.enabled" -> "false",
         "microservice.services.schedulers.old-data-deletion.enabled" -> false,
+        "microservice.services.schedulers.payload.conversion.enabled" -> false,
         "microservice.services.mdg.inboundData.token" -> token
       )
     ).build()
@@ -107,7 +108,7 @@ class InboundDataControllerSpec extends WordSpec
 
   "POST of valid json with valid headers to /vat-registered-companies/vatregistrations" should {
     "return 200" in {
-      when(mockPersistence.processData(ArgumentMatchers.any())).thenReturn(Future(()))
+      when(mockPersistence.bufferData(ArgumentMatchers.any())).thenReturn(Future(()))
       val controller = new InboundDataController(mockPersistence)
       val result: Future[Result] = controller.handle().apply(fakeRequest)
       status(result) shouldBe Status.OK
@@ -116,7 +117,7 @@ class InboundDataControllerSpec extends WordSpec
 
   "POST of invalid json with valid headers to /vat-registered-companies/vatregistrations" should {
     "return 400" in {
-      when(mockPersistence.processData(ArgumentMatchers.any())).thenReturn(Future(()))
+      when(mockPersistence.bufferData(ArgumentMatchers.any())).thenReturn(Future(()))
       val controller = new InboundDataController(mockPersistence)
       val result: Future[Result] = controller.handle().apply(fakeInvalidPayloadRequest)
       status(result) shouldBe Status.BAD_REQUEST
@@ -125,7 +126,7 @@ class InboundDataControllerSpec extends WordSpec
 
   "POST of valid json with invalid bearer token headers to /vat-registered-companies/vatregistrations" should {
     "return 200" in {
-      when(mockPersistence.processData(ArgumentMatchers.any())).thenReturn(Future(()))
+      when(mockPersistence.bufferData(ArgumentMatchers.any())).thenReturn(Future(()))
       val controller = new InboundDataController(mockPersistence)
       val result: Future[Result] = controller.handle().apply(fakeBadRequest)
       status(result) shouldBe Status.UNAUTHORIZED
@@ -134,7 +135,7 @@ class InboundDataControllerSpec extends WordSpec
 
   "POST of valid json with missing bearer token headers to /vat-registered-companies/vatregistrations" should {
     "return 200" in {
-      when(mockPersistence.processData(ArgumentMatchers.any())).thenReturn(Future(()))
+      when(mockPersistence.bufferData(ArgumentMatchers.any())).thenReturn(Future(()))
       val controller = new InboundDataController(mockPersistence)
       val result: Future[Result] = controller.handle().apply(fakeBadRequest2)
       status(result) shouldBe Status.UNAUTHORIZED
