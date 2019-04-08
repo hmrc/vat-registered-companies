@@ -58,7 +58,7 @@ class OldRecordsDeleteSchedulerModule(environment: Environment, val runModeConfi
     new FiniteDuration(
       runModeConfiguration
         .getInt("microservice.services.schedulers.old-data-deletion.interval.seconds")
-        .getOrElse(60)
+        .getOrElse(600)
         .toLong,
       TimeUnit.SECONDS
     )

@@ -39,12 +39,12 @@ class PersistenceService @Inject()(
     repository.lookup(target)
 
   def deleteOld(n: Int): Future[Unit] =
-    repository.deleteOld(n) // TODO ideally would like to lock this operation too but there is no shared identifier
+    withLock(1)(repository.deleteOld(n))
 
   def processOneData: Future[Unit] = {
     val x = for {
       bp <- OptionT(buffer.one)
-      _  <- OptionT.liftF(withLock(bp._id)(repository.process(bp)))
+      _  <- OptionT.liftF(withLock(1)(repository.process(bp)))
     } yield {}
 
     x.fold((())) {_=> (())}
@@ -62,7 +62,7 @@ class PersistenceService @Inject()(
     } yield list.foreach(index => logger.warn(s"Found mongo index ${index.name}"))
   }
 
-  private def withLock(id: BSONObjectID)(f: => Future[Unit]): Future[Unit] = {
+  private def withLock(id: Int)(f: => Future[Unit]): Future[Unit] = {
     lockRepository.lock(id).flatMap {
       gotLock =>
         if (gotLock) {

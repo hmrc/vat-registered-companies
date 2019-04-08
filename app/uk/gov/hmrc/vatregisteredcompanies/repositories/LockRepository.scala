@@ -32,7 +32,7 @@ import uk.gov.hmrc.mongo.ReactiveRepository
 import scala.concurrent.{ExecutionContext, Future}
 
 final case class Lock(
-  pw_id: BSONObjectID,
+  _id: Int,
   lastUpdated: LocalDateTime = LocalDateTime.now
 )
 
@@ -78,32 +78,29 @@ class DefaultLockRepository @Inject()(
 
   override def indexes: Seq[Index] = Seq(index)
 
-  override def lock(id: BSONObjectID): Future[Boolean] = {
+  override def lock(id: Int): Future[Boolean] = {
     collection.insert(Lock(id)).map{x =>
-      logger.info(s"Locking with $x")
+      logger.info(s"Locking with $id")
       true
     }.recover {
       case e: LastError if e.code == documentExistsErrorCode =>
         false
-      case e: LastError => {
-        false
-      }
     }
   }
 
-  override def release(id: BSONObjectID): Future[Unit] =
-    collection.findAndRemove(BSONDocument("pw_id" -> id))
+  override def release(id: Int): Future[Unit] =
+    collection.findAndRemove(BSONDocument("_id" -> id))
       .map(_=> ()).fallbackTo(Future.successful(()))
 
-  override def isLocked(id: BSONObjectID): Future[Boolean] =
-    collection.find(BSONDocument("pw_id" -> id),None)
+  override def isLocked(id: Int): Future[Boolean] =
+    collection.find(BSONDocument("_id" -> id),None)
       .one[Lock].map(_.isDefined)
 
 }
 
 @ImplementedBy(classOf[DefaultLockRepository])
 trait LockRepository {
-  def lock(id: BSONObjectID): Future[Boolean]
-  def release(id: BSONObjectID): Future[Unit]
-  def isLocked(id: BSONObjectID): Future[Boolean]
+  def lock(id: Int): Future[Boolean]
+  def release(id: Int): Future[Unit]
+  def isLocked(id: Int): Future[Boolean]
 }
