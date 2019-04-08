@@ -72,13 +72,6 @@ class   VatRegisteredCompaniesRepository @Inject()(
     bulkInsert(entries).map(_ => (()))
   }
 
-  def processList(bd: List[PayloadWrapper]): Future[Unit] = {
-    for {
-      _ <- bd.map(x => process(x.payload))
-    } yield (())
-    Future.successful(())
-  }
-
   private def streamingDelete(deletes: List[VatNumber]) = {
     if (deletes.nonEmpty) {
       logger.info(s"deleting ${deletes.length} records")
@@ -163,6 +156,7 @@ class   VatRegisteredCompaniesRepository @Inject()(
     Index(
       name = "vatNumberIndex".some,
       key = Seq( "vatNumber" -> IndexType.Text),
+      background = true,
       unique = false
     )
   )
