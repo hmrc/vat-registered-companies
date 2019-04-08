@@ -27,7 +27,7 @@ import play.api.Logger
 import play.api.libs.json._
 import play.modules.reactivemongo.ReactiveMongoComponent
 import reactivemongo.api.Cursor
-import reactivemongo.api.indexes.{Index, IndexType}
+import reactivemongo.api.indexes.{CollectionIndexesManager, Index, IndexType}
 import reactivemongo.bson.{BSONDateTime, BSONDocument, _}
 import reactivemongo.core.nodeset.ProtocolMetadata
 import reactivemongo.play.json.ImplicitBSONHandlers._
@@ -64,7 +64,7 @@ class   VatRegisteredCompaniesRepository @Inject()(
 
   implicit val format: OFormat[Wrapper] = Json.format[Wrapper]
 
-  val bulkSize = ProtocolMetadata.Default.maxBulkSize - 1
+  val bulkSize: Int = ProtocolMetadata.Default.maxBulkSize - 1
 
   private def insert(entries: List[Wrapper]): Future[Unit] = {
     bulkInsert(entries).map(_ => (()))
@@ -148,11 +148,21 @@ class   VatRegisteredCompaniesRepository @Inject()(
       }
   }
 
-  override def indexes: Seq[Index] = Seq(
+  private val index =
     Index(
+      name = "vatNumberIndex".some,
       key = Seq( "vatNumber" -> IndexType.Text),
+      background = true,
       unique = false
     )
-  )
 
+  private val im: CollectionIndexesManager = collection.indexesManager
+  private val setIndexes: Future[Unit] = {
+    for {
+      _ <- im.create(index)
+      list <- im.list()
+    } yield list.filterNot(_.name === index.name).foreach{ x =>
+      im.drop(x.eventualName)
+    }
+  }
 }
