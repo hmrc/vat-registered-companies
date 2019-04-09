@@ -35,13 +35,11 @@ class PayloadConversionScheduler @Inject()(
   @Named("payloadProcessingEnabled") enabled: Boolean)(
   implicit val ec: ExecutionContext) {
 
-  private val logger = Logger(getClass)
-
-  logger.info(s"Initialising payload processing every $interval")
+  Logger.info(s"Initialising payload processing every $interval")
 
   if(enabled) {
     actorSystem.scheduler.schedule(FiniteDuration(10, TimeUnit.SECONDS), interval) {
-      logger.info(s"Scheduling inbound data processing, next run in $interval")
+      Logger.info(s"Scheduling inbound data processing, next run in $interval")
       persistenceService.processOneData.recover {
         case e: RuntimeException => Logger.error(s"Error processing inbound vat registration data: $e")
       }
