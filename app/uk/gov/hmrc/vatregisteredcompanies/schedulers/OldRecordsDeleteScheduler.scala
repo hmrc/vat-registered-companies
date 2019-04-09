@@ -40,7 +40,7 @@ class OldRecordsDeleteScheduler @Inject()(
 
   if (enabled) {
     logger.info(s"Initialising delete every $interval")
-    actorSystem.scheduler.schedule(FiniteDuration(10, TimeUnit.SECONDS), interval) {
+    actorSystem.scheduler.schedule(FiniteDuration(11, TimeUnit.SECONDS), interval) {
       logger.info(s"Scheduling old data delete, next run in $interval")
       persistenceService.deleteOld(rowCount).recover {
         case e: RuntimeException => Logger.error(s"Error deleting old vat registration data: $e")
@@ -58,7 +58,7 @@ class OldRecordsDeleteSchedulerModule(environment: Environment, val runModeConfi
     new FiniteDuration(
       runModeConfiguration
         .getInt("microservice.services.schedulers.old-data-deletion.interval.seconds")
-        .getOrElse(60)
+        .getOrElse(600)
         .toLong,
       TimeUnit.SECONDS
     )

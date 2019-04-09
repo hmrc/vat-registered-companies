@@ -59,7 +59,7 @@ class PayloadConversionSchedulerModule(environment: Environment, val runModeConf
     new FiniteDuration(
       runModeConfiguration
         .getInt("microservice.services.schedulers.payload.conversion.interval.seconds")
-        .getOrElse(600)
+        .getOrElse(500)
         .toLong,
       TimeUnit.SECONDS
     )

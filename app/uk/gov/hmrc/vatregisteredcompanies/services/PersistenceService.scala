@@ -20,15 +20,17 @@ import cats.data.OptionT
 import cats.implicits._
 import javax.inject.{Inject, Singleton}
 import play.api.Logger
+import reactivemongo.bson.BSONObjectID
 import uk.gov.hmrc.vatregisteredcompanies.models.{LookupResponse, Payload, VatNumber}
-import uk.gov.hmrc.vatregisteredcompanies.repositories.{PayloadBufferRepository, PayloadWrapper, VatRegisteredCompaniesRepository}
+import uk.gov.hmrc.vatregisteredcompanies.repositories.{LockRepository, PayloadBufferRepository, PayloadWrapper, VatRegisteredCompaniesRepository}
 
 import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
 class PersistenceService @Inject()(
   repository: VatRegisteredCompaniesRepository,
-  buffer: PayloadBufferRepository
+  buffer: PayloadBufferRepository,
+  lockRepository: LockRepository
 )(implicit executionContext: ExecutionContext) {
 
   val logger = Logger(getClass)
@@ -36,14 +38,13 @@ class PersistenceService @Inject()(
   def lookup(target: VatNumber): Future[Option[LookupResponse]] =
     repository.lookup(target)
 
-  def deleteOld(n: Int) = repository.deleteOld(n)
-
+  def deleteOld(n: Int): Future[Unit] =
+    withLock(1)(repository.deleteOld(n))
 
   def processOneData: Future[Unit] = {
     val x = for {
       bp <- OptionT(buffer.one)
-      _  <- OptionT.liftF(repository.process(bp.payload))
-      _  <- OptionT.liftF(buffer.deleteOne(bp))
+      _  <- OptionT.liftF(withLock(1)(repository.process(bp)))
     } yield {}
 
     x.fold((())) {_=> (())}
@@ -55,11 +56,34 @@ class PersistenceService @Inject()(
   def retrieveBufferData: Future[List[PayloadWrapper]] =
     buffer.list
 
-  def reportIndexes = {
+  def reportIndexes: Future[Unit] = {
     for {
       list <- repository.collection.indexesManager.list()
     } yield list.foreach(index => logger.warn(s"Found mongo index ${index.name}"))
   }
+
+  private def withLock(id: Int)(f: => Future[Unit]): Future[Unit] = {
+    lockRepository.lock(id).flatMap {
+      gotLock =>
+        if (gotLock) {
+          f.flatMap {
+            result =>
+              lockRepository.release(id).map {
+                _ => {
+                  result
+                }
+              }
+          }.recoverWith {
+            case e =>
+              lockRepository.release(id)
+                .map { _ => throw e }
+          }
+        } else {
+          Future.successful(())
+        }
+    }
+  }
+
 }
 
 
