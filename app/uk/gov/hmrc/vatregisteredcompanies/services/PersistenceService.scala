@@ -33,8 +33,6 @@ class PersistenceService @Inject()(
   lockRepository: LockRepository
 )(implicit executionContext: ExecutionContext) {
 
-  val logger = Logger(getClass)
-
   def lookup(target: VatNumber): Future[Option[LookupResponse]] =
     repository.lookup(target)
 
@@ -59,7 +57,7 @@ class PersistenceService @Inject()(
   def reportIndexes: Future[Unit] = {
     for {
       list <- repository.collection.indexesManager.list()
-    } yield list.foreach(index => logger.warn(s"Found mongo index ${index.name}"))
+    } yield list.foreach(index => Logger.warn(s"Found mongo index ${index.name}"))
   }
 
   private def withLock(id: Int)(f: => Future[Unit]): Future[Unit] = {

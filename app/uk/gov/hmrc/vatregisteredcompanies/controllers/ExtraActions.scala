@@ -30,8 +30,6 @@ trait ExtraActions extends ServicesConfig {
 
   val bearerToken = s"Bearer ${getConfString("mdg.inboundData.token", "")}"
 
-  private val logger = Logger(getClass)
-
   object AuthorisedFilterAction extends ActionBuilder[Request] with ActionFilter[Request] {
     override protected def filter[A](request: Request[A]): Future[Option[Result]] = {
       Future.successful(

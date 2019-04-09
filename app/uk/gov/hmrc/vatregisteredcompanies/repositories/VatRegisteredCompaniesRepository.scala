@@ -26,7 +26,7 @@ import javax.inject.{Inject, Singleton}
 import play.api.Logger
 import play.api.libs.json._
 import play.modules.reactivemongo.ReactiveMongoComponent
-import reactivemongo.api.Cursor
+import reactivemongo.api.{Cursor, ReadConcern, ReadPreference}
 import reactivemongo.api.indexes.{CollectionIndexesManager, Index, IndexType}
 import reactivemongo.bson.{BSONDateTime, BSONDocument, _}
 import reactivemongo.core.nodeset.ProtocolMetadata
@@ -71,19 +71,19 @@ class   VatRegisteredCompaniesRepository @Inject()(
   val bulkSize: Int = ProtocolMetadata.Default.maxBulkSize - 1
 
   private def insert(entries: List[Wrapper]): Future[Unit] = {
-    logger.info(s"inserting ${entries.length} entries")
+    Logger.info(s"inserting ${entries.length} entries")
     bulkInsert(entries).map(_ => (()))
   }
 
   private def streamingDelete(deletes: List[VatNumber], payload: PayloadWrapper) = {
     if (deletes.nonEmpty) {
-      logger.info(s"deleting ${deletes.length} records")
+      Logger.info(s"deleting ${deletes.length} records")
       val source = Source(deletes)
       val sink = Flow[VatNumber]
         .map(vrn =>
           collection.findAndRemove(Json.obj("vatNumber" -> vrn)).map {_.result[VatNumber]}
         ).to(Sink.onComplete{x =>
-        logger.info("End of deletion stream")
+        Logger.info("End of deletion stream")
         bufferRepository.deleteOne(payload)
       })
       source.to(sink).run()
@@ -98,7 +98,7 @@ class   VatRegisteredCompaniesRepository @Inject()(
     val it = deletes.sliding(bulkSize,bulkSize)
     while (it.hasNext) {
       val chunk = it.next
-      logger.info(s"deleting ${chunk.length} old entries")
+      Logger.info(s"deleting ${chunk.length} old entries")
       val deleteBuilder = collection.delete(false)
       val ds: Future[List[collection.DeleteCommand.DeleteElement]] =
         Future.sequence(
@@ -122,15 +122,23 @@ class   VatRegisteredCompaniesRepository @Inject()(
 
   private def findOld(n: Int): Future[List[BSONDocument]] = {
     import collection.BatchCommands.AggregationFramework.{Group, Limit, Match, MinField, SumAll}
-    collection.aggregatorContext[BSONDocument](
-      Group(JsString("$vatNumber"))( "count" -> SumAll, "oldest" -> MinField("_id")),
+    collection.aggregateWith[BSONDocument](allowDiskUse = true, readConcern = Some(ReadConcern.Local), readPreference = ReadPreference.nearest, batchSize = 1000.some) { _ =>
+      (Group(JsString("$vatNumber"))( "count" -> SumAll, "oldest" -> MinField("_id")),
       List(
         Match(Json.obj("count" -> Json.obj("$gt" -> 1L))),
         Limit(n)
-      )
-    ).
-      prepared.cursor.
-      collect[List](-1, Cursor.FailOnError[List[BSONDocument]]())
+      ))
+    }.collect[List](-1, Cursor.FailOnError[List[BSONDocument]]())
+
+//    collection.aggregatorContext[BSONDocument](
+//      Group(JsString("$vatNumber"))( "count" -> SumAll, "oldest" -> MinField("_id")),
+//      List(
+//        Match(Json.obj("count" -> Json.obj("$gt" -> 1L))),
+//        Limit(n)
+//      )
+//    ).
+//      prepared.cursor.
+//      collect[List](-1, Cursor.FailOnError[List[BSONDocument]]())
   }
 
   def deleteOld(n: Int): Future[Unit] = {
@@ -183,7 +191,7 @@ class   VatRegisteredCompaniesRepository @Inject()(
     for {
       list <- im.list()
     } yield list.foreach { x =>
-      logger.info(s"Found index ${x.name}")
+      Logger.info(s"Found index ${x.name}")
     }
   }
 
