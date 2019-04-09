@@ -26,7 +26,7 @@ import javax.inject.{Inject, Singleton}
 import play.api.Logger
 import play.api.libs.json._
 import play.modules.reactivemongo.ReactiveMongoComponent
-import reactivemongo.api.Cursor
+import reactivemongo.api.{Cursor, ReadConcern, ReadPreference}
 import reactivemongo.api.indexes.{CollectionIndexesManager, Index, IndexType}
 import reactivemongo.bson.{BSONDateTime, BSONDocument, _}
 import reactivemongo.core.nodeset.ProtocolMetadata
@@ -122,15 +122,23 @@ class   VatRegisteredCompaniesRepository @Inject()(
 
   private def findOld(n: Int): Future[List[BSONDocument]] = {
     import collection.BatchCommands.AggregationFramework.{Group, Limit, Match, MinField, SumAll}
-    collection.aggregatorContext[BSONDocument](
-      Group(JsString("$vatNumber"))( "count" -> SumAll, "oldest" -> MinField("_id")),
+    collection.aggregateWith[BSONDocument](allowDiskUse = true, readConcern = Some(ReadConcern.Local), readPreference = ReadPreference.nearest, batchSize = 1000.some) { _ =>
+      (Group(JsString("$vatNumber"))( "count" -> SumAll, "oldest" -> MinField("_id")),
       List(
         Match(Json.obj("count" -> Json.obj("$gt" -> 1L))),
         Limit(n)
-      )
-    ).
-      prepared.cursor.
-      collect[List](-1, Cursor.FailOnError[List[BSONDocument]]())
+      ))
+    }.collect[List](-1, Cursor.FailOnError[List[BSONDocument]]())
+
+//    collection.aggregatorContext[BSONDocument](
+//      Group(JsString("$vatNumber"))( "count" -> SumAll, "oldest" -> MinField("_id")),
+//      List(
+//        Match(Json.obj("count" -> Json.obj("$gt" -> 1L))),
+//        Limit(n)
+//      )
+//    ).
+//      prepared.cursor.
+//      collect[List](-1, Cursor.FailOnError[List[BSONDocument]]())
   }
 
   def deleteOld(n: Int): Future[Unit] = {
