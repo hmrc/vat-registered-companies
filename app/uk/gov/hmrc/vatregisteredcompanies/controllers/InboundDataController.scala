@@ -24,13 +24,13 @@ import play.api.mvc.Action
 import play.api.{Configuration, Environment}
 import uk.gov.hmrc.play.bootstrap.controller.BaseController
 import uk.gov.hmrc.vatregisteredcompanies.models.{Payload, PayloadSubmissionResponse => Response}
-import uk.gov.hmrc.vatregisteredcompanies.services.{JsonSchemaChecker, PersistenceService}
+import uk.gov.hmrc.vatregisteredcompanies.services.JsonSchemaChecker
 import uk.gov.hmrc.vatregisteredcompanies.repositories.VatRegisteredCompaniesRepository
 import scala.concurrent.{ExecutionContext, Future}
 import uk.gov.hmrc.vatregisteredcompanies.models._
 
 @Singleton
-class InboundDataController @Inject()(persistence: PersistenceService, companiesRepo: VatRegisteredCompaniesRepository)
+class InboundDataController @Inject()(persistence: VatRegisteredCompaniesRepository)
  (implicit executionContext: ExecutionContext, conf: Configuration, environment: Environment)
   extends BaseController with ExtraActions {
 
@@ -42,7 +42,7 @@ class InboundDataController @Inject()(persistence: PersistenceService, companies
             Response(Response.Outcome.FAILURE, Response.Code.INVALID_PAYLOAD.some)
           )))
         else {
-          companiesRepo.process(payload)
+          persistence.process(payload)
           Future.successful(Ok(Json.toJson(
             Response(Response.Outcome.SUCCESS, none)
           )))

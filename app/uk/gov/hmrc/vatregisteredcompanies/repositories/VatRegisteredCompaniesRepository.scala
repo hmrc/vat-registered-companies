@@ -18,23 +18,25 @@ package uk.gov.hmrc.vatregisteredcompanies.repositories
 
 import java.time.Instant
 
-import akka.NotUsed
+import akka.{Done, NotUsed}
 import akka.stream.Materializer
-import akka.stream.scaladsl.{RunnableGraph, Sink, Source}
+import akka.stream.scaladsl.{Flow, RunnableGraph, Sink, Source}
 import cats.implicits._
 import javax.inject.{Inject, Singleton}
 import play.api.Logger
 import play.api.libs.json._
 import play.modules.reactivemongo.ReactiveMongoComponent
-import reactivemongo.api.Cursor
+import reactivemongo.api.{Cursor, ReadConcern, ReadPreference}
 import reactivemongo.api.indexes.{CollectionIndexesManager, Index, IndexType}
 import reactivemongo.bson.{BSONDateTime, BSONDocument, _}
 import reactivemongo.core.nodeset.ProtocolMetadata
 import reactivemongo.play.json.ImplicitBSONHandlers._
+import reactivemongo.play.json.collection.JSONBatchCommands.FindAndModifyCommand
 import uk.gov.hmrc.mongo.ReactiveRepository
 import uk.gov.hmrc.vatregisteredcompanies.models.{LookupResponse, Payload, VatNumber, VatRegisteredCompany}
 
 import scala.concurrent.{ExecutionContext, Future}
+import scala.util.Try
 
 final case class Wrapper(
   vatNumber: VatNumber,
@@ -68,13 +70,13 @@ class VatRegisteredCompaniesRepository @Inject()(
   val bulkSize: Int = ProtocolMetadata.Default.maxBulkSize - 1
 
   private def insert(entries: List[Wrapper]): Future[Unit] = {
-    logger.info(s"inserting ${entries.length} entries")
+    Logger.info(s"inserting ${entries.length} entries")
     bulkInsert(entries).map(_ => (()))
   }
 
   private def streamingDelete(deletes: List[VatNumber]): Future[Unit] = Future {
     if (deletes.nonEmpty) {
-      logger.info(s"deleting ${deletes.length} records")
+      Logger.info(s"deleting ${deletes.length} records")
       val source = Source(deletes)
       val stage: RunnableGraph[NotUsed] = source.to(Sink.foreach[VatNumber] ( vrn =>
         collection.findAndRemove(Json.obj("vatNumber" -> vrn)).map(_.result[VatNumber])))
@@ -114,17 +116,15 @@ class VatRegisteredCompaniesRepository @Inject()(
 
   private def findOld(n: Int): Future[List[BSONDocument]] = {
     import collection.BatchCommands.AggregationFramework.{Group, Limit, Match, MinField, SumAll}
-    collection.aggregatorContext[BSONDocument](
-      Group(JsString("$vatNumber"))( "count" -> SumAll, "oldest" -> MinField("_id")),
+    collection.aggregateWith[BSONDocument](allowDiskUse = true, readConcern = Some(ReadConcern.Local), readPreference = ReadPreference.nearest, batchSize = 1000.some) { _ =>
+      (Group(JsString("$vatNumber"))( "count" -> SumAll, "oldest" -> MinField("_id")),
       List(
         Match(Json.obj("count" -> Json.obj("$gt" -> 1L))),
         Limit(n)
-      )
-    ).
-      prepared.cursor.
-      collect[List](-1, Cursor.FailOnError[List[BSONDocument]]())
+      ))
+    }.collect[List](-1, Cursor.FailOnError[List[BSONDocument]]())
   }
-
+  
   def deleteOld(n: Int): Future[Unit] = {
     findOld(n).flatMap(x => deleteById(x.flatMap(y => y.get("oldest"))))
   }
@@ -148,4 +148,30 @@ class VatRegisteredCompaniesRepository @Inject()(
         _.headOption.map(x => LookupResponse(x.company.some))
       }
   }
+
+  override def indexes: Seq[Index] = Seq(
+    Index(
+      name = "vatNumberIndex".some,
+      key = Seq( "vatNumber" -> IndexType.Text),
+      background = true,
+      unique = false
+    )
+  )
+
+  private val setIndexes: Future[Unit] = {
+    for {
+      list <- im.list()
+    } yield list.filterNot(y => y.name === "vatNumberIndex".some || y.name === "_id_".some).foreach{ x =>
+      im.drop(x.name.getOrElse(""))
+    }
+  }
+
+  val getIndexes: Future[Unit] = {
+    for {
+      list <- im.list()
+    } yield list.foreach { x =>
+      Logger.info(s"Found index ${x.name}")
+    }
+  }
+
 }
