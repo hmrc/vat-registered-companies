@@ -61,7 +61,7 @@ object Lock extends MongoDateTimeFormats {
 @Singleton
 class DefaultLockRepository @Inject()(
   reactiveMongoComponent: ReactiveMongoComponent,
-  config: Configuration
+  val runModeConfiguration: Configuration
 )(implicit ec: ExecutionContext)
   extends ReactiveRepository(
     "locks",
@@ -80,6 +80,8 @@ class DefaultLockRepository @Inject()(
 
   override def indexes: Seq[Index] = Seq(index)
 
+  val ttl = runModeConfiguration.getInt("microservice.services.lock.ttl.minutes").getOrElse(10)
+
   override def lock(id: Int): Future[Boolean] = {
     collection.insert(Lock(id)).map{_ =>
       Logger.info(s"Locking with $id")
@@ -89,7 +91,7 @@ class DefaultLockRepository @Inject()(
         // there is a lock, get it and see how old it is, maybe release it
         getLock(id).map {o =>
           o.map {t =>
-            if (t.lastUpdated.isBefore(LocalDateTime.now.minusMinutes(10))) { // TODO configure
+            if (t.lastUpdated.isBefore(LocalDateTime.now.minusMinutes(ttl))) {
               release(id)
             }
           }
