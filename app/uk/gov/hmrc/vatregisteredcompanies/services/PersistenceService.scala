@@ -21,14 +21,13 @@ import cats.implicits._
 import javax.inject.{Inject, Singleton}
 import play.api.Logger
 import uk.gov.hmrc.vatregisteredcompanies.models.{LookupResponse, Payload, VatNumber}
-import uk.gov.hmrc.vatregisteredcompanies.repositories.{PayloadBufferRepository, PayloadWrapper, VatRegisteredCompaniesRepository}
+import uk.gov.hmrc.vatregisteredcompanies.repositories._
 
 import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
 class PersistenceService @Inject()(
-  repository: VatRegisteredCompaniesRepository,
-  buffer: PayloadBufferRepository
+  repository: VatRegisteredCompaniesRepository
 )(implicit executionContext: ExecutionContext) {
 
   val logger = Logger(getClass)
@@ -37,29 +36,6 @@ class PersistenceService @Inject()(
     repository.lookup(target)
 
   def deleteOld(n: Int) = repository.deleteOld(n)
-
-
-  def processOneData: Future[Unit] = {
-    val x = for {
-      bp <- OptionT(buffer.one)
-      _  <- OptionT.liftF(repository.process(bp.payload))
-      _  <- OptionT.liftF(buffer.deleteOne(bp))
-    } yield {}
-
-    x.fold((())) {_=> (())}
-  }
-
-  def bufferData(payload: Payload): Future[Unit] =
-    buffer.insert(payload)
-
-  def retrieveBufferData: Future[List[PayloadWrapper]] =
-    buffer.list
-
-  def reportIndexes = {
-    for {
-      list <- repository.collection.indexesManager.list()
-    } yield list.foreach(index => logger.warn(s"Found mongo index ${index.name}"))
-  }
 }
 
 

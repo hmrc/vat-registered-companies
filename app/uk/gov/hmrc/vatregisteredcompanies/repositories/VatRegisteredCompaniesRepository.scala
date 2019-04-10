@@ -56,7 +56,7 @@ object Wrapper {
 }
 
 @Singleton
-class   VatRegisteredCompaniesRepository @Inject()(
+class VatRegisteredCompaniesRepository @Inject()(
   reactiveMongoComponent: ReactiveMongoComponent
 )(implicit val executionContext: ExecutionContext, mat: Materializer) extends
   ReactiveRepository("vatregisteredcompanies", reactiveMongoComponent.mongoConnector.db, Wrapper.format) {
@@ -72,22 +72,23 @@ class   VatRegisteredCompaniesRepository @Inject()(
     bulkInsert(entries).map(_ => (()))
   }
 
-  private def streamingDelete(deletes: List[VatNumber]) = {
+  private def streamingDelete(deletes: List[VatNumber]): Future[Unit] = Future {
     if (deletes.nonEmpty) {
       logger.info(s"deleting ${deletes.length} records")
       val source = Source(deletes)
       val stage: RunnableGraph[NotUsed] = source.to(Sink.foreach[VatNumber] ( vrn =>
         collection.findAndRemove(Json.obj("vatNumber" -> vrn)).map(_.result[VatNumber])))
       stage.run()
+    } else {
+      ()
     }
-    Future.successful((()))
   }
 
   // TODO - port deleteById and findOld to akka
   private def deleteById(deletes: List[BSONValue]): Future[Unit] = {
     val it = deletes.sliding(bulkSize,bulkSize)
-    while (it.hasNext) {
-      val chunk = it.next
+
+    def process(chunk: List[BSONValue]): Future[Unit] = {
       logger.info(s"deleting ${chunk.length} old entries")
       val deleteBuilder = collection.delete(false)
       val ds: Future[List[collection.DeleteCommand.DeleteElement]] =
@@ -107,7 +108,8 @@ class   VatRegisteredCompaniesRepository @Inject()(
           )
       }
     }
-    Future.successful((()))
+    
+    it.foldLeft(Future.successful(())){(a,b) => a flatMap {_ => process(b)}}
   }
 
   private def findOld(n: Int): Future[List[BSONDocument]] = {
@@ -127,18 +129,13 @@ class   VatRegisteredCompaniesRepository @Inject()(
     findOld(n).flatMap(x => deleteById(x.flatMap(y => y.get("oldest"))))
   }
 
-  private def wrap(payload: Payload): List[Wrapper] =
-    payload.createsAndUpdates.map { company =>
-      Wrapper(company.vatNumber, company)
-    }
-
   def process(payload: Payload): Future[Unit] = {
-    val inserts = insert(wrap(payload))
-    val deletes = streamingDelete(payload.deletes)
-    for {
-      a <- inserts
-      b <- deletes
-    } yield (())
+    def wrap(payload: Payload): List[Wrapper] =
+      payload.createsAndUpdates.map { company =>
+        Wrapper(company.vatNumber, company)
+      }
+
+    insert(wrap(payload)) >> streamingDelete(payload.deletes)
   }
 
   def lookup(target: String): Future[Option[LookupResponse]] = {
@@ -151,30 +148,4 @@ class   VatRegisteredCompaniesRepository @Inject()(
         _.headOption.map(x => LookupResponse(x.company.some))
       }
   }
-
-  override def indexes: Seq[Index] = Seq(
-    Index(
-      name = "vatNumberIndex".some,
-      key = Seq( "vatNumber" -> IndexType.Text),
-      background = true,
-      unique = false
-    )
-  )
-
-  private val setIndexes: Future[Unit] = {
-    for {
-      list <- im.list()
-    } yield list.filterNot(y => y.name === "vatNumberIndex".some || y.name === "_id_".some).foreach{ x =>
-      im.drop(x.name.getOrElse(""))
-    }
-  }
-
-  val getIndexes: Future[Unit] = {
-    for {
-      list <- im.list()
-    } yield list.foreach { x =>
-      logger.info(s"Found index ${x.name}")
-    }
-  }
-
 }

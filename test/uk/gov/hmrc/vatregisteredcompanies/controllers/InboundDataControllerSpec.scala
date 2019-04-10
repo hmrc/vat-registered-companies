@@ -108,7 +108,7 @@ class InboundDataControllerSpec extends WordSpec
 
   "POST of valid json with valid headers to /vat-registered-companies/vatregistrations" should {
     "return 200" in {
-      when(mockPersistence.bufferData(ArgumentMatchers.any())).thenReturn(Future(()))
+//      when(mockPersistence.bufferData(ArgumentMatchers.any())).thenReturn(Future(()))
       val controller = new InboundDataController(mockPersistence)
       val result: Future[Result] = controller.handle().apply(fakeRequest)
       status(result) shouldBe Status.OK
