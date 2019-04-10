@@ -94,29 +94,17 @@ class   VatRegisteredCompaniesRepository @Inject()(
     Future.successful((()))
   }
 
-  // TODO - port deleteById and findOld to akka
   private def deleteById(deletes: List[BSONValue]): Future[Unit] = {
-    val it = deletes.sliding(bulkSize,bulkSize)
-    while (it.hasNext) {
-      val chunk = it.next
-      Logger.info(s"deleting ${chunk.length} old entries")
-      val deleteBuilder = collection.delete(false)
-      val ds: Future[List[collection.DeleteCommand.DeleteElement]] =
-        Future.sequence(
-          chunk.map { id =>
-            deleteBuilder.element(
-              q = BSONDocument("_id" -> id),
-              limit = None,
-              collation = None)
-          }
-        )
-      ds.flatMap { ops =>
-        deleteBuilder.many(ops)
-      }.map { multiBulkWriteResult =>
-          multiBulkWriteResult.errmsg.foreach(e =>
-            Logger.error(s"$e")
-          )
-      }
+    if(deletes.nonEmpty) {
+      Logger.info(s"Deleting ${deletes.length} old entries")
+      val source = Source(deletes)
+      val sink = Flow[BSONValue]
+        .map(_id =>
+          collection.findAndRemove(Json.obj("_id" -> _id)).map {_.result[BSONValue]}
+        ).to(Sink.onComplete { _ =>
+        Logger.info("End of old entries deletion stream")
+      })
+      source.to(sink).run()
     }
     Future.successful((()))
   }
@@ -130,16 +118,6 @@ class   VatRegisteredCompaniesRepository @Inject()(
         Limit(n)
       ))
     }.collect[List](-1, Cursor.FailOnError[List[BSONDocument]]())
-
-//    collection.aggregatorContext[BSONDocument](
-//      Group(JsString("$vatNumber"))( "count" -> SumAll, "oldest" -> MinField("_id")),
-//      List(
-//        Match(Json.obj("count" -> Json.obj("$gt" -> 1L))),
-//        Limit(n)
-//      )
-//    ).
-//      prepared.cursor.
-//      collect[List](-1, Cursor.FailOnError[List[BSONDocument]]())
   }
 
   def deleteOld(n: Int): Future[Unit] = {
