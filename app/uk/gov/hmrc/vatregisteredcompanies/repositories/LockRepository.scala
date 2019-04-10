@@ -20,7 +20,7 @@ import java.time.{Instant, LocalDateTime, ZoneOffset}
 
 import com.google.inject.ImplementedBy
 import javax.inject.{Inject, Singleton}
-import play.api.Configuration
+import play.api.{Configuration, Logger}
 import play.api.libs.json._
 import play.modules.reactivemongo.ReactiveMongoComponent
 import reactivemongo.api.commands.LastError
@@ -79,12 +79,14 @@ class DefaultLockRepository @Inject()(
   override def indexes: Seq[Index] = Seq(index)
 
   override def lock(id: Int): Future[Boolean] = {
-    collection.insert(Lock(id)).map{x =>
-      logger.info(s"Locking with $id")
+    collection.insert(Lock(id)).map{_ =>
+      Logger.info(s"Locking with $id")
       true
     }.recover {
-      case e: LastError if e.code == documentExistsErrorCode =>
+      case e: LastError if e.code == documentExistsErrorCode => {
+        Logger.info(s"Unable to lock with $id")
         false
+      }
     }
   }
 

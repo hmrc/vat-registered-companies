@@ -88,6 +88,7 @@ class   VatRegisteredCompaniesRepository @Inject()(
       })
       source.to(sink).run()
     } else {
+      Logger.info("No deletes to process, cleaning buffer")
       bufferRepository.deleteOne(payload)
     }
     Future.successful((()))
@@ -151,11 +152,9 @@ class   VatRegisteredCompaniesRepository @Inject()(
     }
 
   def process(payload: PayloadWrapper): Future[Unit] = {
-    val inserts = insert(wrap(payload.payload))
-    val deletes = streamingDelete(payload.payload.deletes, payload)
     for {
-      a <- inserts
-      b <- deletes
+      a <- insert(wrap(payload.payload))
+      b <- streamingDelete(payload.payload.deletes, payload)
     } yield (())
   }
 

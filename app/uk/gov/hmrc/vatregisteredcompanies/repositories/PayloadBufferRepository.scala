@@ -17,9 +17,10 @@
 package uk.gov.hmrc.vatregisteredcompanies.repositories
 
 import javax.inject.{Inject, Singleton}
+import play.api.Logger
 import play.api.libs.json._
 import play.modules.reactivemongo.ReactiveMongoComponent
-import reactivemongo.api.{QueryOpts, Cursor}
+import reactivemongo.api.{Cursor, QueryOpts}
 import reactivemongo.api.collections.GenericQueryBuilder
 import reactivemongo.bson.{BSONDocument, BSONObjectID}
 import reactivemongo.play.json.ImplicitBSONHandlers._
@@ -66,7 +67,7 @@ class   PayloadBufferRepository@Inject()(
   def one: Future[Option[PayloadWrapper]] = getOne.map(_.headOption)
 
   def deleteOne(payload: PayloadWrapper): Future[Unit] = {
-    logger.info(s"deleting payload ${payload._id}")
+    Logger.info(s"deleting payload ${payload._id}")
     remove("_id" -> payload._id).map { _ => (())}
   }
 
