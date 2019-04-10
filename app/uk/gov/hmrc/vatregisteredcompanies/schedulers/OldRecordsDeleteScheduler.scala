@@ -39,7 +39,7 @@ class OldRecordsDeleteScheduler @Inject()(
 
   if (enabled) {
     Logger.info(s"Initialising delete every $interval")
-    actorSystem.scheduler.schedule(FiniteDuration(600, TimeUnit.SECONDS), interval) {
+    actorSystem.scheduler.schedule(FiniteDuration(60, TimeUnit.SECONDS), interval) {
       Logger.info(s"Scheduling old data delete, next run in $interval")
       persistenceService.deleteOld(rowCount).recover {
         case e: RuntimeException => Logger.error(s"Error deleting old vat registration data: $e")

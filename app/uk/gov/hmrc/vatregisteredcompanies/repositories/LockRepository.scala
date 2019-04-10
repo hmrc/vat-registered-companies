@@ -18,6 +18,8 @@ package uk.gov.hmrc.vatregisteredcompanies.repositories
 
 import java.time.{Instant, LocalDateTime, ZoneOffset}
 
+import cats.data.OptionT
+import cats.implicits._
 import com.google.inject.ImplementedBy
 import javax.inject.{Inject, Singleton}
 import play.api.{Configuration, Logger}
@@ -84,6 +86,14 @@ class DefaultLockRepository @Inject()(
       true
     }.recover {
       case e: LastError if e.code == documentExistsErrorCode => {
+        // there is a lock, get it and see how old it is, maybe release it
+        getLock(id).map {o =>
+          o.map {t =>
+            if (t.lastUpdated.isBefore(LocalDateTime.now.minusMinutes(10))) { // TODO configure
+              release(id)
+            }
+          }
+        }
         Logger.info(s"Unable to lock with $id")
         false
       }
@@ -92,11 +102,18 @@ class DefaultLockRepository @Inject()(
 
   override def release(id: Int): Future[Unit] =
     collection.findAndRemove(BSONDocument("_id" -> id))
-      .map(_=> ()).fallbackTo(Future.successful(()))
+      .map{_=>
+        Logger.info(s"Releasing lock $id")
+        ()
+      }.fallbackTo(Future.successful(()))
 
   override def isLocked(id: Int): Future[Boolean] =
     collection.find(BSONDocument("_id" -> id),None)
       .one[Lock].map(_.isDefined)
+
+  def getLock(id: Int): Future[Option[Lock]] =
+    collection.find(BSONDocument("_id" -> id),None)
+      .one[Lock]
 
 }
 
