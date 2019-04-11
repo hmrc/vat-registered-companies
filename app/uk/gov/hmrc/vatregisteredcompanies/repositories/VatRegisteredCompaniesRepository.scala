@@ -108,16 +108,6 @@ class VatRegisteredCompaniesRepository @Inject()(
             Logger.error(s"$e")
           )
       }
-//    if(deletes.nonEmpty) {
-//      Logger.info(s"Deleting ${deletes.length} old entries")
-//      val source = Source(deletes)
-//      val sink = Flow[BSONValue]
-//        .map(_id =>
-//          collection.findAndRemove(Json.obj("_id" -> _id)).map {_.result[BSONValue]}
-//        ).to(Sink.onComplete { _ =>
-//        Logger.info("End of old entries deletion stream")
-//      })
-//      source.to(sink).run()
     }
     
     it.foldLeft(Future.successful(())){(a,b) => a flatMap {_ => process(b)}}
