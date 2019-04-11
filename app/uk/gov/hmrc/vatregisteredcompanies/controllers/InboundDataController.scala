@@ -42,13 +42,14 @@ class InboundDataController @Inject()(persistence: VatRegisteredCompaniesReposit
             Response(Response.Outcome.FAILURE, Response.Code.INVALID_PAYLOAD.some)
           )))
         else {
-          persistence.process(payload)
+          persistence.process(payload) >>
           Future.successful(Ok(Json.toJson(
             Response(Response.Outcome.SUCCESS, none)
-          )))
+          ))).recover{ case _ =>
+            InternalServerError(Json.toJson(Response(Response.Outcome.FAILURE, Response.Code.SERVER_ERROR.some))) }
+          }
         }
       }
-    }
 
   override protected def mode: Mode = environment.mode
 
