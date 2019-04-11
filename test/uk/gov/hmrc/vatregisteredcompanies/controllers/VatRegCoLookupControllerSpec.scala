@@ -29,7 +29,7 @@ import play.api.test.FakeRequest
 import play.api.test.Helpers.{contentAsJson, status, _}
 import uk.gov.hmrc.play.audit.http.connector.AuditConnector
 import uk.gov.hmrc.vatregisteredcompanies.models._
-import uk.gov.hmrc.vatregisteredcompanies.services.PersistenceService
+import uk.gov.hmrc.vatregisteredcompanies.repositories.VatRegisteredCompaniesRepository
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -50,7 +50,7 @@ class VatRegCoLookupControllerSpec extends WordSpec
       )
     ).build()
 
-  val mockPersistence: PersistenceService = mock[PersistenceService]
+  val mockPersistence = mock[VatRegisteredCompaniesRepository]
   val mockAudiConnector: AuditConnector = mock[AuditConnector]
   val fakeRequest = FakeRequest("GET", "/lookup/123456789")
   val fakeVerifiedRequest = FakeRequest("GET", "/lookup/123456789/123456789")
@@ -146,7 +146,6 @@ class VatRegCoLookupControllerSpec extends WordSpec
       }
     }
   }
-
-
+  
 }
 

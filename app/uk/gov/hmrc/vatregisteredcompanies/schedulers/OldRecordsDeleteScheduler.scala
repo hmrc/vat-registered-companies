@@ -22,27 +22,27 @@ import akka.actor.ActorSystem
 import com.google.inject.{AbstractModule, Provides}
 import javax.inject.{Inject, Named, Singleton}
 import play.api.{Configuration, Environment, Logger}
-import uk.gov.hmrc.vatregisteredcompanies.services.PersistenceService
+import uk.gov.hmrc.vatregisteredcompanies.repositories.VatRegisteredCompaniesRepository
 
 import scala.concurrent.ExecutionContext
 import scala.concurrent.duration.FiniteDuration
 
 @Singleton
 class OldRecordsDeleteScheduler @Inject()(
-  persistenceService: PersistenceService,
+  persistenceService: VatRegisteredCompaniesRepository,
   actorSystem: ActorSystem,
   @Named("interval") interval: FiniteDuration,
   @Named("enabled") enabled: Boolean,
   @Named("rowCount") rowCount: Int)(
   implicit val ec: ExecutionContext) {
 
-
   if (enabled) {
     Logger.info(s"Initialising delete every $interval")
     actorSystem.scheduler.schedule(FiniteDuration(60, TimeUnit.SECONDS), interval) {
       Logger.info(s"Scheduling old data delete, next run in $interval")
       persistenceService.deleteOld(rowCount).recover {
-        case e: RuntimeException => Logger.error(s"Error deleting old vat registration data: $e")
+        case e: RuntimeException =>
+          Logger.error(s"Error deleting old vat registration data: $e")
       }
     }
   }

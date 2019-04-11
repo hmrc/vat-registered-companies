@@ -24,28 +24,32 @@ import play.api.mvc.Action
 import play.api.{Configuration, Environment}
 import uk.gov.hmrc.play.bootstrap.controller.BaseController
 import uk.gov.hmrc.vatregisteredcompanies.models.{Payload, PayloadSubmissionResponse => Response}
-import uk.gov.hmrc.vatregisteredcompanies.services.{JsonSchemaChecker, PersistenceService}
-
+import uk.gov.hmrc.vatregisteredcompanies.services.JsonSchemaChecker
+import uk.gov.hmrc.vatregisteredcompanies.repositories.VatRegisteredCompaniesRepository
 import scala.concurrent.{ExecutionContext, Future}
+import uk.gov.hmrc.vatregisteredcompanies.models._
 
 @Singleton
-class InboundDataController @Inject()(persistence: PersistenceService)
+class InboundDataController @Inject()(persistence: VatRegisteredCompaniesRepository)
  (implicit executionContext: ExecutionContext, conf: Configuration, environment: Environment)
   extends BaseController with ExtraActions {
 
   def handle: Action[JsValue] =
     InboundDataAction.async(parse.json) { implicit request =>
       withJsonBody[Payload] { payload: Payload =>
-        if (!JsonSchemaChecker[Payload](payload, "mdg-payload")) {
-          Future.successful(BadRequest(Json.toJson(Response(Response.Outcome.FAILURE, Response.Code.INVALID_PAYLOAD.some))))
-        } else {
-          persistence.bufferData(payload).map { _ =>
-            Ok(Json.toJson(Response(Response.Outcome.SUCCESS, none)))
-          }.recover{ case _ =>
+        if (!JsonSchemaChecker[Payload](payload, "mdg-payload"))
+          Future.successful(BadRequest(Json.toJson(
+            Response(Response.Outcome.FAILURE, Response.Code.INVALID_PAYLOAD.some)
+          )))
+        else {
+          persistence.process(payload) >>
+          Future.successful(Ok(Json.toJson(
+            Response(Response.Outcome.SUCCESS, none)
+          ))).recover{ case _ =>
             InternalServerError(Json.toJson(Response(Response.Outcome.FAILURE, Response.Code.SERVER_ERROR.some))) }
+          }
         }
       }
-    }
 
   override protected def mode: Mode = environment.mode
 
