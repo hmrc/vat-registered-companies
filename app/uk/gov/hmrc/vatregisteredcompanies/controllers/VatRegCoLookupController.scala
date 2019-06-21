@@ -25,11 +25,11 @@ import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.audit.http.connector.AuditConnector
 import uk.gov.hmrc.play.bootstrap.controller.BaseController
 import uk.gov.hmrc.vatregisteredcompanies.models.{AuditDetails, ConsultationNumber, LookupResponse, VatNumber}
-import uk.gov.hmrc.vatregisteredcompanies.repositories._
+import uk.gov.hmrc.vatregisteredcompanies.services.PersistenceService
 
 import scala.concurrent.ExecutionContext
 
-class VatRegCoLookupController @Inject()(persistence: VatRegisteredCompaniesRepository, auditConnector: AuditConnector)
+class VatRegCoLookupController @Inject()(persistence: PersistenceService, auditConnector: AuditConnector)
                                         (implicit executionContext: ExecutionContext) extends BaseController {
 
   def lookup(target: VatNumber): Action[AnyContent] =

@@ -28,55 +28,50 @@ import scala.concurrent.ExecutionContext
 import scala.concurrent.duration.FiniteDuration
 
 @Singleton
-class OldRecordsDeleteScheduler @Inject()(
+class PayloadConversionScheduler @Inject()(
   persistenceService: PersistenceService,
   actorSystem: ActorSystem,
-  @Named("interval") interval: FiniteDuration,
-  @Named("enabled") enabled: Boolean,
-  @Named("rowCount") rowCount: Int)(
+  @Named("payloadInterval") interval: FiniteDuration,
+  @Named("payloadProcessingEnabled") enabled: Boolean)(
   implicit val ec: ExecutionContext) {
 
+  Logger.info(s"Initialising payload processing every $interval")
 
-  if (enabled) {
-    Logger.info(s"Initialising delete every $interval")
-    actorSystem.scheduler.schedule(FiniteDuration(60, TimeUnit.SECONDS), interval) {
-      Logger.info(s"Scheduling old data delete, next run in $interval")
-      persistenceService.deleteOld(rowCount).recover {
-        case e: RuntimeException => Logger.error(s"Error deleting old vat registration data: $e")
+  if(enabled) {
+    actorSystem.scheduler.schedule(FiniteDuration(10, TimeUnit.SECONDS), interval) {
+      Logger.info(s"Scheduling inbound data processing, next run in $interval")
+      persistenceService.processOneData.recover {
+        case e: RuntimeException => Logger.error(s"Error processing inbound vat registration data: $e")
       }
     }
   }
+
 }
 
-class OldRecordsDeleteSchedulerModule(environment: Environment, val runModeConfiguration: Configuration) extends
+class PayloadConversionSchedulerModule(environment: Environment, val runModeConfiguration: Configuration) extends
   AbstractModule {
 
   @Provides
-  @Named("interval")
+  @Named("payloadInterval")
   def interval(): FiniteDuration =
     new FiniteDuration(
       runModeConfiguration
-        .getInt("microservice.services.schedulers.old-data-deletion.interval.seconds")
-        .getOrElse(600)
+        .getInt("microservice.services.schedulers.payload.conversion.interval.seconds")
+        .getOrElse(500)
         .toLong,
       TimeUnit.SECONDS
     )
 
   @Provides
-  @Named("enabled")
+  @Named("payloadProcessingEnabled")
   def enabled(): Boolean =
     runModeConfiguration
-      .getBoolean("microservice.services.schedulers.old-data-deletion.enabled")
+      .getBoolean("microservice.services.schedulers.payload.conversion.enabled")
       .getOrElse(true)
 
-  @Provides
-  @Named("rowCount")
-  def size(): Int =
-    runModeConfiguration.getInt("microservice.services.schedulers.old-data-deletion.rowCount")
-      .getOrElse(100)
 
   override def configure(): Unit = {
-    bind(classOf[OldRecordsDeleteScheduler]).asEagerSingleton()
+    bind(classOf[PayloadConversionScheduler]).asEagerSingleton()
   }
 
 }
