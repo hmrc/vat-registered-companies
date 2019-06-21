@@ -58,8 +58,9 @@ object Wrapper {
 }
 
 @Singleton
-class VatRegisteredCompaniesRepository @Inject()(
-  reactiveMongoComponent: ReactiveMongoComponent
+class   VatRegisteredCompaniesRepository @Inject()(
+  reactiveMongoComponent: ReactiveMongoComponent,
+  bufferRepository: PayloadBufferRepository
 )(implicit val executionContext: ExecutionContext, mat: Materializer) extends
   ReactiveRepository("vatregisteredcompanies", reactiveMongoComponent.mongoConnector.db, Wrapper.format) {
 
@@ -74,43 +75,38 @@ class VatRegisteredCompaniesRepository @Inject()(
     bulkInsert(entries).map(_ => (()))
   }
 
-  private def streamingDelete(deletes: List[VatNumber]): Future[Unit] = Future {
+  private def streamingDelete(deletes: List[VatNumber], payload: PayloadWrapper) = {
     if (deletes.nonEmpty) {
       Logger.info(s"deleting ${deletes.length} records")
       val source = Source(deletes)
-      val stage: RunnableGraph[NotUsed] = source.to(Sink.foreach[VatNumber] ( vrn =>
-        collection.findAndRemove(Json.obj("vatNumber" -> vrn)).map(_.result[VatNumber])))
-      stage.run()
+      val sink = Flow[VatNumber]
+        .map(vrn =>
+          collection.findAndRemove(Json.obj("vatNumber" -> vrn)).map {_.result[VatNumber]}
+        ).to(Sink.onComplete{x =>
+        Logger.info("End of deletion stream")
+        bufferRepository.deleteOne(payload)
+      })
+      source.to(sink).run()
     } else {
-      ()
+      Logger.info("No deletes to process, cleaning buffer")
+      bufferRepository.deleteOne(payload)
     }
+    Future.successful((()))
   }
 
   private def deleteById(deletes: List[BSONValue]): Future[Unit] = {
-    val it = deletes.sliding(bulkSize,bulkSize)
-
-    def process(chunk: List[BSONValue]): Future[Unit] = {
-      logger.info(s"deleting ${chunk.length} old entries")
-      val deleteBuilder = collection.delete(false)
-      val ds: Future[List[collection.DeleteCommand.DeleteElement]] =
-        Future.sequence(
-          chunk.map { id =>
-            deleteBuilder.element(
-              q = BSONDocument("_id" -> id),
-              limit = None,
-              collation = None)
-          }
-        )
-      ds.flatMap { ops =>
-        deleteBuilder.many(ops)
-      }.map { multiBulkWriteResult =>
-          multiBulkWriteResult.errmsg.foreach(e =>
-            Logger.error(s"$e")
-          )
-      }
+    if(deletes.nonEmpty) {
+      Logger.info(s"Deleting ${deletes.length} old entries")
+      val source = Source(deletes)
+      val sink = Flow[BSONValue]
+        .map(_id =>
+          collection.findAndRemove(Json.obj("_id" -> _id)).map {_.result[BSONValue]}
+        ).to(Sink.onComplete { _ =>
+        Logger.info("End of old entries deletion stream")
+      })
+      source.to(sink).run()
     }
-    
-    it.foldLeft(Future.successful(())){(a,b) => a flatMap {_ => process(b)}}
+    Future.successful((()))
   }
 
   private def findOld(n: Int): Future[List[BSONDocument]] = {
@@ -123,18 +119,21 @@ class VatRegisteredCompaniesRepository @Inject()(
       ))
     }.collect[List](-1, Cursor.FailOnError[List[BSONDocument]]())
   }
-  
+
   def deleteOld(n: Int): Future[Unit] = {
     findOld(n).flatMap(x => deleteById(x.flatMap(y => y.get("oldest"))))
   }
 
-  def process(payload: Payload): Future[Unit] = {
-    def wrap(payload: Payload): List[Wrapper] =
-      payload.createsAndUpdates.map { company =>
-        Wrapper(company.vatNumber, company)
-      }
+  private def wrap(payload: Payload): List[Wrapper] =
+    payload.createsAndUpdates.map { company =>
+      Wrapper(company.vatNumber, company)
+    }
 
-    insert(wrap(payload)) >> streamingDelete(payload.deletes)
+  def process(payload: PayloadWrapper): Future[Unit] = {
+    for {
+      a <- insert(wrap(payload.payload))
+      b <- streamingDelete(payload.payload.deletes, payload)
+    } yield (())
   }
 
   def lookup(target: String): Future[Option[LookupResponse]] = {
