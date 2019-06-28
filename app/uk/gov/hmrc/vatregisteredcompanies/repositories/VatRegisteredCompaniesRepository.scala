@@ -17,26 +17,27 @@
 package uk.gov.hmrc.vatregisteredcompanies.repositories
 
 import java.time.Instant
+import java.util.concurrent.TimeUnit
 
-import akka.{Done, NotUsed}
-import akka.stream.Materializer
-import akka.stream.scaladsl.{Flow, RunnableGraph, Sink, Source}
+import akka.Done
+import akka.stream.{Attributes, Materializer}
+import akka.stream.scaladsl.{Flow, Sink, Source}
 import cats.implicits._
-import javax.inject.{Inject, Singleton}
+import javax.inject.{Inject, Named, Singleton}
 import play.api.Logger
 import play.api.libs.json._
 import play.modules.reactivemongo.ReactiveMongoComponent
-import reactivemongo.api.{Cursor, ReadConcern, ReadPreference}
 import reactivemongo.api.indexes.{CollectionIndexesManager, Index, IndexType}
+import reactivemongo.api.{Cursor, ReadConcern, ReadPreference}
 import reactivemongo.bson.{BSONDateTime, BSONDocument, _}
 import reactivemongo.core.nodeset.ProtocolMetadata
 import reactivemongo.play.json.ImplicitBSONHandlers._
-import reactivemongo.play.json.collection.JSONBatchCommands.FindAndModifyCommand
 import uk.gov.hmrc.mongo.ReactiveRepository
 import uk.gov.hmrc.vatregisteredcompanies.models.{LookupResponse, Payload, VatNumber, VatRegisteredCompany}
 
+import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.{ExecutionContext, Future}
-import scala.util.Try
+import scala.util.{Failure, Success, Try}
 
 final case class Wrapper(
   vatNumber: VatNumber,
@@ -60,7 +61,9 @@ object Wrapper {
 @Singleton
 class   VatRegisteredCompaniesRepository @Inject()(
   reactiveMongoComponent: ReactiveMongoComponent,
-  bufferRepository: PayloadBufferRepository
+  bufferRepository: PayloadBufferRepository,
+  @Named("deletionThrottleElements") elements: Int,
+  @Named("deletionThrottlePer") per: FiniteDuration
 )(implicit val executionContext: ExecutionContext, mat: Materializer) extends
   ReactiveRepository("vatregisteredcompanies", reactiveMongoComponent.mongoConnector.db, Wrapper.format) {
 
@@ -79,13 +82,25 @@ class   VatRegisteredCompaniesRepository @Inject()(
     if (deletes.nonEmpty) {
       Logger.info(s"deleting ${deletes.length} records")
       val source = Source(deletes)
+      // See https://doc.akka.io/docs/akka/current/stream/operators/Source-or-Flow/throttle.html
+      // we could work out how many records we can safely delete given the size of the collection
+      // and pass that in as a costCalculation
       val sink = Flow[VatNumber]
-        .map(vrn =>
-          collection.findAndRemove(Json.obj("vatNumber" -> vrn)).map {_.result[VatNumber]}
-        ).to(Sink.onComplete{x =>
-        Logger.info("End of deletion stream")
-        bufferRepository.deleteOne(payload)
-      })
+        .throttle(elements, per)
+        .map(vrn => {
+          collection.findAndRemove(Json.obj("vatNumber" -> vrn)).map {
+            _.result[VatNumber]
+          }
+        }).to(Sink.onComplete{x =>
+          x match {
+            case Failure(e) =>
+              Logger.error(s"Unable to process streaming deletes at $elements per ${per._1} ${per._2}: ${e.getMessage}")
+            case Success(_) =>
+              bufferRepository.deleteOne(payload)
+              Logger.info("Processed streaming deletes")
+          }
+        Logger.info(s"End of deletion stream")
+        })
       source.to(sink).run()
     } else {
       Logger.info("No deletes to process, cleaning buffer")

@@ -57,7 +57,7 @@ class PayloadConversionSchedulerModule(environment: Environment, val runModeConf
     new FiniteDuration(
       runModeConfiguration
         .getInt("microservice.services.schedulers.payload.conversion.interval.seconds")
-        .getOrElse(500)
+        .getOrElse(900)
         .toLong,
       TimeUnit.SECONDS
     )
@@ -68,6 +68,25 @@ class PayloadConversionSchedulerModule(environment: Environment, val runModeConf
     runModeConfiguration
       .getBoolean("microservice.services.schedulers.payload.conversion.enabled")
       .getOrElse(true)
+
+
+  @Provides
+  @Named("deletionThrottleElements")
+  def throttleElements(): Int =
+    runModeConfiguration
+      .getInt("microservice.services.schedulers.payload.conversion.deletion.throttle.elements")
+      .getOrElse(500)
+
+  @Provides
+  @Named("deletionThrottlePer")
+  def throttlePer(): FiniteDuration =
+    new FiniteDuration(
+      runModeConfiguration
+        .getInt("microservice.services.schedulers.payload.conversion.deletion.throttle.elements")
+        .getOrElse(1)
+        .toLong,
+      TimeUnit.SECONDS
+    )
 
 
   override def configure(): Unit = {
