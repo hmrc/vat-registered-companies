@@ -50,7 +50,7 @@ class   PayloadBufferRepository@Inject()(
   implicit val format: OFormat[PayloadWrapper] = Json.format[PayloadWrapper]
 
   def insert(payload: Payload): Future[Unit] =
-    collection.insert(PayloadWrapper(payload = payload)).map(_ => ())
+    collection.insert(false).one(PayloadWrapper(payload = payload)).map(_ => ())
 
   def list: Future[List[PayloadWrapper]] =
     findAll()
