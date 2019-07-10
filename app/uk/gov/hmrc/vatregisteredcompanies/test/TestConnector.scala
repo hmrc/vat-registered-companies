@@ -37,6 +37,9 @@ class TestConnector @Inject()(
   def trigger(url: String)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[HttpResponse] =
     http.GET(s"$stubUrl/$url")
 
+  def trigger(url: String, param: String)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[HttpResponse] =
+    http.GET(s"$stubUrl/$url/$param")
+
   override protected def mode: Mode = environment.mode
   override protected def runModeConfiguration: Configuration = configuration
 }
