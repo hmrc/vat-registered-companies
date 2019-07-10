@@ -27,8 +27,8 @@ class TestController @Inject()(
   connector: TestConnector
 ) extends FrontendController {
 
-  def triggerDataImport: Action[AnyContent] = Action.async { implicit request =>
-    connector.trigger("trigger-mdg-data-post") >>
+  def triggerDataImport(seed: String): Action[AnyContent] = Action.async { implicit request =>
+    connector.trigger("trigger-mdg-data-post", seed) >>
       Future.successful(Ok("w00t - data import "))
   }
 
