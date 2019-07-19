@@ -155,8 +155,7 @@ class   VatRegisteredCompaniesRepository @Inject()(
     collection
       .find(BSONDocument("vatNumber" -> target), Option.empty[JsObject])
       .sort(Json.obj("_id" -> -1))
-      .cursor[Wrapper]()
-      .collect[List](1, Cursor.FailOnError[List[Wrapper]]())
+      .one[Wrapper]
       .map {
         _.headOption.map(x => LookupResponse(x.company.some))
       }
@@ -164,8 +163,8 @@ class   VatRegisteredCompaniesRepository @Inject()(
 
   override def indexes: Seq[Index] = Seq(
     Index(
-      name = "vatNumberIndex".some,
-      key = Seq( "vatNumber" -> IndexType.Text),
+      name = "vatNumberIndexNew".some,
+      key = Seq( "vatNumber" -> IndexType.Ascending),
       background = true,
       unique = false
     )
@@ -174,7 +173,9 @@ class   VatRegisteredCompaniesRepository @Inject()(
   private val setIndexes: Future[Unit] = {
     for {
       list <- im.list()
-    } yield list.filterNot(y => y.name === "vatNumberIndex".some || y.name === "_id_".some).foreach{ x =>
+    } yield list.filterNot(y =>
+      y.name === "vatNumberIndexNew".some ||
+        y.name === "_id_".some).foreach{ x =>
       im.drop(x.name.getOrElse(""))
     }
   }
