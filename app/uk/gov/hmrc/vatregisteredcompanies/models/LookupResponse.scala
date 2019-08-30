@@ -16,7 +16,7 @@
 
 package uk.gov.hmrc.vatregisteredcompanies.models
 
-import java.time.{OffsetDateTime, ZoneOffset}
+import java.time._
 
 import play.api.libs.json.{Json, OFormat}
 
@@ -24,7 +24,7 @@ case class LookupResponse(
   target: Option[VatRegisteredCompany],
   requester: Option[VatNumber] = None,
   consultationNumber: Option[ConsultationNumber] = None,
-  processingDate: ProcessingDate = OffsetDateTime.now(ZoneOffset.UTC)
+  processingDate: ProcessingDate = ZonedDateTime.of(LocalDateTime.now,ZoneId.of("Europe/London"))
 )
 
 object LookupResponse {
