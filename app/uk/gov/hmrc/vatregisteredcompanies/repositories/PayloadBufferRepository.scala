@@ -54,7 +54,6 @@ class   PayloadBufferRepository@Inject()(
 
   def insert(payload: Payload): Future[Unit] =
     collection.insert(true).one(PayloadWrapper(payload = payload)).map(_ => ())
-//    collection.insert(PayloadWrapper(payload = payload)).map(_ => ())
 
   def list: Future[List[PayloadWrapper]] =
     findAll()
