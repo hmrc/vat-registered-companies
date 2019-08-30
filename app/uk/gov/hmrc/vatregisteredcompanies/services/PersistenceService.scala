@@ -33,6 +33,17 @@ class PersistenceService @Inject()(
   lockRepository: LockRepository
 )(implicit executionContext: ExecutionContext) {
 
+  def deleteAll: Future[Unit] = {
+    val bd = buffer.deleteAll
+    val rd = repository.deleteAll
+    for {
+      _ <- bd
+      _ <- rd
+    } yield {
+      Logger.info("Finished delete all")
+    }
+  }
+
   def lookup(target: VatNumber): Future[Option[LookupResponse]] =
     repository.lookup(target)
 

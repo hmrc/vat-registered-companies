@@ -67,6 +67,9 @@ class   VatRegisteredCompaniesRepository @Inject()(
 )(implicit val executionContext: ExecutionContext, mat: Materializer) extends
   ReactiveRepository("vatregisteredcompanies", reactiveMongoComponent.mongoConnector.db, Wrapper.format) {
 
+  def deleteAll(): Future[Unit] =
+    removeAll().map(_=> ())
+
   private val im: CollectionIndexesManager = collection.indexesManager
 
   implicit val format: OFormat[Wrapper] = Json.format[Wrapper]

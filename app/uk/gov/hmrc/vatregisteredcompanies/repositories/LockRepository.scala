@@ -83,8 +83,7 @@ class DefaultLockRepository @Inject()(
   val ttl = runModeConfiguration.getInt("microservice.services.lock.ttl.minutes").getOrElse(10)
 
   override def lock(id: Int): Future[Boolean] = {
-//    collection.insert(false).one(Lock(id)).map{_ =>
-    collection.insert(Lock(id)).map{_ =>
+    collection.insert(true).one(Lock(id)).map{_ =>
       Logger.info(s"Locking with $id")
       true
     }.recover {
