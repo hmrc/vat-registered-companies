@@ -47,11 +47,14 @@ class   PayloadBufferRepository@Inject()(
     reactiveMongoComponent.mongoConnector.db,
     PayloadWrapper.format) {
 
+  def deleteAll(): Future[Unit] =
+    removeAll().map(_=> ())
+
   implicit val format: OFormat[PayloadWrapper] = Json.format[PayloadWrapper]
 
   def insert(payload: Payload): Future[Unit] =
-//    collection.insert(false).one(PayloadWrapper(payload = payload)).map(_ => ())
-    collection.insert(PayloadWrapper(payload = payload)).map(_ => ())
+    collection.insert(true).one(PayloadWrapper(payload = payload)).map(_ => ())
+//    collection.insert(PayloadWrapper(payload = payload)).map(_ => ())
 
   def list: Future[List[PayloadWrapper]] =
     findAll()

@@ -35,9 +35,8 @@ class PayloadConversionScheduler @Inject()(
   @Named("payloadProcessingEnabled") enabled: Boolean)(
   implicit val ec: ExecutionContext) {
 
-  Logger.info(s"Initialising payload processing every $interval")
-
   if(enabled) {
+    Logger.info(s"Initialising payload processing every $interval")
     actorSystem.scheduler.schedule(FiniteDuration(10, TimeUnit.SECONDS), interval) {
       Logger.info(s"Scheduling inbound data processing, next run in $interval")
       persistenceService.processOneData.recover {
