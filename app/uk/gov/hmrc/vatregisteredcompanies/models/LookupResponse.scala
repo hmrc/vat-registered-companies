@@ -24,7 +24,7 @@ case class LookupResponse(
   target: Option[VatRegisteredCompany],
   requester: Option[VatNumber] = None,
   consultationNumber: Option[ConsultationNumber] = None,
-  processingDate: ProcessingDate = ZonedDateTime.of(LocalDateTime.now,ZoneId.of("Europe/London"))
+  processingDate: ProcessingDate = LocalDateTime.now.atZone(ZoneId.of("Europe/London"))
 )
 
 object LookupResponse {
