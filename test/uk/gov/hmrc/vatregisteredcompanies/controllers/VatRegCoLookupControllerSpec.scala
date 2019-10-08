@@ -41,6 +41,7 @@ class VatRegCoLookupControllerSpec extends WordSpec
   with OptionValues
 {
 
+  val cc = play.api.test.Helpers.stubControllerComponents()
   override def fakeApplication(): Application =
     new GuiceApplicationBuilder().configure(
       Map(
@@ -55,7 +56,7 @@ class VatRegCoLookupControllerSpec extends WordSpec
   val fakeRequest = FakeRequest("GET", "/lookup/123456789")
   val fakeVerifiedRequest = FakeRequest("GET", "/lookup/123456789/123456789")
   val testVatNo = "123456789"
-  val controller = new VatRegCoLookupController(mockPersistence, mockAudiConnector)
+  val controller = new VatRegCoLookupController(mockPersistence, mockAudiConnector, cc)
 
   val knownCo =
     VatRegisteredCompany(

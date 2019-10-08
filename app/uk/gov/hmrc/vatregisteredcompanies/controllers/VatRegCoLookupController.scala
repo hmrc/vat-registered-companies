@@ -16,21 +16,27 @@
 
 package uk.gov.hmrc.vatregisteredcompanies.controllers
 
-import cats.data.OptionT
-import cats.implicits._
 import javax.inject.Inject
+
+import cats.implicits._
 import play.api.libs.json.Json
-import play.api.mvc.{Action, AnyContent}
+import play.api.mvc.{Action, AnyContent, ControllerComponents}
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.audit.http.connector.AuditConnector
-import uk.gov.hmrc.play.bootstrap.controller.BaseController
+import uk.gov.hmrc.play.bootstrap.controller.BackendController
 import uk.gov.hmrc.vatregisteredcompanies.models.{AuditDetails, ConsultationNumber, LookupResponse, VatNumber}
 import uk.gov.hmrc.vatregisteredcompanies.services.PersistenceService
 
 import scala.concurrent.ExecutionContext
 
-class VatRegCoLookupController @Inject()(persistence: PersistenceService, auditConnector: AuditConnector)
-                                        (implicit executionContext: ExecutionContext) extends BaseController {
+class VatRegCoLookupController @Inject()
+(
+  persistence: PersistenceService,
+  auditConnector: AuditConnector,
+  cc: ControllerComponents
+)(
+  implicit executionContext: ExecutionContext
+) extends BackendController(cc) {
 
   def lookup(target: VatNumber): Action[AnyContent] =
     Action.async { implicit request =>
