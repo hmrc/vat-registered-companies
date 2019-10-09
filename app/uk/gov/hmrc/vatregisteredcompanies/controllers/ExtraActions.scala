@@ -19,18 +19,19 @@ package uk.gov.hmrc.vatregisteredcompanies.controllers
 import play.api.Logger
 import play.api.http.HeaderNames
 import play.api.mvc.Results.Unauthorized
-import play.api.mvc.{ActionBuilder, ActionFilter, Request, Result}
-import uk.gov.hmrc.play.config.ServicesConfig
+import play.api.mvc._
+import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
 
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
-trait ExtraActions extends ServicesConfig {
+trait ExtraActions {
 
-  val InboundDataAction: ActionBuilder[Request] = AuthorisedFilterAction
+  def servicesConfig: ServicesConfig
+  def messagesControllerComponents: MessagesControllerComponents
+  val InboundDataAction: ActionBuilder[Request, AnyContent] = AuthorisedFilterAction
+  val bearerToken = s"Bearer ${servicesConfig.getConfString("mdg.inboundData.token", "")}"
 
-  val bearerToken = s"Bearer ${getConfString("mdg.inboundData.token", "")}"
-
-  object AuthorisedFilterAction extends ActionBuilder[Request] with ActionFilter[Request] {
+  object AuthorisedFilterAction extends ActionBuilder[Request, AnyContent] with ActionFilter[Request] {
     override protected def filter[A](request: Request[A]): Future[Option[Result]] = {
       Future.successful(
         request.headers.get(HeaderNames.AUTHORIZATION).fold[Option[Result]] {
@@ -52,6 +53,10 @@ trait ExtraActions extends ServicesConfig {
         }
       )
     }
+
+    override def parser: BodyParser[AnyContent] = messagesControllerComponents.parsers.defaultBodyParser
+
+    override protected def executionContext: ExecutionContext = messagesControllerComponents.executionContext
   }
 
 }

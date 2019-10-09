@@ -16,22 +16,27 @@
 
 package uk.gov.hmrc.vatregisteredcompanies.controllers
 
-import cats.implicits._
 import javax.inject.{Inject, Singleton}
-import play.api.Mode.Mode
+
+import cats.implicits._
 import play.api.libs.json.{JsValue, Json}
-import play.api.mvc.Action
+import play.api.mvc.{Action, ControllerComponents, MessagesControllerComponents}
 import play.api.{Configuration, Environment}
-import uk.gov.hmrc.play.bootstrap.controller.BaseController
+import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
+import uk.gov.hmrc.play.bootstrap.controller.BackendController
 import uk.gov.hmrc.vatregisteredcompanies.models.{Payload, PayloadSubmissionResponse => Response}
 import uk.gov.hmrc.vatregisteredcompanies.services.{JsonSchemaChecker, PersistenceService}
 
 import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
-class InboundDataController @Inject()(persistence: PersistenceService)
+class InboundDataController @Inject()(
+ persistence: PersistenceService,
+ sc: ServicesConfig,
+ cc: ControllerComponents,
+ mcc: MessagesControllerComponents)
  (implicit executionContext: ExecutionContext, conf: Configuration, environment: Environment)
-  extends BaseController with ExtraActions {
+  extends BackendController(cc) with ExtraActions {
 
   def handle: Action[JsValue] =
     InboundDataAction.async(parse.json) { implicit request =>
@@ -47,7 +52,6 @@ class InboundDataController @Inject()(persistence: PersistenceService)
       }
     }
 
-  override protected def mode: Mode = environment.mode
-
-  override protected def runModeConfiguration: Configuration = conf
+  override def servicesConfig: ServicesConfig = sc
+  override def messagesControllerComponents: MessagesControllerComponents = mcc
 }
