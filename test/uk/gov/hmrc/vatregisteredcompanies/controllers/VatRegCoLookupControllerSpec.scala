@@ -41,7 +41,6 @@ class VatRegCoLookupControllerSpec extends WordSpec
   with OptionValues
 {
 
-  val cc = play.api.test.Helpers.stubControllerComponents()
   override def fakeApplication(): Application =
     new GuiceApplicationBuilder().configure(
       Map(
@@ -147,7 +146,6 @@ class VatRegCoLookupControllerSpec extends WordSpec
       }
     }
   }
-
 
 }
 

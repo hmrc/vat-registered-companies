@@ -40,11 +40,9 @@ class InboundDataControllerSpec extends WordSpec
   with GuiceOneAppPerSuite {
 
   val token = "foobar"
-  implicit val environment: Environment = Environment.simple()
   implicit val configuration: Configuration = app.configuration
-  val cc = play.api.test.Helpers.stubControllerComponents()
-  val mcc = uk.gov.hmrc.play.bootstrap.tools.Stubs.stubMessagesControllerComponents()
   val sc: ServicesConfig = new ServicesConfig(configuration, new RunMode(configuration, Mode.Dev))
+
   override def fakeApplication(): Application =
     new GuiceApplicationBuilder().configure(
       Map(
