@@ -5,8 +5,8 @@ object AppDependencies {
 
   val compile = Seq(
 
-    "uk.gov.hmrc"             %% "simple-reactivemongo"     % "7.20.0-play-26",
-    "uk.gov.hmrc"             %% "bootstrap-play-26"        % "1.1.0",
+    "uk.gov.hmrc"             %% "simple-reactivemongo"     % "7.30.0-play-26",
+    "uk.gov.hmrc"             %% "bootstrap-play-26"        % "2.0.0",
     "org.typelevel"           %% "cats-core"                % "1.1.0",
     "com.github.fge"          %  "json-schema-validator"    % "2.2.6",
     "com.typesafe.akka"       %% "akka-stream"              % "2.5.18"
@@ -20,6 +20,6 @@ object AppDependencies {
     "org.pegdown"             %  "pegdown"                  % "1.6.0"                 % "test, it",
     "uk.gov.hmrc"             %% "service-integration-test" % "0.2.0"                 % "test, it",
     "org.scalatestplus.play"  %% "scalatestplus-play"       % "3.1.2"                 % "test, it",
-    "uk.gov.hmrc"             %% "bootstrap-play-26"        % "1.1.0" % Test classifier "tests"
+    "uk.gov.hmrc"             %% "bootstrap-play-26"        % "2.0.0" % Test classifier "tests"
   )
 }
