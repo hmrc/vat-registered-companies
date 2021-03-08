@@ -16,12 +16,10 @@
 
 package uk.gov.hmrc.vatregisteredcompanies.controllers
 
-import javax.inject.{Inject, Singleton}
-
 import cats.implicits._
+import javax.inject.{Inject, Singleton}
 import play.api.libs.json.{JsValue, Json}
 import play.api.mvc.{Action, ControllerComponents, MessagesControllerComponents}
-import play.api.{Configuration, Environment}
 import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
 import uk.gov.hmrc.play.bootstrap.controller.BackendController
 import uk.gov.hmrc.vatregisteredcompanies.models.{Payload, PayloadSubmissionResponse => Response}
@@ -35,7 +33,7 @@ class InboundDataController @Inject()(
  sc: ServicesConfig,
  cc: ControllerComponents,
  mcc: MessagesControllerComponents)
- (implicit executionContext: ExecutionContext, conf: Configuration, environment: Environment)
+ (implicit executionContext: ExecutionContext)
   extends BackendController(cc) with ExtraActions {
 
   def handle: Action[JsValue] =

@@ -18,16 +18,14 @@ package uk.gov.hmrc.vatregisteredcompanies.repositories
 
 import java.time.{Instant, LocalDateTime, ZoneOffset}
 
-import cats.data.OptionT
-import cats.implicits._
 import com.google.inject.ImplementedBy
 import javax.inject.{Inject, Singleton}
-import play.api.{Configuration, Logger}
 import play.api.libs.json._
+import play.api.{Configuration, Logger}
 import play.modules.reactivemongo.ReactiveMongoComponent
 import reactivemongo.api.commands.LastError
 import reactivemongo.api.indexes.{Index, IndexType}
-import reactivemongo.bson.{BSONDocument, BSONObjectID}
+import reactivemongo.bson.BSONDocument
 import reactivemongo.play.json.ImplicitBSONHandlers.{JsObjectDocumentWriter => _, _}
 import uk.gov.hmrc.mongo.ReactiveRepository
 
@@ -80,7 +78,7 @@ class DefaultLockRepository @Inject()(
 
   override def indexes: Seq[Index] = Seq(index)
 
-  val ttl = runModeConfiguration.getInt("microservice.services.lock.ttl.minutes").getOrElse(10)
+  val ttl = runModeConfiguration.getOptional[Int]("microservice.services.lock.ttl.minutes").getOrElse(10)
 
   override def lock(id: Int): Future[Boolean] = {
     collection.insert(true).one(Lock(id)).map{_ =>

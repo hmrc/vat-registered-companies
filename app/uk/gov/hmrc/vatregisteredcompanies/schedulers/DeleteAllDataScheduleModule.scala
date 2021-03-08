@@ -34,9 +34,11 @@ class DeleteAllDataScheduler @Inject()(
   @Named("deleteAllDataEnabled") deleteAllDataEnabled: Boolean)(
   implicit val ec: ExecutionContext) {
 
+  val logger = Logger(getClass)
+
   if (deleteAllDataEnabled) {
     actorSystem.scheduler.scheduleOnce(FiniteDuration(60, TimeUnit.SECONDS)) {
-      Logger.info(s"Deleting all data!!!")
+      logger.info(s"Deleting all data!!!")
       persistenceService.deleteAll.recover {
         case e: RuntimeException => Logger.error(s"Error deleting all data: $e")
       }
@@ -51,7 +53,7 @@ class DeleteAllDataScheduleModule(environment: Environment, val runModeConfigura
   @Named("deleteAllDataEnabled")
   def deleteAllDataEnabled(): Boolean =
     runModeConfiguration
-      .getBoolean("microservice.services.schedulers.all-data-deletion.enabled")
+      .getOptional[Boolean]("microservice.services.schedulers.all-data-deletion.enabled")
       .getOrElse(false)
 
   override def configure(): Unit = {

@@ -27,7 +27,7 @@ import play.api.libs.json.{JsValue, Json}
 import play.api.mvc.Result
 import play.api.test.Helpers.{status, _}
 import play.api.test.{FakeHeaders, FakeRequest}
-import play.api.{Application, Configuration, Environment, Mode}
+import play.api.{Application, Configuration, Mode}
 import uk.gov.hmrc.play.bootstrap.config.{RunMode, ServicesConfig}
 import uk.gov.hmrc.vatregisteredcompanies.services.PersistenceService
 

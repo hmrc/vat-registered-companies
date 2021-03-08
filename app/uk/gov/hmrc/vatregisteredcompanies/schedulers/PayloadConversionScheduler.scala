@@ -35,8 +35,10 @@ class PayloadConversionScheduler @Inject()(
   @Named("payloadProcessingEnabled") enabled: Boolean)(
   implicit val ec: ExecutionContext) {
 
+  val logger = Logger(getClass)
+
   if(enabled) {
-    Logger.info(s"Initialising payload processing every $interval")
+    logger.info(s"Initialising payload processing every $interval")
     actorSystem.scheduler.schedule(FiniteDuration(10, TimeUnit.SECONDS), interval) {
       Logger.info(s"Scheduling inbound data processing, next run in $interval")
       persistenceService.processOneData.recover {
@@ -55,7 +57,7 @@ class PayloadConversionSchedulerModule(environment: Environment, val runModeConf
   def interval(): FiniteDuration =
     new FiniteDuration(
       runModeConfiguration
-        .getInt("microservice.services.schedulers.payload.conversion.interval.seconds")
+        .getOptional[Int]("microservice.services.schedulers.payload.conversion.interval.seconds")
         .getOrElse(900)
         .toLong,
       TimeUnit.SECONDS
@@ -65,7 +67,7 @@ class PayloadConversionSchedulerModule(environment: Environment, val runModeConf
   @Named("payloadProcessingEnabled")
   def enabled(): Boolean =
     runModeConfiguration
-      .getBoolean("microservice.services.schedulers.payload.conversion.enabled")
+      .getOptional[Boolean]("microservice.services.schedulers.payload.conversion.enabled")
       .getOrElse(true)
 
 
@@ -73,7 +75,7 @@ class PayloadConversionSchedulerModule(environment: Environment, val runModeConf
   @Named("deletionThrottleElements")
   def throttleElements(): Int =
     runModeConfiguration
-      .getInt("microservice.services.schedulers.payload.conversion.deletion.throttle.elements")
+      .getOptional[Int]("microservice.services.schedulers.payload.conversion.deletion.throttle.elements")
       .getOrElse(500)
 
   @Provides
@@ -81,7 +83,7 @@ class PayloadConversionSchedulerModule(environment: Environment, val runModeConf
   def throttlePer(): FiniteDuration =
     new FiniteDuration(
       runModeConfiguration
-        .getInt("microservice.services.schedulers.payload.conversion.deletion.throttle.elements")
+        .getOptional[Int]("microservice.services.schedulers.payload.conversion.deletion.throttle.elements")
         .getOrElse(1)
         .toLong,
       TimeUnit.SECONDS

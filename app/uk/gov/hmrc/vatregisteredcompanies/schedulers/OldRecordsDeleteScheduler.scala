@@ -36,11 +36,12 @@ class OldRecordsDeleteScheduler @Inject()(
   @Named("rowCount") rowCount: Int)(
   implicit val ec: ExecutionContext) {
 
+  val logger = Logger(getClass)
 
   if (enabled) {
-    Logger.info(s"Initialising delete every $interval")
+    logger.info(s"Initialising delete every $interval")
     actorSystem.scheduler.schedule(FiniteDuration(60, TimeUnit.SECONDS), interval) {
-      Logger.info(s"Scheduling old data delete, next run in $interval")
+      logger.info(s"Scheduling old data delete, next run in $interval")
       persistenceService.deleteOld(rowCount).recover {
         case e: RuntimeException => Logger.error(s"Error deleting old vat registration data: $e")
       }
@@ -56,7 +57,7 @@ class OldRecordsDeleteSchedulerModule(environment: Environment, val runModeConfi
   def interval(): FiniteDuration =
     new FiniteDuration(
       runModeConfiguration
-        .getInt("microservice.services.schedulers.old-data-deletion.interval.seconds")
+        .getOptional[Int]("microservice.services.schedulers.old-data-deletion.interval.seconds")
         .getOrElse(600)
         .toLong,
       TimeUnit.SECONDS
@@ -66,13 +67,13 @@ class OldRecordsDeleteSchedulerModule(environment: Environment, val runModeConfi
   @Named("enabled")
   def enabled(): Boolean =
     runModeConfiguration
-      .getBoolean("microservice.services.schedulers.old-data-deletion.enabled")
+      .getOptional[Boolean]("microservice.services.schedulers.old-data-deletion.enabled")
       .getOrElse(true)
 
   @Provides
   @Named("rowCount")
   def size(): Int =
-    runModeConfiguration.getInt("microservice.services.schedulers.old-data-deletion.rowCount")
+    runModeConfiguration.getOptional[Int]("microservice.services.schedulers.old-data-deletion.rowCount")
       .getOrElse(100)
 
   override def configure(): Unit = {

@@ -20,7 +20,6 @@ import cats.data.OptionT
 import cats.implicits._
 import javax.inject.{Inject, Singleton}
 import play.api.Logger
-import reactivemongo.bson.BSONObjectID
 import uk.gov.hmrc.vatregisteredcompanies.models.{LookupResponse, Payload, VatNumber}
 import uk.gov.hmrc.vatregisteredcompanies.repositories.{LockRepository, PayloadBufferRepository, PayloadWrapper, VatRegisteredCompaniesRepository}
 

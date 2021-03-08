@@ -39,7 +39,7 @@ class VatRegCoLookupController @Inject()
 ) extends BackendController(cc) {
 
   def lookup(target: VatNumber): Action[AnyContent] =
-    Action.async { implicit request =>
+    Action.async {
       persistence.lookup(target).map { x =>
         Ok(Json.toJson(x.getOrElse(LookupResponse(None))))
       }
