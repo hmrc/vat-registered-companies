@@ -19,7 +19,7 @@ object AppDependencies {
     "org.mockito"             %  "mockito-core"             % "2.24.0"                % "test",
     "org.pegdown"             %  "pegdown"                  % "1.6.0"                 % "test, it",
     "uk.gov.hmrc"             %% "service-integration-test" % "1.1.0-play-26"         % "test, it",
-    "org.scalatestplus.play"  %% "scalatestplus-play"       % "3.1.2"                 % "test, it",
+    "org.scalatestplus.play"  %% "scalatestplus-play"       % "3.1.3"                 % "test, it",
     "uk.gov.hmrc"             %% "bootstrap-play-26"        % "2.3.0" % Test classifier "tests"
   )
 }
