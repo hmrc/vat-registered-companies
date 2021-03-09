@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 HM Revenue & Customs
+ * Copyright 2021 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -39,7 +39,7 @@ class VatRegCoLookupController @Inject()
 ) extends BackendController(cc) {
 
   def lookup(target: VatNumber): Action[AnyContent] =
-    Action.async { implicit request =>
+    Action.async {
       persistence.lookup(target).map { x =>
         Ok(Json.toJson(x.getOrElse(LookupResponse(None))))
       }

@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 HM Revenue & Customs
+ * Copyright 2021 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,7 +20,6 @@ import cats.data.OptionT
 import cats.implicits._
 import javax.inject.{Inject, Singleton}
 import play.api.Logger
-import reactivemongo.bson.BSONObjectID
 import uk.gov.hmrc.vatregisteredcompanies.models.{LookupResponse, Payload, VatNumber}
 import uk.gov.hmrc.vatregisteredcompanies.repositories.{LockRepository, PayloadBufferRepository, PayloadWrapper, VatRegisteredCompaniesRepository}
 

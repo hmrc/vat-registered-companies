@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 HM Revenue & Customs
+ * Copyright 2021 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,10 +17,8 @@
 package uk.gov.hmrc.vatregisteredcompanies.repositories
 
 import java.time.Instant
-import java.util.concurrent.TimeUnit
 
-import akka.Done
-import akka.stream.{Attributes, Materializer}
+import akka.stream.Materializer
 import akka.stream.scaladsl.{Flow, Sink, Source}
 import cats.implicits._
 import javax.inject.{Inject, Named, Singleton}
@@ -37,7 +35,7 @@ import uk.gov.hmrc.vatregisteredcompanies.models.{LookupResponse, Payload, VatNu
 
 import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.{ExecutionContext, Future}
-import scala.util.{Failure, Success, Try}
+import scala.util.{Failure, Success}
 
 final case class Wrapper(
   vatNumber: VatNumber,
