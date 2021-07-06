@@ -17,16 +17,16 @@
 package uk.gov.hmrc.vatregisteredcompanies.repositories
 
 import java.time.Instant
-
 import akka.stream.Materializer
 import akka.stream.scaladsl.{Flow, Sink, Source}
 import cats.implicits._
+
 import javax.inject.{Inject, Named, Singleton}
 import play.api.Logger
 import play.api.libs.json._
 import play.modules.reactivemongo.ReactiveMongoComponent
 import reactivemongo.api.indexes.{CollectionIndexesManager, Index, IndexType}
-import reactivemongo.api.{Cursor, ReadConcern, ReadPreference}
+import reactivemongo.api.{Cursor, ReadConcern, ReadPreference, WriteConcern}
 import reactivemongo.bson.{BSONDateTime, BSONDocument, _}
 import reactivemongo.core.nodeset.ProtocolMetadata
 import reactivemongo.play.json.ImplicitBSONHandlers._
@@ -89,7 +89,7 @@ class   VatRegisteredCompaniesRepository @Inject()(
       val sink = Flow[VatNumber]
         .throttle(elements, per)
         .map(vrn => {
-          collection.findAndRemove(Json.obj("vatNumber" -> vrn)).map {
+          collection.findAndRemove(Json.obj("vatNumber" -> vrn), None, None, writeConcern = WriteConcern.Default, None, None, Seq.empty).map {
             _.result[VatNumber]
           }
         }).to(Sink.onComplete{x =>
@@ -116,7 +116,7 @@ class   VatRegisteredCompaniesRepository @Inject()(
       val source = Source(deletes)
       val sink = Flow[BSONValue]
         .map(_id =>
-          collection.findAndRemove(Json.obj("_id" -> _id)).map {_.result[BSONValue]}
+          collection.findAndRemove(Json.obj("_id" -> _id), None, None, writeConcern = WriteConcern.Default, None, None, Seq.empty).map {_.result[BSONValue]}
         ).to(Sink.onComplete { _ =>
         Logger.info("End of old entries deletion stream")
       })
@@ -170,16 +170,6 @@ class   VatRegisteredCompaniesRepository @Inject()(
       unique = false
     )
   )
-
-  private val setIndexes: Future[Unit] = {
-    for {
-      list <- im.list()
-    } yield list.filterNot(y =>
-      y.name === "vatNumberIndexNew".some ||
-        y.name === "_id_".some).foreach{ x =>
-      im.drop(x.name.getOrElse(""))
-    }
-  }
 
   val getIndexes: Future[Unit] = {
     for {
