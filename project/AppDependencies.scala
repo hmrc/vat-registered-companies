@@ -10,8 +10,8 @@ object AppDependencies {
     "org.typelevel"           %% "cats-core"                 % "2.4.2",
     "com.github.fge"          %  "json-schema-validator"     % "2.2.6",
     "com.typesafe.akka"       %% "akka-stream"               % "2.5.18",
-    compilerPlugin("com.github.ghik"           % "silencer-plugin" % "1.7.1" cross CrossVersion.full),
-    "com.github.ghik" % "silencer-lib" % "1.7.1" % Provided cross CrossVersion.full
+    compilerPlugin("com.github.ghik"           % "silencer-plugin" % "1.7.5" cross CrossVersion.full),
+    "com.github.ghik" % "silencer-lib" % "1.7.5" % Provided cross CrossVersion.full
   )
 
   val test = Seq(
