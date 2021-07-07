@@ -20,14 +20,14 @@ import javax.inject.Inject
 
 import cats.implicits._
 import play.api.mvc.{Action, AnyContent, MessagesControllerComponents}
-import uk.gov.hmrc.play.bootstrap.controller.FrontendController
+//import uk.gov.hmrc.play.bootstrap.controller.FrontendController
 
 import scala.concurrent.{ExecutionContext, Future}
 
 class TestController @Inject()(
   connector: TestConnector,
   mcc: MessagesControllerComponents
-)(implicit ec: ExecutionContext) extends FrontendController(mcc) {
+)(implicit ec: ExecutionContext) extends FrontendController {
 
   def triggerDataImport(seed: String): Action[AnyContent] = Action.async { implicit request =>
     connector.trigger("trigger-mdg-data-post", seed) >>
