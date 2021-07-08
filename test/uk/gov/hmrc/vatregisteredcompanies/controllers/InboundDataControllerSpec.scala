@@ -18,7 +18,7 @@ package uk.gov.hmrc.vatregisteredcompanies.controllers
 
 import org.mockito.ArgumentMatchers
 import org.mockito.Mockito._
-import org.scalatest.mockito.MockitoSugar
+import org.scalatestplus.mockito.MockitoSugar
 import org.scalatest.{Matchers, WordSpec}
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 import play.api.http.{HeaderNames, Status}
@@ -28,7 +28,7 @@ import play.api.mvc.Result
 import play.api.test.Helpers.{status, _}
 import play.api.test.{FakeHeaders, FakeRequest}
 import play.api.{Application, Configuration, Mode}
-import uk.gov.hmrc.play.bootstrap.config.{RunMode, ServicesConfig}
+import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
 import uk.gov.hmrc.vatregisteredcompanies.services.PersistenceService
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -41,7 +41,7 @@ class InboundDataControllerSpec extends WordSpec
 
   val token = "foobar"
   implicit val configuration: Configuration = app.configuration
-  val sc: ServicesConfig = new ServicesConfig(configuration, new RunMode(configuration, Mode.Dev))
+  val sc: ServicesConfig = new ServicesConfig(configuration)
 
   override def fakeApplication(): Application =
     new GuiceApplicationBuilder().configure(

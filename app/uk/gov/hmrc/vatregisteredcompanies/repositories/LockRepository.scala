@@ -17,12 +17,13 @@
 package uk.gov.hmrc.vatregisteredcompanies.repositories
 
 import java.time.{Instant, LocalDateTime, ZoneOffset}
-
 import com.google.inject.ImplementedBy
+
 import javax.inject.{Inject, Singleton}
 import play.api.libs.json._
 import play.api.{Configuration, Logger}
 import play.modules.reactivemongo.ReactiveMongoComponent
+import reactivemongo.api.WriteConcern
 import reactivemongo.api.commands.LastError
 import reactivemongo.api.indexes.{Index, IndexType}
 import reactivemongo.bson.BSONDocument
@@ -101,7 +102,7 @@ class DefaultLockRepository @Inject()(
   }
 
   override def release(id: Int): Future[Unit] =
-    collection.findAndRemove(BSONDocument("_id" -> id))
+    collection.findAndRemove(BSONDocument("_id" -> id), None, None, writeConcern = WriteConcern.Default, None, None, Seq.empty)
       .map{_=>
         Logger.info(s"Releasing lock $id")
         ()
