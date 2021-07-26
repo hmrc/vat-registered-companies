@@ -69,7 +69,7 @@ class   PayloadBufferRepository@Inject()(
   def one: Future[Option[PayloadWrapper]] = getOne.map(_.headOption)
 
   def deleteOne(payload: PayloadWrapper): Future[Unit] = {
-    Logger.info(s"deleting payload ${payload._id}")
+    logger.info(s"deleting payload ${payload._id}")
     remove("_id" -> payload._id).map { _ => (())}
   }
 

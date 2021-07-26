@@ -26,6 +26,8 @@ import scala.concurrent.{ExecutionContext, Future}
 
 trait ExtraActions {
 
+  lazy val logger: Logger = Logger(this.getClass)
+
   def servicesConfig: ServicesConfig
   def messagesControllerComponents: MessagesControllerComponents
   val InboundDataAction: ActionBuilder[Request, AnyContent] = AuthorisedFilterAction
@@ -41,12 +43,12 @@ trait ExtraActions {
             if (a.matches(bearerToken))
               None
             else {
-              Logger.info(s"config token ends with ${bearerToken.toList.takeRight(3).mkString}")
-              Logger.info(s"config token is ${bearerToken.length} characters long")
-              Logger.info(s"config token starts with 'Bearer ' ${bearerToken.startsWith("Bearer ")}")
-              Logger.info(s"supplied token starts with 'Bearer ' ${a.startsWith("Bearer ")}")
-              Logger.info(s"supplied token ends with ${a.toList.takeRight(3).mkString}")
-              Logger.info(s"supplied token is ${a.length} characters long")
+              logger.info(s"config token ends with ${bearerToken.toList.takeRight(3).mkString}")
+              logger.info(s"config token is ${bearerToken.length} characters long")
+              logger.info(s"config token starts with 'Bearer ' ${bearerToken.startsWith("Bearer ")}")
+              logger.info(s"supplied token starts with 'Bearer ' ${a.startsWith("Bearer ")}")
+              logger.info(s"supplied token ends with ${a.toList.takeRight(3).mkString}")
+              logger.info(s"supplied token is ${a.length} characters long")
 
               Some(Unauthorized("Supplied bearer token does not match config"))
             }

@@ -75,13 +75,13 @@ class   VatRegisteredCompaniesRepository @Inject()(
   val bulkSize: Int = ProtocolMetadata.Default.maxBulkSize - 1
 
   private def insert(entries: List[Wrapper]): Future[Unit] = {
-    Logger.info(s"inserting ${entries.length} entries")
+    logger.info(s"inserting ${entries.length} entries")
     bulkInsert(entries).map(_ => (()))
   }
 
   private def streamingDelete(deletes: List[VatNumber], payload: PayloadWrapper) = {
     if (deletes.nonEmpty) {
-      Logger.info(s"deleting ${deletes.length} records")
+      logger.info(s"deleting ${deletes.length} records")
       val source = Source(deletes)
       // See https://doc.akka.io/docs/akka/current/stream/operators/Source-or-Flow/throttle.html
       // we could work out how many records we can safely delete given the size of the collection
@@ -95,16 +95,16 @@ class   VatRegisteredCompaniesRepository @Inject()(
         }).to(Sink.onComplete{x =>
           x match {
             case Failure(e) =>
-              Logger.error(s"Unable to process streaming deletes at $elements per ${per._1} ${per._2}: ${e.getMessage}")
+              logger.error(s"Unable to process streaming deletes at $elements per ${per._1} ${per._2}: ${e.getMessage}")
             case Success(_) =>
               bufferRepository.deleteOne(payload)
-              Logger.info("Processed streaming deletes")
+              logger.info("Processed streaming deletes")
           }
-        Logger.info(s"End of deletion stream")
+        logger.info(s"End of deletion stream")
         })
       source.to(sink).run()
     } else {
-      Logger.info("No deletes to process, cleaning buffer")
+      logger.info("No deletes to process, cleaning buffer")
       bufferRepository.deleteOne(payload)
     }
     Future.successful((()))
@@ -112,13 +112,13 @@ class   VatRegisteredCompaniesRepository @Inject()(
 
   private def deleteById(deletes: List[BSONValue]): Future[Unit] = {
     if(deletes.nonEmpty) {
-      Logger.info(s"Deleting ${deletes.length} old entries")
+      logger.info(s"Deleting ${deletes.length} old entries")
       val source = Source(deletes)
       val sink = Flow[BSONValue]
         .map(_id =>
           collection.findAndRemove(Json.obj("_id" -> _id), None, None, writeConcern = WriteConcern.Default, None, None, Seq.empty).map {_.result[BSONValue]}
         ).to(Sink.onComplete { _ =>
-        Logger.info("End of old entries deletion stream")
+        logger.info("End of old entries deletion stream")
       })
       source.to(sink).run()
     }
@@ -175,7 +175,7 @@ class   VatRegisteredCompaniesRepository @Inject()(
     for {
       list <- im.list()
     } yield list.foreach { x =>
-      Logger.info(s"Found index ${x.name}")
+      logger.info(s"Found index ${x.name}")
     }
   }
 
