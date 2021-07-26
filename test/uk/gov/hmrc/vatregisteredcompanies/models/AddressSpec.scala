@@ -16,11 +16,13 @@
 
 package uk.gov.hmrc.vatregisteredcompanies.models
 
+import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
-import org.scalatest.{FlatSpec, Matchers}
+import org.scalatest.matchers.should.Matchers
 import play.api.libs.json.Json
 
-class AddressSpec extends FlatSpec with Matchers with ScalaCheckPropertyChecks {
+
+class AddressSpec extends AnyFlatSpec with Matchers with ScalaCheckPropertyChecks {
 
   "An Address" should "be serialisable" in {
     val item = new Address(line1 = "line 1", None, None, None, None, None, countryCode = "GB")

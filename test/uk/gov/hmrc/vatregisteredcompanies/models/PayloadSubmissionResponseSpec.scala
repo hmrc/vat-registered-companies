@@ -16,10 +16,11 @@
 
 package uk.gov.hmrc.vatregisteredcompanies.models
 
-import org.scalatest.{FlatSpec, Matchers}
+import org.scalatest.matchers.should.Matchers
+import org.scalatest.flatspec.AnyFlatSpec
 import play.api.libs.json.{JsValue, Json}
 
-class PayloadSubmissionResponseSpec  extends FlatSpec with Matchers {
+class PayloadSubmissionResponseSpec  extends AnyFlatSpec with Matchers {
 
   "A PayloadSubmissionResponse" should "be serialisable" in {
     val item = new PayloadSubmissionResponse(
