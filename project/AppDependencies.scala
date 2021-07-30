@@ -5,7 +5,7 @@ object AppDependencies {
 
   val compile = Seq(
 
-    "uk.gov.hmrc"             %% "simple-reactivemongo"      % "8.0.0-play-26",
+    "uk.gov.hmrc"             %% "simple-reactivemongo"      % "8.0.0-play-28",
     "uk.gov.hmrc"             %% "bootstrap-backend-play-28" % "5.7.0",
     "org.typelevel"           %% "cats-core"                 % "2.4.2",
     "com.github.fge"          %  "json-schema-validator"     % "2.2.6",
@@ -15,7 +15,7 @@ object AppDependencies {
   )
 
   val test = Seq(
-    "uk.gov.hmrc"               %% "bootstrap-test-play-28"   % "5.7.0"           % "test",
+    "uk.gov.hmrc"             %% "bootstrap-test-play-28"   % "5.7.0"             % "test",
     "org.scalatest"           %% "scalatest"                % "3.2.9"             % "test",
     "org.scalacheck"          %% "scalacheck"               % "1.14.0"            % "test",
     "com.typesafe.play"       %% "play-test"                % current             % "test",
