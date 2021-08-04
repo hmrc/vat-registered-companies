@@ -19,7 +19,8 @@ package uk.gov.hmrc.vatregisteredcompanies.controllers
 import org.mockito.ArgumentMatchers
 import org.mockito.Mockito._
 import org.scalatestplus.mockito.MockitoSugar
-import org.scalatest.{Matchers, WordSpec}
+import org.scalatest.wordspec.AnyWordSpec
+import org.scalatest.matchers.should.Matchers
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 import play.api.http.{HeaderNames, Status}
 import play.api.inject.guice.GuiceApplicationBuilder
@@ -34,7 +35,7 @@ import uk.gov.hmrc.vatregisteredcompanies.services.PersistenceService
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
-class InboundDataControllerSpec extends WordSpec
+class InboundDataControllerSpec extends AnyWordSpec
   with MockitoSugar
   with Matchers
   with GuiceOneAppPerSuite {

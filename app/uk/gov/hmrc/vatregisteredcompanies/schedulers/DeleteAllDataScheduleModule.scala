@@ -40,7 +40,7 @@ class DeleteAllDataScheduler @Inject()(
     actorSystem.scheduler.scheduleOnce(FiniteDuration(60, TimeUnit.SECONDS)) {
       logger.info(s"Deleting all data!!!")
       persistenceService.deleteAll.recover {
-        case e: RuntimeException => Logger.error(s"Error deleting all data: $e")
+        case e: RuntimeException => logger.error(s"Error deleting all data: $e")
       }
     }
   }
