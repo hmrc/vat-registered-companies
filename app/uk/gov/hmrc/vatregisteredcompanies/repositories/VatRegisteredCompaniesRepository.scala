@@ -20,21 +20,27 @@ import java.time.{Instant, LocalDateTime, ZonedDateTime}
 import akka.stream.Materializer
 import akka.stream.scaladsl.{Flow, Sink, Source}
 import cats.implicits._
+import com.mongodb.client.model.Aggregates.{group}
 import com.mongodb.client.model.Collation
+import org.bson.BsonValue
+import org.mongodb.scala.bson.conversions.Bson
 
 import javax.inject.{Inject, Named, Singleton}
 import play.api.{Logger, Logging}
 import play.api.libs.json._
 import play.shaded.ahc.io.netty.util.concurrent.FastThreadLocal.removeAll
-import org.mongodb.scala.bson.{BsonDocument, ObjectId}
+import org.mongodb.scala.bson.{BsonDocument, BsonValue, ObjectId}
+import org.mongodb.scala.model.Accumulators.{first, push, sum}
+import org.mongodb.scala.model.Aggregates.{count, filter, group, limit}
 import org.mongodb.scala.{DuplicateKeyException, MongoException, ReadConcern, ReadPreference, WriteConcern}
 import org.mongodb.scala.model.Filters.equal
 import org.mongodb.scala.model.Indexes.ascending
-import org.mongodb.scala.model.{Filters, FindOneAndDeleteOptions, IndexModel, IndexOptions, InsertOneOptions}
+import org.mongodb.scala.model.{Accumulators, Aggregates, Filters, FindOneAndDeleteOptions, IndexModel, IndexOptions, InsertOneOptions}
 import uk.gov.hmrc.mongo.MongoComponent
-import uk.gov.hmrc.mongo.play.json.PlayMongoRepository
+import uk.gov.hmrc.mongo.play.json.{Codecs, PlayMongoRepository}
 import uk.gov.hmrc.vatregisteredcompanies.models.{LookupResponse, Payload, VatNumber, VatRegisteredCompany}
 import uk.gov.hmrc.mongo.play.json.formats.MongoJavatimeFormats.localDateTimeReads
+import uk.gov.hmrc.play.http.logging.Mdc
 
 import java.time.{Instant, LocalDate, LocalDateTime, ZoneOffset}
 import java.util.concurrent.TimeUnit
@@ -144,23 +150,55 @@ class   VatRegisteredCompaniesRepository @Inject()(
     Future.successful((()))
   }
 
-  private def findOld(n: Int): Future[List[Wrapper]] = {
-    //import collection .BatchCommands.AggregationFramework.{Group, Limit, Match, MinField, SumAll}
+  /*private def findOld(n: Int): Future[List[BsonDocument]] = {
 
-    collection.aggregate[Wrapper](Seq(equal("allowDiskUse", true), equal("readConcern", Some(ReadConcern.DEFAULT)),
-      equal("readPreference", ReadPreference.nearest), equal("batchSize", 1000.some))) { _ =>
-      //equal("_id", 1)allowDiskUse = true, readConcern = Some(ReadConcern.Local), readPreference = ReadPreference.nearest, batchSize = 1000.some) { _ =>
-      (Group(JsString("$vatNumber"))( "count" -> SumAll, "oldest" -> MinField("_id")),
-      List(
-        Match(Json.obj("count" -> Json.obj("$gt" -> 1L))),
-        Limit(n)
-      ))
-    }.collect[List](-1, List[Wrapper]())
+
+    import Aggregates._
+    import Accumulators._
+
+    val filterList: Seq[Bson] = Seq(equal("allowDiskUse", true), equal("readConcern", Some(ReadConcern.DEFAULT)),
+      equal("readPreference", ReadPreference.nearest), equal("batchSize", 1000.some))
+
+
+
+    val groupTransportType = group("$vatNumber",
+      min("_id", "oldest"),
+      sum("count", 1))
+
+
+    val groupIntoArray = group("$vatNumber",
+      match("count", 1),
+      limit(n))
+    )
+
+
+    Mdc
+      .preservingMdc(
+        collection
+          .aggregate[BsonValue](
+            List(equal("allowDiskUse", true),
+              equal("readConcern", Some(ReadConcern.DEFAULT)),
+              equal("readPreference", ReadPreference.nearest),
+              equal("batchSize", 1000.some),
+              groupTransportType)
+          )
+          .headOption
+      )
+      .map {
+        case Some(bson) => (Codecs.fromBson[List[BsonDocument]](bson)).sorted
+        case None         => List.empty
+      }
+
+
+
+
   }
 
   def deleteOld(n: Int): Future[Unit] = {
     findOld(n).flatMap(x => deleteById(x.flatMap(y => y.get("oldest"))))
   }
+  
+   */
 
   private def wrap(payload: Payload): List[Wrapper] =
     payload.createsAndUpdates.map { company =>
