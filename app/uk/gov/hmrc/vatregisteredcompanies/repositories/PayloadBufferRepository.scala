@@ -16,20 +16,16 @@
 
 package uk.gov.hmrc.vatregisteredcompanies.repositories
 
-import com.mongodb.client.model.InsertOneOptions
 import org.bson.types.ObjectId
 
 import javax.inject.{Inject, Singleton}
 import play.api.Logging
 import play.api.libs.json._
-import org.mongodb.scala.bson.{BsonDocument}
 import uk.gov.hmrc.mongo.play.json.formats.MongoFormats.Implicits.objectIdFormat
-import org.mongodb.scala.model.Filters.equal
-import org.mongodb.scala.model.Indexes.ascending
-import org.mongodb.scala.model.{Filters, FindOneAndDeleteOptions, IndexModel, IndexOptions, InsertOneOptions}
+import org.mongodb.scala.model.{Filters, Sorts}
 import uk.gov.hmrc.mongo.MongoComponent
 import uk.gov.hmrc.mongo.play.json.PlayMongoRepository
-import uk.gov.hmrc.vatregisteredcompanies.models.{Payload}
+import uk.gov.hmrc.vatregisteredcompanies.models.Payload
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -56,8 +52,6 @@ class   PayloadBufferRepository@Inject()(
   def deleteAll(): Future[Unit] =
     collection.deleteMany(Filters.empty()).toFuture().map(_ => ())
 
-  //implicit val format: OFormat[PayloadWrapper] = Json.format[PayloadWrapper]
-
   def insert(payload: Payload): Future[Unit] =
     collection.insertOne(PayloadWrapper(payload = payload)).toFuture().map(_ => ())
 
@@ -65,22 +59,18 @@ class   PayloadBufferRepository@Inject()(
     collection.find(Filters.empty()).toFuture().map(_.toList)
 
   private def getOne: Future[List[PayloadWrapper]] = {
-    val query = BsonDocument()
     collection
-      .find(query)
-      .sort(equal("_id", 1))
+      .find(Filters.empty())
+      .sort(Sorts.ascending("_id"))
       .toFuture()
       .map(_.toList)
-      //.cursor[PayloadWrapper]()
-      //.collect[List](1, Cursor.FailOnError[List[PayloadWrapper]]())
   }
 
   def one: Future[Option[PayloadWrapper]] = getOne.map(_.headOption)
 
   def deleteOne(payload: PayloadWrapper): Future[Unit] = {
-    collection.findOneAndDelete(BsonDocument("_id" -> payload._id))
+    collection.findOneAndDelete(Filters.equal("_id", payload._id))
       .headOption()
-      //findAndDelete( WriteConcern.ACKNOWLEDGED, None, None, Seq.empty)
       .map{_=>
         logger.info(s"Releasing lock $payload._id")
         ()
