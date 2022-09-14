@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 HM Revenue & Customs
+ * Copyright 2021 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,65 +16,61 @@
 
 package uk.gov.hmrc.vatregisteredcompanies.repositories
 
-import org.bson.types.ObjectId
-
 import javax.inject.{Inject, Singleton}
-import play.api.Logging
+import play.api.Logger
 import play.api.libs.json._
-import uk.gov.hmrc.mongo.play.json.formats.MongoFormats.Implicits.objectIdFormat
-import org.mongodb.scala.model.{Filters, Sorts}
-import uk.gov.hmrc.mongo.MongoComponent
-import uk.gov.hmrc.mongo.play.json.PlayMongoRepository
+import play.modules.reactivemongo.ReactiveMongoComponent
+import reactivemongo.api.Cursor
+import reactivemongo.bson.{BSONDocument, BSONObjectID}
+import reactivemongo.play.json.ImplicitBSONHandlers._
+import uk.gov.hmrc.mongo.ReactiveRepository
 import uk.gov.hmrc.vatregisteredcompanies.models.Payload
 
 import scala.concurrent.{ExecutionContext, Future}
 
-final case class PayloadWrapper (
-  _id: ObjectId = ObjectId.get(),
+final case class PayloadWrapper(
+  _id: BSONObjectID = BSONObjectID.generate,
   payload: Payload
 )
 
 object PayloadWrapper {
-  implicit  val format: Format[PayloadWrapper] = Json.format[PayloadWrapper]
-
+  val format: Format[PayloadWrapper] = Json.format[PayloadWrapper]
 }
 
 @Singleton
 class   PayloadBufferRepository@Inject()(
-  mongoComponent: MongoComponent
+  reactiveMongoComponent: ReactiveMongoComponent
 )(implicit val executionContext: ExecutionContext)
-  extends PlayMongoRepository[PayloadWrapper](
-    mongoComponent = mongoComponent,
-    collectionName = "vatregisteredcompaniesbuffer",
-    domainFormat = PayloadWrapper.format,
-    indexes = Seq()) with Logging {
+  extends ReactiveRepository(
+    "vatregisteredcompaniesbuffer",
+    reactiveMongoComponent.mongoConnector.db,
+    PayloadWrapper.format) {
 
   def deleteAll(): Future[Unit] =
-    collection.deleteMany(Filters.empty()).toFuture().map(_ => ())
+    removeAll().map(_=> ())
+
+  implicit val format: OFormat[PayloadWrapper] = Json.format[PayloadWrapper]
 
   def insert(payload: Payload): Future[Unit] =
-    collection.insertOne(PayloadWrapper(payload = payload)).toFuture().map(_ => ())
+    collection.insert(true).one(PayloadWrapper(payload = payload)).map(_ => ())
 
   def list: Future[List[PayloadWrapper]] =
-    collection.find(Filters.empty()).toFuture().map(_.toList)
+    findAll()
 
   private def getOne: Future[List[PayloadWrapper]] = {
+    val query = BSONDocument()
     collection
-      .find(Filters.empty())
-      .sort(Sorts.ascending("_id"))
-      .toFuture()
-      .map(_.toList)
+      .find(query, Option.empty[JsObject])
+      .sort(Json.obj("_id" -> 1))
+      .cursor[PayloadWrapper]()
+      .collect[List](1, Cursor.FailOnError[List[PayloadWrapper]]())
   }
 
   def one: Future[Option[PayloadWrapper]] = getOne.map(_.headOption)
 
   def deleteOne(payload: PayloadWrapper): Future[Unit] = {
-    collection.findOneAndDelete(Filters.equal("_id", payload._id))
-      .headOption()
-      .map{_=>
-        logger.info(s"Releasing lock $payload._id")
-        ()
-      }.fallbackTo(Future.successful(()))
+    logger.info(s"deleting payload ${payload._id}")
+    remove("_id" -> payload._id).map { _ => (())}
   }
 
 }
