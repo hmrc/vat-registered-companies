@@ -61,7 +61,10 @@ trait IntegrationSpecBase
     "auditing.consumer.baseUri.host"                          -> s"$mockHost",
     "auditing.consumer.baseUri.port"                          -> s"$mockPort",
     "microservice.services.auth.host"                         -> s"$mockHost",
-    "microservice.services.auth.port"                         -> s"$mockPort"
+    "microservice.services.auth.port"                         -> s"$mockPort",
+    "microservice.services.schedulers.old-data-deletion.enabled" -> DEFAULT_JOB_ENABLED,
+    "microservice.services.schedulers.all-data-deletion.enabled" -> DEFAULT_JOB_ENABLED,
+    "microservice.services.schedulers.payload.conversion.enabled" -> DEFAULT_JOB_ENABLED
   )
 
   override implicit val patienceConfig: PatienceConfig = PatienceConfig(
