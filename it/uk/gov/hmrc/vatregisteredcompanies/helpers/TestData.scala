@@ -14,24 +14,21 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.vatregisteredcompanies
+package uk.gov.hmrc.vatregisteredcompanies.helpers
 
-import java.time._
+import uk.gov.hmrc.vatregisteredcompanies.models.{Address, VatNumber, VatRegisteredCompany}
 
-import scala.util.Random
+object TestData {
 
-package object models {
+  val testVatNo1 = "123456789"
+  val testVatNo2 = "223456789"
+  val testVatNo3 = "323456789"
 
-  type CompanyName = String
-  type VatNumber = String
-  type ConsultationNumber = String
-  type ProcessingDate = ZonedDateTime
-
-  object ConsultationNumber {
-    def generate: ConsultationNumber =
-      new Random().alphanumeric.filter(x =>
-        x.toLower >= 'a' && x.toLower <= 'z'
-      ).take(9).toList.mkString.replaceAll("...(?!$)", "$0-")
-  }
+  def getVatRegCompany(vatNumber: String) =
+    VatRegisteredCompany(
+      name = "ACME trading",
+      vatNumber = vatNumber,
+      address = Address("line 1", None, None, None, None, None, countryCode = "GB")
+    )
 
 }

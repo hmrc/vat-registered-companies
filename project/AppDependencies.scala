@@ -25,6 +25,7 @@ object AppDependencies {
     "uk.gov.hmrc"             %% "service-integration-test" % "1.1.0-play-28"     % "test, it",
     "org.scalatestplus.play"  %% "scalatestplus-play"       % "5.1.0"             % "test, it",
     "org.scalatestplus"       %% "scalacheck-1-14"          % "3.2.0.0"           % "test, it",
-    "com.vladsch.flexmark"    %  "flexmark-all"             % "0.36.8"            % "test, it"
+    "com.vladsch.flexmark"    %  "flexmark-all"             % "0.36.8"            % "test, it",
+    "com.github.tomakehurst"   % "wiremock-jre8-standalone"    % "2.33.2"    % "test, it"
   )
 }
