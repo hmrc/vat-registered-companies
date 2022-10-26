@@ -45,6 +45,21 @@ class VatRegisteredCompaniesRepositoryISpec extends IntegrationSpecBase {
         }
       }
     }
+
+    "there are multiple records in the database" should {
+      "return unit" in {
+        insertOne(getVatRegCompany(testVatNo1))
+        insertOne(getVatRegCompany(testVatNo2))
+        insertOne(getVatRegCompany(testVatNo3))
+        totalCount shouldBe 3
+        val result = vatRegisteredCompaniesRepository.deleteAll()
+
+        whenReady(result) { res =>
+          res shouldBe ((): Unit)
+          totalCount shouldBe 0
+        }
+      }
+    }
   }
 
 }
