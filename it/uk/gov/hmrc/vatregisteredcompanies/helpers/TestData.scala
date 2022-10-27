@@ -16,15 +16,20 @@
 
 package uk.gov.hmrc.vatregisteredcompanies.helpers
 
-import uk.gov.hmrc.vatregisteredcompanies.models.{Address, VatNumber, VatRegisteredCompany}
+import uk.gov.hmrc.vatregisteredcompanies.models.{Address, VatNumber, VatRegisteredCompany, CompanyName, Payload}
+import uk.gov.hmrc.vatregisteredcompanies.repositories.PayloadWrapper
 
 object TestData {
 
   val testVatNo1 = "123456789"
   val testVatNo2 = "223456789"
   val testVatNo3 = "323456789"
-
-  def getVatRegCompany(vatNumber: String) =
+  val vatRegisteredCompany1: VatRegisteredCompany = getVatRegCompany("12345")
+  val vatRegisteredCompany2: VatRegisteredCompany = getVatRegCompany("12345")
+  val vatRegisteredCompany3: VatRegisteredCompany = getVatRegCompany("12321")
+  val testPayload1: PayloadWrapper = PayloadWrapper(payload = Payload(List(vatRegisteredCompany1, vatRegisteredCompany2), List()))
+  val testPayload2: PayloadWrapper = PayloadWrapper(payload = Payload(List(vatRegisteredCompany1, vatRegisteredCompany2), List()))
+  def getVatRegCompany(vatNumber: String): VatRegisteredCompany =
     VatRegisteredCompany(
       name = "ACME trading",
       vatNumber = vatNumber,
