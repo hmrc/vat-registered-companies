@@ -16,14 +16,14 @@
 
 package uk.gov.hmrc.vatregisteredcompanies.helpers
 
-import uk.gov.hmrc.vatregisteredcompanies.models.{Address, VatNumber, VatRegisteredCompany, CompanyName, Payload}
+import uk.gov.hmrc.vatregisteredcompanies.models.{Address, VatRegisteredCompany, Payload}
 import uk.gov.hmrc.vatregisteredcompanies.repositories.PayloadWrapper
 
 object TestData {
-
   val testVatNo1 = "123456789"
   val testVatNo2 = "223456789"
   val testVatNo3 = "323456789"
+
   val vatRegisteredCompany1: VatRegisteredCompany = getVatRegCompany("12345")
   val vatRegisteredCompany2: VatRegisteredCompany = getVatRegCompany("12345")
   val vatRegisteredCompany3: VatRegisteredCompany = getVatRegCompany("12321")
@@ -35,5 +35,4 @@ object TestData {
       vatNumber = vatNumber,
       address = Address("line 1", None, None, None, None, None, countryCode = "GB")
     )
-
 }
