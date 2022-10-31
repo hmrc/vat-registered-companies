@@ -67,8 +67,7 @@ trait PayloadBufferDatabaseOperations {
     payloadBufferRepository
       .remove("_id" -> payloadWrapper._id).map(_.ok)
   }
-  def deleteAllBuffer: Boolean = {
-      await(payloadBufferRepository.removeAll().map(_.ok))
+  def deleteAllBuffer(): Future[Boolean] = {
+      payloadBufferRepository.removeAll().map(_.ok)
   }
-
 }
