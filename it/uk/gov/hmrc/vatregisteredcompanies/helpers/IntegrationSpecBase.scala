@@ -18,6 +18,7 @@ package uk.gov.hmrc.vatregisteredcompanies.helpers
 
 import akka.http.scaladsl.model.HttpResponse
 import com.github.tomakehurst.wiremock.stubbing.StubMapping
+import org.scalatest.concurrent.PatienceConfiguration.{Interval, Timeout}
 import org.scalatest.concurrent.{Eventually, IntegrationPatience, ScalaFutures}
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.time.{Millis, Seconds, Span}
@@ -53,6 +54,9 @@ trait IntegrationSpecBase
   val mockHost: String = WiremockHelper.wiremockHost
   val mockPort: Int    = WiremockHelper.wiremockPort
   val mockUrl          = s"http://$mockHost:$mockPort"
+
+  val timeout: Timeout   = Timeout(Span(5, Seconds))
+  val interval: Interval = Interval(Span(100, Millis))
 
   val DEFAULT_JOB_ENABLED       = "false"
 
