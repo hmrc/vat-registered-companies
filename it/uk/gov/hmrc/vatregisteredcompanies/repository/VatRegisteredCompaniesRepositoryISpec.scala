@@ -46,9 +46,7 @@ class VatRegisteredCompaniesRepositoryISpec extends IntegrationSpecBase {
 
     "there are multiple records in the database" should {
       "return unit" in {
-        insertOne(getVatRegCompany(testVatNo1))
-        insertOne(getVatRegCompany(testVatNo2))
-        insertOne(getVatRegCompany(testVatNo3))
+        insertMany(List(getVatRegCompany(testVatNo1), getVatRegCompany(testVatNo2), getVatRegCompany(testVatNo3)))
         totalCount shouldBe 3
       }
     }
@@ -143,4 +141,23 @@ class VatRegisteredCompaniesRepositoryISpec extends IntegrationSpecBase {
       }
     }
   }
+
+  "lookup" should {
+    "return the latest lookup response with the vatRegisteredCompany" when {
+      "the database has more than one record with the vatNumber" in {
+        val oldestRecord = getVatRegCompany(testVatNo1)
+        val newestRecord = oldestRecord.copy(name = "newCompany")
+        insertOne(oldestRecord)
+        Thread.sleep(100)
+        insertOne(newestRecord)
+
+        val result = vatRegisteredCompaniesRepository.lookup(testVatNo1)
+          whenReady(result) {res =>
+            res shouldBe defined
+            res.get.target shouldBe defined
+            res.get.target.get.name shouldBe "newCompany"
+          }
+        }
+      }
+    }
 }

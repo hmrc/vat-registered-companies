@@ -21,7 +21,7 @@ import reactivemongo.play.json.ImplicitBSONHandlers._
 import reactivemongo.api.Cursor
 import reactivemongo.bson.BSONDocument
 import uk.gov.hmrc.vatregisteredcompanies.models.VatRegisteredCompany
-import uk.gov.hmrc.vatregisteredcompanies.repositories.{PayloadWrapper, VatRegisteredCompaniesRepository, Wrapper}
+import uk.gov.hmrc.vatregisteredcompanies.repositories.{VatRegisteredCompaniesRepository, Wrapper}
 
 trait VatRegisteredCompaniesDatabaseOperations {
 
