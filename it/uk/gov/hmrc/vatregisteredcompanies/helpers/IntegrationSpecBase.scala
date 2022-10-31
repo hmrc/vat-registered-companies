@@ -18,10 +18,7 @@ package uk.gov.hmrc.vatregisteredcompanies.helpers
 
 import akka.http.scaladsl.model.HttpResponse
 import com.github.tomakehurst.wiremock.stubbing.StubMapping
-<<<<<<< HEAD
-=======
 import org.scalatest.concurrent.PatienceConfiguration.{Interval, Timeout}
->>>>>>> 397970d (Dls 6037 (#55))
 import org.scalatest.concurrent.{Eventually, IntegrationPatience, ScalaFutures}
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.time.{Millis, Seconds, Span}
@@ -34,16 +31,12 @@ import play.api.test.{DefaultAwaitTimeout, FutureAwaits}
 import play.api.{Application, Environment, Mode}
 import uk.gov.hmrc.vatregisteredcompanies.helpers.WiremockHelper.stubPost
 import uk.gov.hmrc.vatregisteredcompanies.repositories.{DefaultLockRepository, LockRepository, PayloadBufferRepository, VatRegisteredCompaniesRepository}
-<<<<<<< HEAD
-=======
-import uk.gov.hmrc.vatregisteredcompanies.services.PersistenceService
->>>>>>> 397970d (Dls 6037 (#55))
 
 import scala.concurrent.duration.Duration
 import scala.concurrent.{Await, ExecutionContext, Future}
 
 trait IntegrationSpecBase
-    extends AnyWordSpec
+  extends AnyWordSpec
     with GivenWhenThen
     with TestSuite
     with ScalaFutures
@@ -56,13 +49,12 @@ trait IntegrationSpecBase
     with Eventually
     with FutureAwaits
     with DefaultAwaitTimeout
-    with PayloadBufferDatabaseOperations
-    with VatRegisteredCompaniesDatabaseOperations
-    with LockDatabaseOperations {
+    with VatRegisteredCompaniesDatabaseOperations {
 
   val mockHost: String = WiremockHelper.wiremockHost
   val mockPort: Int    = WiremockHelper.wiremockPort
-  val mockUrl          = s"http://$mockHost:$mockPort" =
+  val mockUrl          = s"http://$mockHost:$mockPort"
+
   val timeout: Timeout   = Timeout(Span(5, Seconds))
   val interval: Interval = Interval(Span(100, Millis))
 
@@ -97,7 +89,6 @@ trait IntegrationSpecBase
   val lockRepository = app.injector.instanceOf[DefaultLockRepository]
   val payloadBufferRepository = app.injector.instanceOf[PayloadBufferRepository]
   val vatRegisteredCompaniesRepository = app.injector.instanceOf[VatRegisteredCompaniesRepository]
-  val persistenceService = app.injector.instanceOf[PersistenceService]
 
 
   override def beforeEach(): Unit = {
