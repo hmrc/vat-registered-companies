@@ -23,6 +23,11 @@ import uk.gov.hmrc.vatregisteredcompanies.repositories.PayloadWrapper
 class VatRegisteredCompaniesRepositoryISpec extends IntegrationSpecBase {
   override def beforeEach(): Unit = {
     await(vatRegisteredCompaniesRepository.deleteAll())
+    val result = vatRegisteredCompaniesRepository.deleteAll()
+
+    whenReady(result) { res =>
+      println("DB cleared")
+    }
   }
 
   "Method: deleteAll" when {
@@ -86,6 +91,7 @@ class VatRegisteredCompaniesRepositoryISpec extends IntegrationSpecBase {
     "the payload contains only deletes" should {
       "return unit and deletes the records if present in the database" when {
         "the database has no records" in {
+
           totalCount shouldBe 0
           val payload = PayloadWrapper(payload = testPayloadDeletes)
           val result = vatRegisteredCompaniesRepository.process(payload)
@@ -97,6 +103,8 @@ class VatRegisteredCompaniesRepositoryISpec extends IntegrationSpecBase {
         }
         "the database has one record that matches the VAT number" in {
           insertOne(getVatRegCompany(testVatNo1))
+
+
           val payload = PayloadWrapper(payload = testPayloadDeletes)
           val result = vatRegisteredCompaniesRepository.process(payload)
 
@@ -105,6 +113,18 @@ class VatRegisteredCompaniesRepositoryISpec extends IntegrationSpecBase {
             totalCount shouldBe 0
           }
         }
+        // Test is currently failing - return to later
+//        "the database has one record that matches the VAT number" in {
+//          insertOne(getVatRegCompany(testVatNo1))
+//
+//          val payload = PayloadWrapper(payload = testPayloadDeletes)
+//          val result = vatRegisteredCompaniesRepository.process(payload)
+//
+//          whenReady(result) { res =>
+//            res shouldBe ((): Unit)
+//            totalCount shouldBe 0
+//          }
+//        }
         //        "the database has multiple records that matches the VAT number" in {
         //
         //        }
