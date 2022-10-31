@@ -124,7 +124,7 @@ class   VatRegisteredCompaniesRepository @Inject()(
     deletes match {
       case vrn :: tail =>
         remove("vatNumber" -> vrn)
-        .flatMap {result =>
+        .flatMap {_ =>
           if(tail.nonEmpty) {
             streamingDelete(tail, payload)
           }
