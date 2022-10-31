@@ -99,9 +99,17 @@ class VatRegisteredCompaniesRepositoryISpec extends IntegrationSpecBase {
             totalCount shouldBe 0
           }
         }
-//        "the database has one record that matches the VAT number" in {
-//
-//        }
+        "the database has one record that matches the VAT number" in {
+          insertOne(getVatRegCompany(testVatNo1))
+
+          val payload = PayloadWrapper(payload = testPayloadDeletes)
+          val result = vatRegisteredCompaniesRepository.process(payload)
+
+          whenReady(result) { res =>
+            res shouldBe ((): Unit)
+            totalCount shouldBe 0
+          }
+        }
         //        "the database has multiple records that matches the VAT number" in {
         //
         //        }
