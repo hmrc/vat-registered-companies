@@ -79,35 +79,64 @@ class   VatRegisteredCompaniesRepository @Inject()(
     bulkInsert(entries).map(_ => (()))
   }
 
-  private def streamingDelete(deletes: List[VatNumber], payload: PayloadWrapper) = {
-    if (deletes.nonEmpty) {
-      logger.info(s"deleting ${deletes.length} records")
-      val source = Source(deletes)
-      // See https://doc.akka.io/docs/akka/current/stream/operators/Source-or-Flow/throttle.html
-      // we could work out how many records we can safely delete given the size of the collection
-      // and pass that in as a costCalculation
-      val sink = Flow[VatNumber]
-        .throttle(elements, per)
-        .map(vrn => {
-          collection.findAndRemove(Json.obj("vatNumber" -> vrn), None, None, writeConcern = WriteConcern.Default, None, None, Seq.empty).map {
-            _.result[VatNumber]
+//  private def streamingDelete(deletes: List[VatNumber], payload: PayloadWrapper) = {
+//    if (deletes.nonEmpty) {
+//      logger.info(s"deleting ${deletes.length} records")
+//      println("**************************")
+//      println(deletes)
+//      lazy val source = Source(deletes)
+//      // See https://doc.akka.io/docs/akka/current/stream/operators/Source-or-Flow/throttle.html
+//      // we could work out how many records we can safely delete given the size of the collection
+//      // and pass that in as a costCalculation
+//      lazy val sink = Flow[VatNumber]
+//        .throttle(elements, per)
+//        .map{vrn => {
+//          println("**************************")
+//          println(vrn)
+//          collection
+//            .findAndRemove(Json.obj("vatNumber" -> vrn),
+//              None, None, writeConcern = WriteConcern.Default,
+//              None, None, Seq.empty)
+//            .map {result =>
+//            println("^^^^^^^^^^^^^^^^^^")
+//            println(result.value)
+//            result.result[VatNumber]
+//          }
+//        }}.to(Sink.onComplete{x =>
+//          x match {
+//            case Failure(e) =>
+//              logger.error(s"Unable to process streaming deletes at $elements per ${per._1} ${per._2}: ${e.getMessage}")
+//            case Success(_) =>
+//              bufferRepository.deleteOne(payload)
+//              logger.info("Processed streaming deletes")
+//          }
+//        logger.info(s"End of deletion stream")
+//        })
+//      source.to(sink).run()
+//    } else {
+//      logger.info("No deletes to process, cleaning buffer")
+//      bufferRepository.deleteOne(payload)
+//    }
+//    Future.successful((()))
+//  }
+
+  def streamingDelete(deletes: List[VatNumber], payload: PayloadWrapper): Future[Unit] = {
+    deletes match {
+      case vrn :: tail =>
+        remove("vatNumber" -> vrn)
+        .flatMap {result =>
+          if(tail.nonEmpty) {
+            streamingDelete(tail, payload)
           }
-        }).to(Sink.onComplete{x =>
-          x match {
-            case Failure(e) =>
-              logger.error(s"Unable to process streaming deletes at $elements per ${per._1} ${per._2}: ${e.getMessage}")
-            case Success(_) =>
-              bufferRepository.deleteOne(payload)
+          else {
+            bufferRepository.deleteOne(payload).map { _ =>
               logger.info("Processed streaming deletes")
+            }
           }
-        logger.info(s"End of deletion stream")
-        })
-      source.to(sink).run()
-    } else {
-      logger.info("No deletes to process, cleaning buffer")
-      bufferRepository.deleteOne(payload)
+        }
+      case Nil => logger.info("No deletes to process, cleaning buffer")
+        bufferRepository.deleteOne(payload)
     }
-    Future.successful((()))
   }
 
   private def deleteById(deletes: List[BSONValue]): Future[Unit] = {
