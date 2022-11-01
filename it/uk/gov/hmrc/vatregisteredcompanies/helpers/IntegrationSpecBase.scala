@@ -30,7 +30,7 @@ import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.test.{DefaultAwaitTimeout, FutureAwaits}
 import play.api.{Application, Environment, Mode}
 import uk.gov.hmrc.vatregisteredcompanies.helpers.WiremockHelper.stubPost
-import uk.gov.hmrc.vatregisteredcompanies.repositories.{DefaultLockRepository, LockRepository, PayloadBufferRepository, VatRegisteredCompaniesRepository}
+import uk.gov.hmrc.vatregisteredcompanies.repositories.{DefaultLockRepository, PayloadBufferRepository, VatRegisteredCompaniesRepository}
 import uk.gov.hmrc.vatregisteredcompanies.services.PersistenceService
 
 import scala.concurrent.duration.Duration
