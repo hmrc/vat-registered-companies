@@ -18,4 +18,15 @@ import uk.gov.hmrc.vatregisteredcompanies.helpers.IntegrationSpecBase
 import uk.gov.hmrc.vatregisteredcompanies.helpers.TestData._
 
 class LockRepositoryISpec extends IntegrationSpecBase {
+
+  "Method: lock" when {
+    "no lock exists" should {
+      "Return this" in {
+        val result = lockRepository.lock(2)
+        whenReady(result) { res =>
+          println(res)
+        }
+      }
+    }
+  }
 }
