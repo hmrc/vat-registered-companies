@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package uk.gov.hmrc.vatregisteredcompanies.repository
 import uk.gov.hmrc.vatregisteredcompanies.helpers.IntegrationSpecBase
 import uk.gov.hmrc.vatregisteredcompanies.helpers.TestData._
@@ -40,17 +41,19 @@ import uk.gov.hmrc.vatregisteredcompanies.helpers.TestData._
 
         whenReady(act) { res =>
           res shouldBe false
+          lockCount shouldBe 1
         }
       }
     }
     "lock exists outside TTL" should {
-      // revisit this test
       "Return " in {
         insert(expiredTestLock)
         val act = lockRepository.lock(testLockId)
+        Thread.sleep(200)
 
         whenReady(act) { res =>
           res shouldBe false
+          lockCount shouldBe 0
         }
       }
     }

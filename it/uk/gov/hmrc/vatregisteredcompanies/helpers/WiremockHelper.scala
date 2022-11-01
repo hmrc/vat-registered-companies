@@ -54,7 +54,7 @@ trait WiremockHelper extends ServerProvider {
 
   def resetWiremock(): Unit = WireMock.reset()
 
-  def buildClient(path: String) =
-    ws.url(s"http://localhost:$port$path").withFollowRedirects(false)
+  def buildRequest(path: String) =
+    ws.url(s"http://localhost:$port/vat-registered-companies$path").withFollowRedirects(false)
 
 }
