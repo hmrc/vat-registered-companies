@@ -64,27 +64,34 @@ class PayloadBufferRepositoryISpec extends IntegrationSpecBase {
     }
   }
 
-//  "Method: insert" when {
-//    "there are no records in the database" should {
-//      "Have no records" in {
-//        bufferTotalCount shouldBe 0
-//      }
-//    }
-//
-//    "there is 1 record in the database" should {
-//      "Have one record" in {
-//        insertOne(getVatRegCompany(testVatNo1))
-//        bufferTotalCount shouldBe 1
-//      }
-//    }
-//
-//    "there are multiple records in the database" should {
-//      "Have three records" in {
-//        insertMany(List(getVatRegCompany(testVatNo1), getVatRegCompany(testVatNo2), getVatRegCompany(testVatNo3)))
-//        bufferTotalCount shouldBe 3
-//      }
-//    }
-//  }
+  "Method: insert" when {
+    "there are no records in the database" should {
+      "Add one record" in {
+        insertOneBuffer(testPayloadCreate)
+        bufferTotalCount shouldBe 1
+      }
+    }
+
+    "there are multiple records in the database" should {
+      "Increase the database by one record" in {
+        insertOneBuffer(testPayloadCreateAndUpdates)
+        bufferTotalCount shouldBe 2
+
+        insertOneBuffer(testPayloadCreate)
+        bufferTotalCount shouldBe 3
+      }
+    }
+
+    "there are multiple records in the database" should {
+      "Increase the database by two records" in {
+        insertOneBuffer(testPayloadCreateAndUpdates)
+        bufferTotalCount shouldBe 2
+
+        insertOneBuffer(testPayloadCreateAndUpdates)
+        bufferTotalCount shouldBe 4
+      }
+    }
+  }
 //
 //  "Method: list" when {
 //    "there are no records in the database" should {
