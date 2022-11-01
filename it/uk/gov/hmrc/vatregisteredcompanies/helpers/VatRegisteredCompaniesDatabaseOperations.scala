@@ -57,4 +57,8 @@ trait VatRegisteredCompaniesDatabaseOperations {
 //      .cursor[VatRegisteredCompany]()
 //      .collect[List](100, Cursor.FailOnError[List[VatRegisteredCompany]]()))
 //  }
+
+  def deleteAll: Boolean = {
+    await(vatRegisteredCompaniesRepository.removeAll().map(_.ok))
+  }
 }
