@@ -22,8 +22,6 @@ import reactivemongo.play.json.ImplicitBSONHandlers._
 import reactivemongo.api.Cursor
 import uk.gov.hmrc.vatregisteredcompanies.models.{Payload, VatRegisteredCompany}
 import uk.gov.hmrc.vatregisteredcompanies.repositories.{PayloadBufferRepository, PayloadWrapper}
-
-
 import scala.concurrent.Future
 
 trait PayloadBufferDatabaseOperations {
@@ -31,13 +29,14 @@ trait PayloadBufferDatabaseOperations {
   self: IntegrationSpecBase =>
 
   val payloadBufferRepository: PayloadBufferRepository
-  val vatRegisteredCompany: VatRegisteredCompany
-  val vatNumber = vatRegisteredCompany.vatNumber
-  val payload = Payload(List(vatRegisteredCompany), List(vatNumber))
-  val _id: BSONObjectID = BSONObjectID.generate()
-  val payloadWrapper = PayloadWrapper(_id, payload)
-
+  def createPayloadWrapper(payload: Payload): PayloadWrapper = {
+    val _id: BSONObjectID = BSONObjectID.generate()
+    val payloadWrapper = PayloadWrapper(_id, payload)
+    payloadWrapper
+  }
   def insertOneBuffer(payload: Payload): Boolean = {
+
+      val payloadWrapper = createPayloadWrapper(payload)
     await(
       payloadBufferRepository.insert(payloadWrapper).map(_.ok)
     )
