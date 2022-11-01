@@ -23,12 +23,14 @@ object TestData {
   val testVatNo1 = "123456789"
   val testVatNo2 = "223456789"
   val testVatNo3 = "323456789"
+  val testVatNo4 = "423456780"
 
   val vatRegisteredCompany1: VatRegisteredCompany = getVatRegCompany(testVatNo1)
   val vatRegisteredCompany2: VatRegisteredCompany = getVatRegCompany(testVatNo2)
   val vatRegisteredCompany3: VatRegisteredCompany = getVatRegCompany(testVatNo3)
+  val vatRegisteredCompany4: VatRegisteredCompany = getVatRegCompany(testVatNo3)
 
-  val testPayloadCreate: Payload = Payload(List(vatRegisteredCompany1), List())
+  val testPayloadCreateAndUpdates1: Payload = Payload(List(vatRegisteredCompany3, vatRegisteredCompany4), List())
   val testPayloadCreateAndUpdates: Payload = Payload(List(vatRegisteredCompany1, vatRegisteredCompany2), List())
   val testPayloadDeletes: Payload = Payload(List(), List(testVatNo1, testVatNo2))
 
