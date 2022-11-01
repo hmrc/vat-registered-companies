@@ -19,9 +19,10 @@ package uk.gov.hmrc.vatregisteredcompanies.helpers
 import reactivemongo.bson.{BSONDocument, BSONObjectID}
 import play.api.libs.json._
 import reactivemongo.play.json.ImplicitBSONHandlers._
-import reactivemongo.api.Cursor
+import reactivemongo.api.{Cursor, ReadPreference}
 import uk.gov.hmrc.vatregisteredcompanies.models.{Payload, VatRegisteredCompany}
 import uk.gov.hmrc.vatregisteredcompanies.repositories.{PayloadBufferRepository, PayloadWrapper}
+
 import scala.concurrent.Future
 
 trait PayloadBufferDatabaseOperations {
@@ -49,17 +50,17 @@ trait PayloadBufferDatabaseOperations {
     await(payloadBufferRepository.count)
   }
 
-  def getOneBuffer: Future[List[PayloadWrapper]] = {
-    val query = BSONDocument()
-    await(
-      payloadBufferRepository
-        .collection
-        .find(query, Option.empty[JsObject])
-        .sort(Json.obj("_id" -> 1))
-        .cursor[PayloadWrapper]()
-        .collect[List](1, Cursor.FailOnError[List[PayloadWrapper]]())
-    )
-  }
+//  def getOneBuffer: Future[List[PayloadWrapper]] = {
+//    val query = BSONDocument()
+//    await(
+//      payloadBufferRepository
+//        .collection
+//        .find(query, Option.empty[JsObject])
+//        .sort(Json.obj("_id" -> 1))
+//        .cursor[BSONDocument](ReadPreference.primaryPreferred)
+//        .collect[List](1, Cursor.FailOnError[List[PayloadWrapper]]())
+//    )
+//  }
 
   def deleteOneBuffer(payload: Payload): Future[Boolean] = {
     val payloadWrapper = createPayloadWrapper(payload)
