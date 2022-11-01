@@ -28,26 +28,47 @@ class VatRegisteredCompaniesRepositoryISpec extends IntegrationSpecBase {
     whenReady(result) { res =>
       println("DB cleared")
     }
+    deleteAll
   }
 
   "Method: deleteAll" when {
     "there are no records in the database" should {
       "Have no records" in {
         totalCount shouldBe 0
+        val res = vatRegisteredCompaniesRepository.deleteAll()
+
+        whenReady(res) {result =>
+          result shouldBe ((): Unit)
+          totalCount shouldBe 0
+        }
       }
     }
 
     "there is 1 record in the database" should {
       "Have one record" in {
+      "return unit and delete the record" in {
         insertOne(getVatRegCompany(testVatNo1))
         totalCount shouldBe 1
+        val res = vatRegisteredCompaniesRepository.deleteAll()
+
+        whenReady(res) {result =>
+          result shouldBe ((): Unit)
+          totalCount shouldBe 0
+        }
       }
     }
 
     "there are multiple records in the database" should {
       "Have three records" in {
+      "return unit and delete all records" in {
         insertMany(List(getVatRegCompany(testVatNo1), getVatRegCompany(testVatNo2), getVatRegCompany(testVatNo3)))
         totalCount shouldBe 3
+        val res = vatRegisteredCompaniesRepository.deleteAll()
+
+        whenReady(res) {result =>
+          result shouldBe ((): Unit)
+          totalCount shouldBe 0
+        }
       }
     }
   }
