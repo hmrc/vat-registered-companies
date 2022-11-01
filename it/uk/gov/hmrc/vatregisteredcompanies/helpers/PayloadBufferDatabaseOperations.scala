@@ -61,9 +61,12 @@ trait PayloadBufferDatabaseOperations {
     )
   }
 
-  def deleteOneBuffer(payload: PayloadWrapper): Future[Unit] = {
-        payloadBufferRepository
-          .remove("_id" -> payload._id).map { _ => (()) }
+  def deleteOneBuffer(payload: Payload): Future[Boolean] = {
+    val payloadWrapper = createPayloadWrapper(payload)
+    payloadBufferRepository
+      .remove("_id" -> payloadWrapper._id).map(_.ok)
   }
-
+  def deleteAllBuffer(): Future[Boolean] = {
+      payloadBufferRepository.removeAll().map(_.ok)
+  }
 }
