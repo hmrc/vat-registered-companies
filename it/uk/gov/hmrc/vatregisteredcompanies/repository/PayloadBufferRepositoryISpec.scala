@@ -54,6 +54,7 @@ class PayloadBufferRepositoryISpec extends IntegrationSpecBase {
     "there are multiple records in the database" should {
       "Have two records" in {
         insertOneBuffer(testPayloadCreateAndUpdates)
+        insertOneBuffer(testPayloadCreateAndUpdates)
         bufferTotalCount shouldBe 2
         val res = payloadBufferRepository.deleteAll()
 
@@ -74,6 +75,7 @@ class PayloadBufferRepositoryISpec extends IntegrationSpecBase {
 
     "there are multiple records in the database" should {
       "Increase the database by one record" in {
+        insertOneBuffer(testPayloadCreate)
         insertOneBuffer(testPayloadCreateAndUpdates)
         bufferTotalCount shouldBe 2
 
@@ -84,9 +86,11 @@ class PayloadBufferRepositoryISpec extends IntegrationSpecBase {
 
     "there are multiple records in the database" should {
       "Increase the database by two records" in {
+        insertOneBuffer(testPayloadCreate)
         insertOneBuffer(testPayloadCreateAndUpdates)
         bufferTotalCount shouldBe 2
 
+        insertOneBuffer(testPayloadCreate)
         insertOneBuffer(testPayloadCreateAndUpdates)
         bufferTotalCount shouldBe 4
       }
