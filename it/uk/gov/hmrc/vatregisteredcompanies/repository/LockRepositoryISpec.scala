@@ -19,12 +19,24 @@ import uk.gov.hmrc.vatregisteredcompanies.helpers.TestData._
 
 class LockRepositoryISpec extends IntegrationSpecBase {
 
-  "Method: lock" when {
+  "Method: release" when {
     "no lock exists" should {
       "Return this" in {
-        val result = lockRepository.lock(2)
+        val result = lockRepository.release(testLockId)
+
         whenReady(result) { res =>
-          println(res)
+          res shouldBe ((): Unit)
+        }
+      }
+    }
+
+    "A lock exists" should {
+      "Return this" in {
+        lockRepository.lock(2)
+        val result = lockRepository.release(testLockId)
+
+        whenReady(result) { res =>
+          res shouldBe ((): Unit)
         }
       }
     }
