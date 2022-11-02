@@ -21,7 +21,7 @@ class LockRepositoryISpec extends IntegrationSpecBase {
 
   "Method: release" when {
     "no lock exists" should {
-      "Return this" in {
+      "Return (): Unit" in {
         val result = lockRepository.release(testLockId)
 
         whenReady(result) { res =>
@@ -31,12 +31,35 @@ class LockRepositoryISpec extends IntegrationSpecBase {
     }
 
     "A lock exists" should {
-      "Return this" in {
+      "Return (): Unit" in {
         lockRepository.lock(2)
         val result = lockRepository.release(testLockId)
 
         whenReady(result) { res =>
           res shouldBe ((): Unit)
+        }
+      }
+    }
+  }
+
+  "Method: isLocked" when {
+    "no lock exists" should {
+      "Return false" in {
+        val result = lockRepository.isLocked(testLockId)
+
+        whenReady(result) { res =>
+          res shouldBe false
+        }
+      }
+    }
+
+    "A lock exists" should {
+      "Return true" in {
+        lockRepository.lock(testLockId)
+        val result = lockRepository.isLocked(testLockId)
+
+        whenReady(result) { res =>
+          res shouldBe true
         }
       }
     }
