@@ -20,6 +20,30 @@ import uk.gov.hmrc.vatregisteredcompanies.repositories.Lock
 
 class LockRepositoryISpec extends IntegrationSpecBase {
 
+  "Method: lock" when {
+    "no lock exists" should {
+      "Return true" in {
+        val act = lockRepository.lock(testLockId)
+
+        whenReady(act) { res =>
+          res shouldBe true
+        }
+      }
+    }
+
+//    "lock exists within TTL" should {
+//      "Return (): Unit" in {
+//        println("====================")
+//        println(lockRepository.ttl)
+//      }
+//    }
+//
+//    "lock exists outside TTL" should {
+//      "Return " in {
+//      }
+//    }
+  }
+
   "Method: release" when {
     "no lock exists" should {
       "Return (): Unit" in {
