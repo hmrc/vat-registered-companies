@@ -26,9 +26,9 @@ object TestData {
   val testVatNo4 = "423456780"
 
   val vatRegisteredCompany1: VatRegisteredCompany = getVatRegCompany(testVatNo1)
-  val vatRegisteredCompany2: VatRegisteredCompany = getVatRegCompany(testVatNo2)
-  val vatRegisteredCompany3: VatRegisteredCompany = getVatRegCompany(testVatNo3)
-  val vatRegisteredCompany4: VatRegisteredCompany = getVatRegCompany(testVatNo3)
+  val vatRegisteredCompany2: VatRegisteredCompany = getVatRegCompany1(testVatNo2)
+  val vatRegisteredCompany3: VatRegisteredCompany = getVatRegCompany2(testVatNo3)
+  val vatRegisteredCompany4: VatRegisteredCompany = getVatRegCompany(testVatNo4)
 
   val testPayloadCreateAndUpdates1: Payload = Payload(List(vatRegisteredCompany3, vatRegisteredCompany4), List())
   val testPayloadCreateAndUpdates: Payload = Payload(List(vatRegisteredCompany1, vatRegisteredCompany2), List())
@@ -39,5 +39,19 @@ object TestData {
       name = "ACME trading",
       vatNumber = vatNumber,
       address = Address("line 1", None, None, None, None, None, countryCode = "GB")
+    )
+
+  def getVatRegCompany1(vatNumber: String): VatRegisteredCompany =
+    VatRegisteredCompany(
+      name = "Delta trading",
+      vatNumber = vatNumber,
+      address = Address("c/o Delta trading", None, None, None, None, None, countryCode = "GB")
+    )
+
+  def getVatRegCompany2(vatNumber: String): VatRegisteredCompany =
+    VatRegisteredCompany(
+      name = "Alpha trading",
+      vatNumber = vatNumber,
+      address = Address("c/o Alpha trading co", None, None, None, None, None, countryCode = "GB")
     )
 }
