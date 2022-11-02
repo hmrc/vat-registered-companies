@@ -31,6 +31,8 @@ object TestData {
   val testPayloadCreateAndUpdates: Payload = Payload(List(vatRegisteredCompany1, vatRegisteredCompany2), List())
   val testPayloadDeletes: Payload = Payload(List(), List(testVatNo1, testVatNo2))
 
+  val testLockId = 2
+
   def getVatRegCompany(vatNumber: String): VatRegisteredCompany =
     VatRegisteredCompany(
       name = "ACME trading",
