@@ -110,29 +110,56 @@ class PayloadBufferRepositoryISpec extends IntegrationSpecBase {
       }
     }
   }
-//
-//  "Method: list" when {
-//    "there are no records in the database" should {
-//      "Have no records" in {
-//        bufferTotalCount shouldBe 0
-//      }
-//    }
-//
-//    "there is 1 record in the database" should {
-//      "Have one record" in {
-//        insertOne(getVatRegCompany(testVatNo1))
-//        bufferTotalCount shouldBe 0
-//      }
-//    }
-//
-//    "there are multiple records in the database" should {
-//      "Have three records" in {
-//        insertMany(List(getVatRegCompany(testVatNo1), getVatRegCompany(testVatNo2), getVatRegCompany(testVatNo3)))
-//        bufferTotalCount shouldBe 0
-//      }
-//    }
-//  }
-//
+
+  "Method: list" when {
+
+    "there are no records in the database" should {
+      "Have no records" in {
+        val res = {
+          payloadBufferRepository.list
+        }
+
+        whenReady(res) { result =>
+          result shouldBe empty
+          bufferTotalCount shouldBe 0
+        }
+
+      }
+    }
+
+    "there is 1 record in the database" should {
+      "Have one record" in {
+
+        insertOneBuffer(testPayloadCreateAndUpdates)
+        val res = {
+          payloadBufferRepository.list
+        }
+
+        whenReady(res) { result =>
+          result.head.toString should include ("ACME trading,123456789,Address(line 1,None,None,None,None,None,GB))")
+          bufferTotalCount shouldBe 1
+        }
+      }
+    }
+
+    "there are multiple records in the database" should {
+      "Have three records" in {
+        insertOneBuffer(testPayloadCreateAndUpdates1)
+        insertOneBuffer(testPayloadCreateAndUpdates)
+        insertOneBuffer(testPayloadCreateAndUpdates1)
+        val res = {
+          payloadBufferRepository.list
+        }
+
+        whenReady(res) { result =>
+
+          result.head.toString should include("Alpha trading,323456789,Address(c/o Alpha trading co,None,None,None,None,None,GB)")
+          bufferTotalCount shouldBe 3
+        }
+      }
+    }
+  }
+
 //  "Method: lookup" should {
 //    "return the latest lookup response with the vatRegisteredCompany" when {
 //      "the database has no records" in {
