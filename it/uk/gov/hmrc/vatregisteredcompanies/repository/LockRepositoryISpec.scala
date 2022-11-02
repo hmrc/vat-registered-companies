@@ -16,6 +16,7 @@
 package uk.gov.hmrc.vatregisteredcompanies.repository
 import uk.gov.hmrc.vatregisteredcompanies.helpers.IntegrationSpecBase
 import uk.gov.hmrc.vatregisteredcompanies.helpers.TestData._
+import uk.gov.hmrc.vatregisteredcompanies.repositories.Lock
 
 class LockRepositoryISpec extends IntegrationSpecBase {
 
@@ -60,6 +61,30 @@ class LockRepositoryISpec extends IntegrationSpecBase {
 
         whenReady(result) { res =>
           res shouldBe true
+        }
+      }
+    }
+  }
+
+  "Method: getLock" when {
+    "no lock exists" should {
+      "Return None" in {
+        val result = lockRepository.getLock(testLockId)
+
+        whenReady(result) { res =>
+          res shouldBe None
+        }
+      }
+    }
+
+    "A lock exists" should {
+      "Return true" in {
+        lockRepository.lock(testLockId)
+        val result = lockRepository.getLock(testLockId)
+
+        whenReady(result) { res =>
+          res shouldBe defined
+          res.get._id shouldBe testLockId
         }
       }
     }
