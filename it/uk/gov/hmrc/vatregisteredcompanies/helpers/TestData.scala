@@ -28,8 +28,8 @@ object TestData {
   val testVatNo4 = "423456780"
 
   val vatRegisteredCompany1: VatRegisteredCompany = getVatRegCompany(testVatNo1)
-  val vatRegisteredCompany2: VatRegisteredCompany = getVatRegCompany1(testVatNo2)
-  val vatRegisteredCompany3: VatRegisteredCompany = getVatRegCompany2(testVatNo3)
+  val vatRegisteredCompany2: VatRegisteredCompany = getVatRegCompany(testVatNo2)
+  val vatRegisteredCompany3: VatRegisteredCompany = getVatRegCompany(testVatNo3)
   val vatRegisteredCompany4: VatRegisteredCompany = getVatRegCompany(testVatNo4)
 
   val testPayloadCreateAndUpdates1: Payload = Payload(List(vatRegisteredCompany3, vatRegisteredCompany4), List())
