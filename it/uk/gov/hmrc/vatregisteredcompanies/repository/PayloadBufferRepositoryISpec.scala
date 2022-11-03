@@ -136,7 +136,7 @@ class PayloadBufferRepositoryISpec extends IntegrationSpecBase {
         }
 
         whenReady(res) { result =>
-          result.head.toString should include ("ACME trading,123456789,Address(line 1,None,None,None,None,None,GB))")
+          result.map(_.payload) shouldBe List(testPayloadCreateAndUpdates)
           bufferTotalCount shouldBe 1
         }
       }
@@ -153,7 +153,7 @@ class PayloadBufferRepositoryISpec extends IntegrationSpecBase {
 
         whenReady(res) { result =>
 
-          result.head.toString should include("Alpha trading,323456789,Address(c/o Alpha trading co,None,None,None,None,None,GB)")
+          result.head.payload shouldBe testPayloadCreateAndUpdates1
           bufferTotalCount shouldBe 3
         }
       }
