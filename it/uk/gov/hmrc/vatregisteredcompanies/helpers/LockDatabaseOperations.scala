@@ -30,4 +30,8 @@ trait LockDatabaseOperations {
   def clearLock(): Unit = {
     await(lockRepository.removeAll().map(_.ok))
   }
+
+  def lockCount(): Int = {
+    await(lockRepository.count)
+  }
 }
