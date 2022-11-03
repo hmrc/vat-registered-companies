@@ -50,6 +50,7 @@ trait IntegrationSpecBase
     with Eventually
     with FutureAwaits
     with DefaultAwaitTimeout
+    with PayloadBufferDatabaseOperations
     with VatRegisteredCompaniesDatabaseOperations
     with LockDatabaseOperations {
 
