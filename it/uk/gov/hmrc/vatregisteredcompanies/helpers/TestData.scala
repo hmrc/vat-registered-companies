@@ -22,11 +22,12 @@ import java.time.format.DateTimeFormatter
 import java.time.{LocalDateTime, ZoneId}
 
 object TestData {
-  val testVatNo1 = "123456789"
-  val testVatNo2 = "223456789"
-  val testVatNo3 = "323456789"
-  val testVatNo4 = "423456780"
+  val testVatNo1 = "123456789012"
+  val testVatNo2 = "223456789012"
+  val testVatNo3 = "323456789012"
+  val testVatNo4 = "423456780012"
 
+  val invalidVatNo = "hakfgjdfjk"
   val vatRegisteredCompany1: VatRegisteredCompany = getVatRegCompany(testVatNo1)
   val vatRegisteredCompany2: VatRegisteredCompany = getVatRegCompany(testVatNo2)
   val vatRegisteredCompany3: VatRegisteredCompany = getVatRegCompany(testVatNo3)
