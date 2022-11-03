@@ -116,6 +116,13 @@ class DefaultLockRepository @Inject()(
     collection.find(BSONDocument("_id" -> id),None)
       .one[Lock]
 
+  def insert(id: Int): Unit = {
+    collection.insert(true).one(Lock(id)).map { _ =>
+      logger.info(s"Locking with $id")
+    }
+  }
+
+  def deleteLock(): Future[Unit] = removeAll().map(_ => ())
 }
 
 @ImplementedBy(classOf[DefaultLockRepository])
