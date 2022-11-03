@@ -32,6 +32,7 @@ object TestData {
   val testPayloadDeletes: Payload = Payload(List(), List(testVatNo1, testVatNo2))
 
   val testLockId = 2
+  val testLockId2 = 123
 
   def getVatRegCompany(vatNumber: String): VatRegisteredCompany =
     VatRegisteredCompany(
