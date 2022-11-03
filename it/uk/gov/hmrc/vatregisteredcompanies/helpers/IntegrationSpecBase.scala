@@ -31,6 +31,7 @@ import play.api.test.{DefaultAwaitTimeout, FutureAwaits}
 import play.api.{Application, Environment, Mode}
 import uk.gov.hmrc.vatregisteredcompanies.helpers.WiremockHelper.stubPost
 import uk.gov.hmrc.vatregisteredcompanies.repositories.{DefaultLockRepository, LockRepository, PayloadBufferRepository, VatRegisteredCompaniesRepository}
+import uk.gov.hmrc.vatregisteredcompanies.services.PersistenceService
 
 import scala.concurrent.duration.Duration
 import scala.concurrent.{Await, ExecutionContext, Future}
@@ -91,6 +92,7 @@ trait IntegrationSpecBase
   val payloadBufferRepository = app.injector.instanceOf[PayloadBufferRepository]
   val vatRegisteredCompaniesRepository = app.injector.instanceOf[VatRegisteredCompaniesRepository]
 
+  val persistenceService = app.injector.instanceOf[PersistenceService]
 
   override def beforeEach(): Unit = {
     resetWiremock()
