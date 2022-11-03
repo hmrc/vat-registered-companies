@@ -19,10 +19,7 @@ import uk.gov.hmrc.vatregisteredcompanies.helpers.TestData._
 
  class LockRepositoryISpec extends IntegrationSpecBase {
    override def beforeEach(): Unit = {
-     val delete = lockRepository.deleteLock()
-     whenReady(delete) { res =>
-       println("lock deleted")
-     }
+     clearLock()
   }
 
   "Method: lock" when {
@@ -38,7 +35,7 @@ import uk.gov.hmrc.vatregisteredcompanies.helpers.TestData._
 
     "lock exists within TTL" should {
       "Return false" in {
-        lockRepository.insert(testLockId)
+        insert(testLock)
         Thread.sleep(20)
         val act = lockRepository.lock(testLockId)
 
@@ -69,7 +66,7 @@ import uk.gov.hmrc.vatregisteredcompanies.helpers.TestData._
 
     "A lock exists" should {
       "Return (): Unit" in {
-        lockRepository.insert(testLockId)
+        insert(testLock)
         Thread.sleep(20)
         val act = lockRepository.release(testLockId)
 
@@ -93,7 +90,7 @@ import uk.gov.hmrc.vatregisteredcompanies.helpers.TestData._
 
     "A lock exists" should {
       "Return true" in {
-        lockRepository.insert(testLockId)
+        insert(testLock)
         Thread.sleep(20)
         val act = lockRepository.isLocked(testLockId)
 
@@ -117,7 +114,7 @@ import uk.gov.hmrc.vatregisteredcompanies.helpers.TestData._
 
     "A lock exists" should {
       "Return true" in {
-        lockRepository.insert(testLockId)
+        insert(testLock)
         Thread.sleep(20)
         val act = lockRepository.getLock(testLockId)
 

@@ -1,5 +1,5 @@
 package uk.gov.hmrc.vatregisteredcompanies.helpers
-import uk.gov.hmrc.vatregisteredcompanies.repositories.LockRepository
+import uk.gov.hmrc.vatregisteredcompanies.repositories.{Lock, LockRepository}
 
 trait LockDatabaseOperations {
 
@@ -7,11 +7,11 @@ trait LockDatabaseOperations {
 
   val lockRepository: LockRepository
 
-  def insert(id: Int): Unit = {
-    lockRepository.insert(id)
+  def insert(lock: Lock): Unit = {
+    await(lockRepository.collection.insert(true).one(lock).map(_.ok))
   }
 
   def clearLock(): Unit = {
-    lockRepository.deleteLock()
+    await(lockRepository.removeAll().map(_.ok))
   }
 }

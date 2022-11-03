@@ -49,7 +49,8 @@ trait IntegrationSpecBase
     with Eventually
     with FutureAwaits
     with DefaultAwaitTimeout
-    with VatRegisteredCompaniesDatabaseOperations {
+    with VatRegisteredCompaniesDatabaseOperations
+    with LockDatabaseOperations {
 
   val mockHost: String = WiremockHelper.wiremockHost
   val mockPort: Int    = WiremockHelper.wiremockPort
