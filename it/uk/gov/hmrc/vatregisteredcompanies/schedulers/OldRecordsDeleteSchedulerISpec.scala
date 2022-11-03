@@ -4,134 +4,61 @@ import uk.gov.hmrc.vatregisteredcompanies.helpers.IntegrationSpecBase
 
 class OldRecordsDeleteSchedulerISpec extends IntegrationSpecBase {
 
-  "deleteOld" when {
+  val limit = 2
+
+  "deleteOld with limit 2" when {
     "the lock is not already acquired" should {
-      "remove records that have " when {
-        "there is one record in the buffer and no records in vatRegisteredCompanies" that {
-          "contains a payload with only createsAndUpdates" in {
-            //insert one record into buffer repository that has a payload with only createsAndUpdates
-            val res = persistenceService.processOneData
+      "not remove any documents" when {
+        "there are no records with repeated vatNumbers" in {
+          //insert into vatRegisteredCompanies records with different vatNumbers
+          val res = persistenceService.deleteOld(limit)
 
-            whenReady(res) {result =>
-              result shouldBe ((): Unit)
-              //check records inserted into vatRegisteredCompanies database
-              //check buffer record deleted
-              //check lock has been removed
-            }
+          whenReady(res) { result =>
+            result shouldBe ((): Unit)
+            //check no records deleted
+            //check lock has been removed
           }
+        }
+      }
+      "remove the oldest record(s)" when {
+        "there is one VatNumber with more than one record associated with" in {
+          //insert into vatRegisteredCompanies records with different vatNumbers
+          //Thread.sleep(100)
+          //insert into vatRegisteredCompanies a record with a vatNumber used above but slightly different details
+          val res = persistenceService.deleteOld(limit)
 
-          "contains a payload with only deletes" in {
-            //insert one record into buffer repository that has a payload with only deletes
-            val res = persistenceService.processOneData
-
-            whenReady(res) {result =>
-              result shouldBe ((): Unit)
-              //check records deleted from vatRegisteredCompanies database
-              //check buffer record deleted
-              //check lock has been removed
-            }
-          }
-
-          "contains a payload with both createsAndUpdates and deletes" in {
-            //insert one record into buffer repository that has a payload with createAndUpdates and deletes
-            val res = persistenceService.processOneData
-
-            whenReady(res) {result =>
-              result shouldBe ((): Unit)
-              //check records inserted into vatRegisteredCompanies database
-              //check records deleted from vatRegisteredCompanies database
-              //check buffer record deleted
-              //check lock has been removed
-            }
+          whenReady(res) { result =>
+            result shouldBe ((): Unit)
+            //check only 1 record exists with VatNumber and is the newest
+            //check lock has been removed
           }
         }
 
-        "there is one record in the buffer" that {
-          "contains a payload with only createsAndUpdates" in {
-            //insert one record into buffer repository that has a payload with only createsAndUpdates
-            // insert records into vatRegisteredCompanies with at least one with the same vatNumber in the buffer paylod
-             val res = persistenceService.processOneData
+        "there are two VatNumber with more than one record associated with" in {
+          //insert into vatRegisteredCompanies records with different vatNumbers
+          //Thread.sleep(100)
+          //insert into vatRegisteredCompanies two records with 2 of the vatNumbers used above but slightly different details
+          val res = persistenceService.deleteOld(limit)
 
-            whenReady(res) {result =>
-              result shouldBe ((): Unit)
-              //check records inserted into vatRegisteredCompanies database
-              //check buffer record deleted
-              //check lock has been removed
-            }
-          }
-
-          "contains a payload with only deletes" in {
-            //insert one record into buffer repository that has a payload with only deletes
-            // insert records into vatRegisteredCompanies with at least one with the same vatNumber in the buffer paylod
-            val res = persistenceService.processOneData
-
-            whenReady(res) {result =>
-              result shouldBe ((): Unit)
-              //check records deleted from vatRegisteredCompanies database
-              //check buffer record deleted
-              //check lock has been removed
-            }
-          }
-
-          "contains a payload with both createsAndUpdates and deletes" in {
-            //insert one record into buffer repository that has a payload with createAndUpdates and deletes
-            // insert records into vatRegisteredCompanies with at least one with the same vatNumber in the buffer paylod
-            val res = persistenceService.processOneData
-
-            whenReady(res) {result =>
-              result shouldBe ((): Unit)
-              //check records inserted into vatRegisteredCompanies database
-              //check records deleted from vatRegisteredCompanies database
-              //check buffer record deleted
-              //check lock has been removed
-            }
+          whenReady(res) { result =>
+            result shouldBe ((): Unit)
+            //check only 1 record exists with VatNumber and is the newest for both the repeated vatNumbers
+            //check lock has been removed
           }
         }
+      }
 
-        "there is multiple records in the buffer" that {
-          "has the oldest record containing a payload with only createsAndUpdates" in {
-            //insert one record into buffer repository that has a payload with only createsAndUpdates
-            //insert one record into buffer repository that has a payload with createAndUpdates and deletes
-            //insert one record into buffer repository that has a payload with only deletes
-            val res = persistenceService.processOneData
+      "remove only two of the oldest record(s)" when {
+        "there are three VatNumber with more than one record associated with and the limit is 2" in {
+          //insert into vatRegisteredCompanies records with different vatNumbers
+          //Thread.sleep(100)
+          //insert into vatRegisteredCompanies two records with 3 of the vatNumbers used above but slightly different details
+          val res = persistenceService.deleteOld(limit)
 
-            whenReady(res) {result =>
-              result shouldBe ((): Unit)
-              //check records inserted into vatRegisteredCompanies database
-              //check buffer record with payload containing only deletes is deleted
-              //check lock has been removed
-            }
-          }
-
-          "has a oldest record containing a payload with only deletes" in {
-            //insert one record into buffer repository that has a payload with only deletes
-            //insert one record into buffer repository that has a payload with only createsAndUpdates
-            //insert one record into buffer repository that has a payload with createAndUpdates and deletes
-            // insert records in vatRegisteredCompanies to be deleted
-            val res = persistenceService.processOneData
-
-            whenReady(res) {result =>
-              result shouldBe ((): Unit)
-              //check records deleted from vatRegisteredCompanies database
-              //check buffer record deleted with payload containing only deletes
-              //check lock has been removed
-            }
-          }
-
-          "has a oldest record containing a payload with both createsAndUpdates and deletes" in {
-            //insert one record into buffer repository that has a payload with createAndUpdates and deletes
-            //insert one record into buffer repository that has a payload with only deletes
-            //insert one record into buffer repository that has a payload with only createsAndUpdates
-            //insert records in vatRegisteredCompanies to be deleted
-            val res = persistenceService.processOneData
-
-            whenReady(res) {result =>
-              result shouldBe ((): Unit)
-              //check records inserted into vatRegisteredCompanies database
-              //check records deleted from vatRegisteredCompanies database
-              //check buffer record deleted with payload containing createsAndUpdates and deletes
-              //check lock has been removed
-            }
+          whenReady(res) { result =>
+            result shouldBe ((): Unit)
+            //check only 2 records deleted
+            //check lock has been removed
           }
         }
       }
@@ -139,17 +66,16 @@ class OldRecordsDeleteSchedulerISpec extends IntegrationSpecBase {
 
     "the lock is already acquired" that {
       "is within the TTL" should {
-        "not run the processing job and return unit" in {
-          //insert one record into buffer repository that has a payload with createAndUpdates and deletes
-          //insert records in vatRegisteredCompanies to be deleted
+        "not run the deleteOld job and return unit" in {
+          //insert into vatRegisteredCompanies records with different vatNumbers
+          //Thread.sleep(100)
+          //insert into vatRegisteredCompanies a record with a vatNumber used above but slightly different details
           // insert a lock within TTL
-          val res = persistenceService.processOneData
+          val res = persistenceService.deleteOld(limit)
 
           whenReady(res) {result =>
             result shouldBe ((): Unit)
-            //check no records inserted into vatRegisteredCompanies database
             //check no records deleted from vatRegisteredCompanies database
-            //check buffer record is still present with payload containing createsAndUpdates and deletes
             //check lock is still present removed
           }
 
@@ -157,17 +83,16 @@ class OldRecordsDeleteSchedulerISpec extends IntegrationSpecBase {
       }
 
       "is outside of the TTL" should {
-        "not run the processing job, remove the lock and return unit" in {
-          //insert one record into buffer repository that has a payload with createAndUpdates and deletes
-          //insert records in vatRegisteredCompanies to be deleted
+        "not run the deleteOld job, remove the lock and return unit" in {
+          //insert into vatRegisteredCompanies records with different vatNumbers
+          //Thread.sleep(100)
+          //insert into vatRegisteredCompanies a record with a vatNumber used above but slightly different details
           // insert a lock within TTL
           val res = persistenceService.processOneData
 
           whenReady(res) {result =>
             result shouldBe ((): Unit)
-            //check no records inserted into vatRegisteredCompanies database
             //check no records deleted from vatRegisteredCompanies database
-            //check buffer record is still present with payload containing createsAndUpdates and deletes
             //check lock has been removed
           }
         }
