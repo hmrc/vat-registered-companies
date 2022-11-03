@@ -36,21 +36,25 @@ import uk.gov.hmrc.vatregisteredcompanies.helpers.TestData._
     "lock exists within TTL" should {
       "Return false" in {
         insert(testLock)
-        Thread.sleep(20)
         val act = lockRepository.lock(testLockId)
 
         whenReady(act) { res =>
           res shouldBe false
-          println(lockRepository.ttl)
+        }
+      }
+    }
+    "lock exists outside TTL" should {
+      // revisit this test
+      "Return " in {
+        insert(expiredTestLock)
+        val act = lockRepository.lock(testLockId)
+
+        whenReady(act) { res =>
+          res shouldBe false
         }
       }
     }
 
-//    "lock exists outside TTL" should {
-//      "Return " in {
-      // check lock is deleted and return is false
-//      }
-//    }
   }
 
   "Method: release" when {
@@ -67,7 +71,6 @@ import uk.gov.hmrc.vatregisteredcompanies.helpers.TestData._
     "A lock exists" should {
       "Return (): Unit" in {
         insert(testLock)
-        Thread.sleep(20)
         val act = lockRepository.release(testLockId)
 
         whenReady(act) { res =>
@@ -91,7 +94,6 @@ import uk.gov.hmrc.vatregisteredcompanies.helpers.TestData._
     "A lock exists" should {
       "Return true" in {
         insert(testLock)
-        Thread.sleep(20)
         val act = lockRepository.isLocked(testLockId)
 
         whenReady(act) { res =>
@@ -115,7 +117,6 @@ import uk.gov.hmrc.vatregisteredcompanies.helpers.TestData._
     "A lock exists" should {
       "Return true" in {
         insert(testLock)
-        Thread.sleep(20)
         val act = lockRepository.getLock(testLockId)
 
         whenReady(act) { res =>
