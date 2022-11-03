@@ -62,6 +62,7 @@ trait IntegrationSpecBase
   val interval: Interval = Interval(Span(100, Millis))
 
   val DEFAULT_JOB_ENABLED       = "false"
+  val AUTHORISATION_TOKEN = "Bearer ab9e219d-0d9d-4a1d-90e5-f2a5c287668c"
 
   def config: Map[String, String] = Map(
     "application.router"                                      -> "testOnlyDoNotUseInAppConf.Routes",
