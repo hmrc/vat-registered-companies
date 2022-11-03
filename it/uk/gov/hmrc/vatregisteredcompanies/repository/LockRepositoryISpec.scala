@@ -16,9 +16,14 @@
 package uk.gov.hmrc.vatregisteredcompanies.repository
 import uk.gov.hmrc.vatregisteredcompanies.helpers.IntegrationSpecBase
 import uk.gov.hmrc.vatregisteredcompanies.helpers.TestData._
-import uk.gov.hmrc.vatregisteredcompanies.repositories.Lock
 
-class LockRepositoryISpec extends IntegrationSpecBase {
+ class LockRepositoryISpec extends IntegrationSpecBase {
+   override def beforeEach(): Unit = {
+     val delete = lockRepository.deleteLock()
+     whenReady(delete) { res =>
+       println("lock deleted")
+     }
+  }
 
   "Method: lock" when {
     "no lock exists" should {
@@ -31,15 +36,22 @@ class LockRepositoryISpec extends IntegrationSpecBase {
       }
     }
 
-//    "lock exists within TTL" should {
-//      "Return (): Unit" in {
-//        println("====================")
-//        println(lockRepository.ttl)
-//      }
-//    }
-//
+    "lock exists within TTL" should {
+      "Return false" in {
+        lockRepository.insert(testLockId)
+        Thread.sleep(20)
+        val act = lockRepository.lock(testLockId)
+
+        whenReady(act) { res =>
+          res shouldBe false
+          println(lockRepository.ttl)
+        }
+      }
+    }
+
 //    "lock exists outside TTL" should {
 //      "Return " in {
+      // check lock is deleted and return is false
 //      }
 //    }
   }
@@ -47,9 +59,9 @@ class LockRepositoryISpec extends IntegrationSpecBase {
   "Method: release" when {
     "no lock exists" should {
       "Return (): Unit" in {
-        val result = lockRepository.release(testLockId)
+        val act = lockRepository.release(testLockId)
 
-        whenReady(result) { res =>
+        whenReady(act) { res =>
           res shouldBe ((): Unit)
         }
       }
@@ -57,10 +69,11 @@ class LockRepositoryISpec extends IntegrationSpecBase {
 
     "A lock exists" should {
       "Return (): Unit" in {
-        lockRepository.lock(2)
-        val result = lockRepository.release(testLockId)
+        lockRepository.insert(testLockId)
+        Thread.sleep(20)
+        val act = lockRepository.release(testLockId)
 
-        whenReady(result) { res =>
+        whenReady(act) { res =>
           res shouldBe ((): Unit)
         }
       }
@@ -70,9 +83,9 @@ class LockRepositoryISpec extends IntegrationSpecBase {
   "Method: isLocked" when {
     "no lock exists" should {
       "Return false" in {
-        val result = lockRepository.isLocked(testLockId)
+        val act = lockRepository.isLocked(testLockId)
 
-        whenReady(result) { res =>
+        whenReady(act) { res =>
           res shouldBe false
         }
       }
@@ -80,10 +93,11 @@ class LockRepositoryISpec extends IntegrationSpecBase {
 
     "A lock exists" should {
       "Return true" in {
-        lockRepository.lock(testLockId)
-        val result = lockRepository.isLocked(testLockId)
+        lockRepository.insert(testLockId)
+        Thread.sleep(20)
+        val act = lockRepository.isLocked(testLockId)
 
-        whenReady(result) { res =>
+        whenReady(act) { res =>
           res shouldBe true
         }
       }
@@ -93,9 +107,9 @@ class LockRepositoryISpec extends IntegrationSpecBase {
   "Method: getLock" when {
     "no lock exists" should {
       "Return None" in {
-        val result = lockRepository.getLock(testLockId)
+        val act = lockRepository.getLock(testLockId)
 
-        whenReady(result) { res =>
+        whenReady(act) { res =>
           res shouldBe None
         }
       }
@@ -103,10 +117,11 @@ class LockRepositoryISpec extends IntegrationSpecBase {
 
     "A lock exists" should {
       "Return true" in {
-        lockRepository.lock(testLockId)
-        val result = lockRepository.getLock(testLockId)
+        lockRepository.insert(testLockId)
+        Thread.sleep(20)
+        val act = lockRepository.getLock(testLockId)
 
-        whenReady(result) { res =>
+        whenReady(act) { res =>
           res shouldBe defined
           res.get._id shouldBe testLockId
         }
