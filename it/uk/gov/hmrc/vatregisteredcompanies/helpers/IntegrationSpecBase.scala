@@ -52,7 +52,7 @@ trait IntegrationSpecBase
     with DefaultAwaitTimeout
     with PayloadBufferDatabaseOperations
     with VatRegisteredCompaniesDatabaseOperations
-    with LockRepositoryDatabaseOperations {
+    with LockDatabaseOperations {
 
   val mockHost: String = WiremockHelper.wiremockHost
   val mockPort: Int    = WiremockHelper.wiremockPort
