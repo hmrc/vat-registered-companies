@@ -16,8 +16,8 @@
 
 package uk.gov.hmrc.vatregisteredcompanies.helpers
 
-import uk.gov.hmrc.vatregisteredcompanies.models.{Address, VatRegisteredCompany, Payload}
-import uk.gov.hmrc.vatregisteredcompanies.repositories.PayloadWrapper
+import uk.gov.hmrc.vatregisteredcompanies.models.{Address, Payload, VatRegisteredCompany}
+import uk.gov.hmrc.vatregisteredcompanies.repositories.Lock
 
 object TestData {
   val testVatNo1 = "123456789"
@@ -31,8 +31,8 @@ object TestData {
   val testPayloadCreateAndUpdates: Payload = Payload(List(vatRegisteredCompany1, vatRegisteredCompany2), List())
   val testPayloadDeletes: Payload = Payload(List(), List(testVatNo1, testVatNo2))
 
-  val testLockId = 2
-  val testLockId2 = 123
+  val testLockId = 1234
+  val testLock: Lock = Lock(testLockId)
 
   def getVatRegCompany(vatNumber: String): VatRegisteredCompany =
     VatRegisteredCompany(
