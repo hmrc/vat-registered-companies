@@ -131,11 +131,11 @@ class VatRegisteredCompaniesRepositoryISpec extends IntegrationSpecBase {
         insertOne(newestRecord)
 
         val result = vatRegisteredCompaniesRepository.lookup(testVatNo1)
-          whenReady(result) {res =>
-            res shouldBe defined
-            res.get.target shouldBe defined
-            res.get.target.get.name shouldBe "newCompany"
-          }
+        whenReady(result) {res =>
+          res shouldBe defined
+          res.get.target shouldBe defined
+          res.get.target.get.name shouldBe "newCompany"
+        }
       }
     }
   }
