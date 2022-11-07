@@ -61,6 +61,7 @@ class PayloadBufferRepositoryISpec extends IntegrationSpecBase {
         whenReady(res) { result =>
           result shouldBe ((): Unit)
           bufferTotalCount shouldBe 0
+        }
       }
     }
   }
@@ -160,40 +161,6 @@ class PayloadBufferRepositoryISpec extends IntegrationSpecBase {
     }
   }
 
-//  "Method: lookup" should {
-//    "return the latest lookup response with the vatRegisteredCompany" when {
-//      "the database has no records" in {
-//        val result = vatRegisteredCompaniesRepository.lookup(testVatNo1)
-//        whenReady(result) { res =>
-//          res shouldBe None
-//        }
-//      }
-//
-//      "the database has a record with the matching vatNumber" in {
-//        insertOne(getVatRegCompany(testVatNo1))
-//        val result = vatRegisteredCompaniesRepository.lookup(testVatNo1)
-//
-//        whenReady(result) { res =>
-//          res shouldBe defined
-//          res.get.target shouldBe defined
-//          res.get.target.get.vatNumber shouldBe testVatNo1
-//        }
-//      }
-//
-//      "the database has more than one record with the vatNumber" in {
-//        val oldestRecord = getVatRegCompany(testVatNo1)
-//        val newestRecord = oldestRecord.copy(name = "newCompany")
-//        insertOne(oldestRecord)
-//        Thread.sleep(100)
-//        insertOne(newestRecord)
-//
-//        val result = vatRegisteredCompaniesRepository.lookup(testVatNo1)
-//          whenReady(result) {res =>
-//            res shouldBe defined
-//            res.get.target shouldBe defined
-//            res.get.target.get.name shouldBe "newCompany"
-//          }
-//      }
 //      "Method: getOne" when {
 //        "there are no records in the database" should {
 //          "Have no records" in {
@@ -215,27 +182,42 @@ class PayloadBufferRepositoryISpec extends IntegrationSpecBase {
 //          }
 //        }
 //      }
-//      "Method: deleteOne" when {
-//        "there are no records in the database" should {
-//          "Have no records" in {
-//            bufferTotalCount shouldBe 0
-//          }
-//        }
-//
-//        "there is 1 record in the database" should {
-//          "Have one record" in {
-//            insertOne(getVatRegCompany(testVatNo1))
-//            bufferTotalCount shouldBe 0
-//          }
-//        }
-//
-//        "there are multiple records in the database" should {
-//          "Have three records" in {
-//            insertMany(List(getVatRegCompany(testVatNo1), getVatRegCompany(testVatNo2), getVatRegCompany(testVatNo3)))
-//            bufferTotalCount shouldBe 0
-//          }
-////        }
-//      }
-//    }
+      "Method: deleteOne" when {
+        "there are no records in the database" should {
+          "Have no records" in {
+            bufferTotalCount shouldBe 0
+            val currentRecordsList = {
+              payloadBufferRepository.list
+            }
+            val firstRecord = whenReady(currentRecordsList) { first => first.head.payload }
+            val res = payloadBufferRepository.deleteOne(createPayloadWrapper(testPayloadDeletes))
+
+            whenReady(res) { result =>
+              result shouldBe ((): Unit)
+              bufferTotalCount shouldBe 0
+            }
+        }
+
+        "there is 1 record in the database" should {
+          "Have one record" in {
+            bufferTotalCount shouldBe 1
+            val currentRecordsList = {
+              payloadBufferRepository.list
+            }
+            val res = payloadBufferRepository.deleteOne(createPayloadWrapper(testPayloadDeletes))
+
+            whenReady(res) { result =>
+              result shouldBe ((): Unit)
+              bufferTotalCount shouldBe 0
+            }
+        }
+
+        "there are multiple records in the database" should {
+          "Have three records" in {
+            insertMany(List(getVatRegCompany(testVatNo1), getVatRegCompany(testVatNo2), getVatRegCompany(testVatNo3)))
+            bufferTotalCount shouldBe 0
+          }
+      }
+    }
   }
 }
