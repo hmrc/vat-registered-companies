@@ -190,10 +190,8 @@ class PayloadBufferRepositoryISpec extends IntegrationSpecBase {
             bufferTotalCount shouldBe 0
             val currentRecordsList = {
               await(payloadBufferRepository.list)
-
-
             }
-            //val firstRecord = whenReady(currentRecordsList) { first => first.head.payload }
+
             val res = payloadBufferRepository.deleteOne(createPayloadWrapper(testPayloadDeletes))
 
             whenReady(res) { result =>
@@ -207,11 +205,14 @@ class PayloadBufferRepositoryISpec extends IntegrationSpecBase {
 
         "there is 1 record in the database" should {
           "Have one record" in {
+            val ginnyPayload = insertOneBuffer(testPayloadCreateAndUpdates)
             bufferTotalCount shouldBe 1
+
             val currentRecordsList = {
               payloadBufferRepository.list
             }
-            val res = payloadBufferRepository.deleteOne(createPayloadWrapper(testPayloadDeletes))
+            val payloadWrapperToDelete = whenReady(currentRecordsList) { first => first.head }
+            val res = payloadBufferRepository.deleteOne(payloadWrapperToDelete)
 
             whenReady(res) { result =>
               result shouldBe ((): Unit)
@@ -222,8 +223,26 @@ class PayloadBufferRepositoryISpec extends IntegrationSpecBase {
 
         "there are multiple records in the database" should {
           "Have three records" in {
-            insertMany(List(getVatRegCompany(testVatNo1), getVatRegCompany(testVatNo2), getVatRegCompany(testVatNo3)))
-            bufferTotalCount shouldBe 0
+            insertOneBuffer(testPayloadCreateAndUpdates1)
+            insertOneBuffer(testPayloadCreateAndUpdates)
+            insertOneBuffer(testPayloadCreateAndUpdates1)
+            val currentRecordsList = {
+              payloadBufferRepository.list
+            }
+
+            println(bufferTotalCount)
+
+            val payloadWrapperToDelete = await(currentRecordsList).apply(1)
+            bufferTotalCount shouldBe 3
+            println("^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ printing list of records ^^^")
+            println(currentRecordsList)
+            val res = payloadBufferRepository.deleteOne(payloadWrapperToDelete)
+            println("****************** printing payloadWrapper to delete ")
+            println(payloadWrapperToDelete)
+            whenReady(res) { result =>
+              result shouldBe ((): Unit)
+              bufferTotalCount shouldBe 2
+            }
           }
       }
     }
