@@ -1,6 +1,7 @@
 package uk.gov.hmrc.vatregisteredcompanies.schedulers
 
 import uk.gov.hmrc.vatregisteredcompanies.helpers.IntegrationSpecBase
+import uk.gov.hmrc.vatregisteredcompanies.helpers.TestData._
 
 class PayloadConversionSchedulerISpec extends IntegrationSpecBase {
 
@@ -9,39 +10,75 @@ class PayloadConversionSchedulerISpec extends IntegrationSpecBase {
       "get the oldest payload from the buffer repository and process it then delete buffer record" when {
         "there is one record in the buffer and no records in vatRegisteredCompanies" that {
           "contains a payload with only createsAndUpdates" in {
+
             //insert one record into buffer repository that has a payload with only createsAndUpdates
+            insertOneBuffer(testPayloadCreateAndUpdates)
+            bufferTotalCount shouldBe 1
+            totalCount shouldBe 0
+
             val res = persistenceService.processOneData
 
             whenReady(res) {result =>
               result shouldBe ((): Unit)
+
               //check records inserted into vatRegisteredCompanies database
+              totalCount shouldBe 2
               //check buffer record deleted
+              bufferTotalCount shouldBe 0
               //check lock has been removed
+              lockCount shouldBe 0
             }
           }
 
           "contains a payload with only deletes" in {
             //insert one record into buffer repository that has a payload with only deletes
+            insertOneBuffer(testPayloadDeletes)
+            bufferTotalCount shouldBe 1
+
+
             val res = persistenceService.processOneData
 
             whenReady(res) {result =>
               result shouldBe ((): Unit)
               //check records deleted from vatRegisteredCompanies database
+              //TODO: based on above request, no records would be present. - Will have another dev confirm assumption
               //check buffer record deleted
               //check lock has been removed
+              bufferTotalCount shouldBe 0
+              totalCount shouldBe 0
+              lockCount shouldBe 0
             }
           }
 
           "contains a payload with both createsAndUpdates and deletes" in {
             //insert one record into buffer repository that has a payload with createAndUpdates and deletes
+            bufferTotalCount shouldBe 0
+            insertOneBuffer(testPayloadCreateAndDeletes)
+                //this inserts companies with vatNo1 and vatNo2
+                //deletes is deleting vatNo1 and vatNo3
+
+            bufferTotalCount shouldBe(1)
+            totalCount shouldBe(0)
+
+            val payloadSentToBufferRepo = await(payloadBufferRepository.list)
+            payloadSentToBufferRepo.mkString should include (testVatNo1)
+            payloadSentToBufferRepo.mkString should include (testVatNo2)
+            // payloadSentToBufferRepo.head.payload should include(testPayloadCreateAndUpdates.toString)
+
             val res = persistenceService.processOneData
 
             whenReady(res) {result =>
               result shouldBe ((): Unit)
               //check records inserted into vatRegisteredCompanies database
               //check records deleted from vatRegisteredCompanies database
+              totalCount shouldBe(1)
+              val secondCompanyStillPresent = await(vatRegisteredCompaniesRepository.findAll())
+              secondCompanyStillPresent.mkString shouldNot  include (testVatNo1)
+              secondCompanyStillPresent.mkString should include (testVatNo2)
               //check buffer record deleted
+              bufferTotalCount shouldBe(0)
               //check lock has been removed
+              lockCount shouldBe(0)
             }
           }
         }
