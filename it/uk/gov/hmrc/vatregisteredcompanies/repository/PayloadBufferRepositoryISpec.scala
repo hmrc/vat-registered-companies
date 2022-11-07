@@ -182,49 +182,7 @@ class PayloadBufferRepositoryISpec extends IntegrationSpecBase {
 //          }
 //        }
 //      }
-//      "Method: deleteOne" when {
-//        "there are no records in the database" should {
-//          "Have no records" in {
-//            bufferTotalCount shouldBe 0
-//          }
-//        }
 //
-//        "there is 1 record in the database" should {
-//          "Have one record" in {
-//            insertOne(getVatRegCompany(testVatNo1))
-//            bufferTotalCount shouldBe 0
-//          }
-//        }
-//
-//        "there are multiple records in the database" should {
-//          "Have three records" in {
-//            insertMany(List(getVatRegCompany(testVatNo1), getVatRegCompany(testVatNo2), getVatRegCompany(testVatNo3)))
-//            bufferTotalCount shouldBe 0
-//          }
-////        }
-//      }
-//    }
-//      "Method: getOne" when {
-//        "there are no records in the database" should {
-//          "Have no records" in {
-//            bufferTotalCount shouldBe 0
-//          }
-//        }
-//
-//        "there is 1 record in the database" should {
-//          "Have one record" in {
-//            insertOne(getVatRegCompany(testVatNo1))
-//            bufferTotalCount shouldBe 0
-//          }
-//        }
-//
-//        "there are multiple records in the database" should {
-//          "Have three records" in {
-//            insertMany(List(getVatRegCompany(testVatNo1), getVatRegCompany(testVatNo2), getVatRegCompany(testVatNo3)))
-//            bufferTotalCount shouldBe 0
-//          }
-//        }
-//      }
       "Method: deleteOne" when {
         "there are no records in the database" should {
           "Have no records" in {
@@ -239,6 +197,7 @@ class PayloadBufferRepositoryISpec extends IntegrationSpecBase {
               result shouldBe ((): Unit)
               bufferTotalCount shouldBe 0
             }
+          }
         }
 
         "there is 1 record in the database" should {
@@ -253,6 +212,7 @@ class PayloadBufferRepositoryISpec extends IntegrationSpecBase {
               result shouldBe ((): Unit)
               bufferTotalCount shouldBe 0
             }
+          }
         }
 
         "there are multiple records in the database" should {
@@ -263,4 +223,3 @@ class PayloadBufferRepositoryISpec extends IntegrationSpecBase {
       }
     }
   }
-}
