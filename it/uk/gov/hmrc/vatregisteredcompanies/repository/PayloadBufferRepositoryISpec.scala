@@ -16,6 +16,7 @@
 
 package uk.gov.hmrc.vatregisteredcompanies.repository
 
+import net.bytebuddy.pool.TypePool.Empty
 import uk.gov.hmrc.vatregisteredcompanies.helpers.IntegrationSpecBase
 import uk.gov.hmrc.vatregisteredcompanies.helpers.TestData._
 import uk.gov.hmrc.vatregisteredcompanies.repositories.PayloadWrapper
@@ -188,14 +189,18 @@ class PayloadBufferRepositoryISpec extends IntegrationSpecBase {
           "Have no records" in {
             bufferTotalCount shouldBe 0
             val currentRecordsList = {
-              payloadBufferRepository.list
+              await(payloadBufferRepository.list)
+
+
             }
-            val firstRecord = whenReady(currentRecordsList) { first => first.head.payload }
+            //val firstRecord = whenReady(currentRecordsList) { first => first.head.payload }
             val res = payloadBufferRepository.deleteOne(createPayloadWrapper(testPayloadDeletes))
 
             whenReady(res) { result =>
               result shouldBe ((): Unit)
+              currentRecordsList shouldBe empty
               bufferTotalCount shouldBe 0
+
             }
           }
         }
