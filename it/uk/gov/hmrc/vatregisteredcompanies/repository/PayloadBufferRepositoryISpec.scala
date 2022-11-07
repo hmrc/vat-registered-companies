@@ -251,8 +251,6 @@ class PayloadBufferRepositoryISpec extends IntegrationSpecBase {
               payloadBufferRepository.list
             }
 
-            println(bufferTotalCount)
-
             val payloadWrapperToDelete = await(currentRecordsList).apply(1)
             bufferTotalCount shouldBe 3
 
