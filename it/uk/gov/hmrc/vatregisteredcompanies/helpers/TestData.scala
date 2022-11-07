@@ -28,17 +28,10 @@ object TestData {
   val testVatNo4 = "423456780012"
   val invalidVatNo = "hakfgjdfjk"
 
-<<<<<<< HEAD
   val acmeTradingWithVatNo1: VatRegisteredCompany = getVatRegCompany(testVatNo1, "ACME Trading")
   val acmeTradingWithVatNo2: VatRegisteredCompany = getVatRegCompany(testVatNo2, "ACME Trading")
   val acmeTradingWithVatNo3: VatRegisteredCompany = getVatRegCompany(testVatNo3, "ACME Trading")
   val acmeTradingWithVatNo4: VatRegisteredCompany = getVatRegCompany(testVatNo4, "ACME Trading")
-=======
-  val vatRegisteredCompany1: VatRegisteredCompany = getVatRegCompany(testVatNo1)
-  val vatRegisteredCompany2: VatRegisteredCompany = getVatRegCompany1(testVatNo2)
-  val vatRegisteredCompany3: VatRegisteredCompany = getVatRegCompany2(testVatNo3)
-  val vatRegisteredCompany4: VatRegisteredCompany = getVatRegCompany(testVatNo4)
->>>>>>> fccbaba (DLS-6037-update DeleteOne PBR ispec tests to pass)
 
   val deltaTradingWithVatNo1: VatRegisteredCompany = getVatRegCompany(testVatNo1, "Delta Trading")
 
