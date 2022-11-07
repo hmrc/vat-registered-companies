@@ -205,7 +205,7 @@ class PayloadBufferRepositoryISpec extends IntegrationSpecBase {
 
         "there is 1 record in the database" should {
           "Have one record" in {
-            val ginnyPayload = insertOneBuffer(testPayloadCreateAndUpdates)
+            insertOneBuffer(testPayloadCreateAndUpdates)
             bufferTotalCount shouldBe 1
 
             val currentRecordsList = {
