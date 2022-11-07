@@ -26,20 +26,21 @@ object TestData {
   val testVatNo2 = "223456789012"
   val testVatNo3 = "323456789012"
   val testVatNo4 = "423456780012"
-
   val invalidVatNo = "hakfgjdfjk"
-  val vatRegisteredCompany1: VatRegisteredCompany = getVatRegCompany(testVatNo1)
-  val vatRegisteredCompany2: VatRegisteredCompany = getVatRegCompany(testVatNo2)
-  val vatRegisteredCompany3: VatRegisteredCompany = getVatRegCompany(testVatNo3)
-  val vatRegisteredCompany4: VatRegisteredCompany = getVatRegCompany(testVatNo4)
 
-  val testPayloadCreateAndUpdates1: Payload = Payload(List(vatRegisteredCompany3, vatRegisteredCompany4), List())
-  val testPayloadCreateAndUpdates: Payload = Payload(List(vatRegisteredCompany1, vatRegisteredCompany2), List())
+  val acmeTradingWithVatNo1: VatRegisteredCompany = getVatRegCompany(testVatNo1, "ACME Trading")
+  val acmeTradingWithVatNo2: VatRegisteredCompany = getVatRegCompany(testVatNo2, "ACME Trading")
+  val acmeTradingWithVatNo3: VatRegisteredCompany = getVatRegCompany(testVatNo3, "ACME Trading")
+  val acmeTradingWithVatNo4: VatRegisteredCompany = getVatRegCompany(testVatNo4, "ACME Trading")
+
+  val deltaTradingWithVatNo1: VatRegisteredCompany = getVatRegCompany(testVatNo1, "Delta Trading")
+
+  val testPayloadCreateAndUpdates1: Payload = Payload(List(acmeTradingWithVatNo3, acmeTradingWithVatNo4), List())
+  val testPayloadCreateAndUpdates: Payload = Payload(List(acmeTradingWithVatNo1, acmeTradingWithVatNo2), List())
   val testPayloadDeletes: Payload = Payload(List(), List(testVatNo1, testVatNo2))
 
   val testLockId = 1234
   val testLock: Lock = Lock(testLockId)
-
   val formattedDateString = "2020-07-01T00:00:00Z"
   val pastTime: LocalDateTime = LocalDateTime.parse(
     formattedDateString,
@@ -47,24 +48,10 @@ object TestData {
   );
   val expiredTestLock: Lock = Lock(testLockId, pastTime)
 
-  def getVatRegCompany(vatNumber: String): VatRegisteredCompany =
+  def getVatRegCompany(vatNumber: String, companyName: String): VatRegisteredCompany =
     VatRegisteredCompany(
-      name = "ACME trading",
+      name = companyName,
       vatNumber = vatNumber,
       address = Address("line 1", None, None, None, None, None, countryCode = "GB")
-    )
-
-  def getVatRegCompany1(vatNumber: String): VatRegisteredCompany =
-    VatRegisteredCompany(
-      name = "Delta trading",
-      vatNumber = vatNumber,
-      address = Address("c/o Delta trading", None, None, None, None, None, countryCode = "GB")
-    )
-
-  def getVatRegCompany2(vatNumber: String): VatRegisteredCompany =
-    VatRegisteredCompany(
-      name = "Alpha trading",
-      vatNumber = vatNumber,
-      address = Address("c/o Alpha trading co", None, None, None, None, None, countryCode = "GB")
     )
 }

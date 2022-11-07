@@ -51,14 +51,14 @@ class VatregCoControllerISpec extends IntegrationSpecBase {
       "contains a target that is the payload for the vatNumber" when {
         "there is one record matching the vatNumber" in {
           stubAudit
-          insertOne(vatRegisteredCompany1)
+          insertOne(acmeTradingWithVatNo1)
           val request = buildRequest(lookupPath)
             .get()
 
           whenReady(request) {resp =>
             resp.status shouldBe 200
             val respBody = Json.parse(resp.body).as[LookupResponse]
-            respBody.target shouldBe Some(vatRegisteredCompany1)
+            respBody.target shouldBe Some(acmeTradingWithVatNo1)
           }
         }
       }
@@ -66,9 +66,9 @@ class VatregCoControllerISpec extends IntegrationSpecBase {
       "contains a target that is the newest payload for the vatNumber" when {
         "there is more than one record matching the vatNumber" in {
           stubAudit
-          insertOne(getVatRegCompany2(testVatNo1))
+          insertOne(deltaTradingWithVatNo1)
           Thread.sleep(100)
-          insertOne(vatRegisteredCompany1)
+          insertOne(acmeTradingWithVatNo1)
 
           val request = buildRequest(lookupPath)
             .get()
@@ -76,7 +76,7 @@ class VatregCoControllerISpec extends IntegrationSpecBase {
           whenReady(request) {resp =>
             resp.status shouldBe 200
             val respBody = Json.parse(resp.body).as[LookupResponse]
-            respBody.target shouldBe Some(vatRegisteredCompany1)
+            respBody.target shouldBe Some(acmeTradingWithVatNo1)
           }
         }
       }
@@ -103,14 +103,14 @@ class VatregCoControllerISpec extends IntegrationSpecBase {
       "contains a target that is the payload for the vatNumber but no requester" when {
         "there is one record matching the vatNumber and no records for requester vatNumber" in {
           stubAudit
-          insertOne(vatRegisteredCompany1)
+          insertOne(acmeTradingWithVatNo1)
           val request = buildRequest(lookupWithRequesterPath)
             .get()
 
           whenReady(request) {resp =>
             resp.status shouldBe 200
             val respBody = Json.parse(resp.body).as[LookupResponse]
-            respBody.target shouldBe Some(vatRegisteredCompany1)
+            respBody.target shouldBe Some(acmeTradingWithVatNo1)
             respBody.requester.isDefined shouldBe false
           }
         }
@@ -119,9 +119,9 @@ class VatregCoControllerISpec extends IntegrationSpecBase {
       "contains a target that is the newest payload for the vatNumber and no requester" when {
         "there is more than one record matching the vatNumber and no records matching requester" in {
           stubAudit
-          insertOne(getVatRegCompany2(testVatNo1))
+          insertOne(deltaTradingWithVatNo1)
           Thread.sleep(100)
-          insertOne(vatRegisteredCompany1)
+          insertOne(acmeTradingWithVatNo1)
 
           val request = buildRequest(lookupWithRequesterPath)
             .get()
@@ -129,7 +129,7 @@ class VatregCoControllerISpec extends IntegrationSpecBase {
           whenReady(request) {resp =>
             resp.status shouldBe 200
             val respBody = Json.parse(resp.body).as[LookupResponse]
-            respBody.target shouldBe Some(vatRegisteredCompany1)
+            respBody.target shouldBe Some(acmeTradingWithVatNo1)
             respBody.requester.isDefined shouldBe false
           }
         }
@@ -138,7 +138,7 @@ class VatregCoControllerISpec extends IntegrationSpecBase {
       "contains no target but a requester" when {
         "there are no records matching the vatNumber and record for requester vatNumber" in {
           stubAudit
-          insertOne(vatRegisteredCompany2)
+          insertOne(acmeTradingWithVatNo2)
           val request = buildRequest(lookupWithRequesterPath)
             .get()
 
@@ -154,15 +154,15 @@ class VatregCoControllerISpec extends IntegrationSpecBase {
       "contains a target that is the payload for the vatNumber and a requester" when {
         "there is one record matching the vatNumber and a record for requester vatNumber" in {
           stubAudit
-          insertOne(vatRegisteredCompany1)
-          insertOne(vatRegisteredCompany2)
+          insertOne(acmeTradingWithVatNo1)
+          insertOne(acmeTradingWithVatNo2)
           val request = buildRequest(lookupWithRequesterPath)
             .get()
 
           whenReady(request) {resp =>
             resp.status shouldBe 200
             val respBody = Json.parse(resp.body).as[LookupResponse]
-            respBody.target shouldBe Some(vatRegisteredCompany1)
+            respBody.target shouldBe Some(acmeTradingWithVatNo1)
             respBody.requester.isDefined shouldBe true
           }
         }
@@ -171,10 +171,10 @@ class VatregCoControllerISpec extends IntegrationSpecBase {
       "contains a target that is the newest payload for the vatNumber and a requester" when {
         "there is more than one record matching the vatNumber and a record matching requester" in {
           stubAudit
-          insertOne(getVatRegCompany2(testVatNo1))
+          insertOne(deltaTradingWithVatNo1)
           Thread.sleep(100)
-          insertOne(vatRegisteredCompany1)
-          insertOne(vatRegisteredCompany2)
+          insertOne(acmeTradingWithVatNo1)
+          insertOne(acmeTradingWithVatNo2)
 
           val request = buildRequest(lookupWithRequesterPath)
             .get()
@@ -182,7 +182,7 @@ class VatregCoControllerISpec extends IntegrationSpecBase {
           whenReady(request) {resp =>
             resp.status shouldBe 200
             val respBody = Json.parse(resp.body).as[LookupResponse]
-            respBody.target shouldBe Some(vatRegisteredCompany1)
+            respBody.target shouldBe Some(acmeTradingWithVatNo1)
             respBody.requester.isDefined shouldBe true
           }
         }

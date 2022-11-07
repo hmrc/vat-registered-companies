@@ -40,7 +40,7 @@ class VatRegisteredCompaniesRepositoryISpec extends IntegrationSpecBase {
 
     "there is 1 record in the database" should {
       "return unit and delete the record" in {
-        insertOne(getVatRegCompany(testVatNo1))
+        insertOne(acmeTradingWithVatNo1)
         totalCount shouldBe 1
         val res = vatRegisteredCompaniesRepository.deleteAll()
 
@@ -53,7 +53,7 @@ class VatRegisteredCompaniesRepositoryISpec extends IntegrationSpecBase {
 
     "there are multiple records in the database" should {
       "return unit and delete all records" in {
-        insertMany(List(getVatRegCompany(testVatNo1), getVatRegCompany(testVatNo2), getVatRegCompany(testVatNo3)))
+        insertMany(List(acmeTradingWithVatNo1, acmeTradingWithVatNo2, acmeTradingWithVatNo3))
         totalCount shouldBe 3
         val res = vatRegisteredCompaniesRepository.deleteAll()
 
@@ -79,7 +79,7 @@ class VatRegisteredCompaniesRepositoryISpec extends IntegrationSpecBase {
         }
 
         "the database has one record" in {
-          insertOne(getVatRegCompany(testVatNo3))
+          insertOne(acmeTradingWithVatNo3)
           val payload = PayloadWrapper(payload = testPayloadCreateAndUpdates)
           val result = vatRegisteredCompaniesRepository.process(payload)
           whenReady(result) { res =>
@@ -89,8 +89,8 @@ class VatRegisteredCompaniesRepositoryISpec extends IntegrationSpecBase {
         }
 
         "the database has multiple records, including duplicate VAT number" in {
-          insertOne(getVatRegCompany(testVatNo1))
-          insertOne(getVatRegCompany(testVatNo3))
+          insertOne(acmeTradingWithVatNo1)
+          insertOne(acmeTradingWithVatNo3)
           val payload = PayloadWrapper(payload = testPayloadCreateAndUpdates)
           val result = vatRegisteredCompaniesRepository.process(payload)
           whenReady(result) { res =>
@@ -113,7 +113,7 @@ class VatRegisteredCompaniesRepositoryISpec extends IntegrationSpecBase {
       }
 
       "the database has a record with the matching vatNumber" in {
-        insertOne(getVatRegCompany(testVatNo1))
+        insertOne(acmeTradingWithVatNo1)
         val result = vatRegisteredCompaniesRepository.lookup(testVatNo1)
 
         whenReady(result) { res =>
@@ -124,7 +124,7 @@ class VatRegisteredCompaniesRepositoryISpec extends IntegrationSpecBase {
       }
 
       "the database has more than one record with the vatNumber" in {
-        val oldestRecord = getVatRegCompany(testVatNo1)
+        val oldestRecord = acmeTradingWithVatNo1
         val newestRecord = oldestRecord.copy(name = "newCompany")
         insertOne(oldestRecord)
         Thread.sleep(100)
