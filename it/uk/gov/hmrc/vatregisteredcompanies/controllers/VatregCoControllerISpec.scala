@@ -66,7 +66,7 @@ class VatregCoControllerISpec extends IntegrationSpecBase {
       "contains a target that is the newest payload for the vatNumber" when {
         "there is more than one record matching the vatNumber" in {
           stubAudit
-          insertOne(deltaTradingWithVatNo1)
+          insertOne(getVatRegCompany(testVatNo1, "Acme Trading"))
           Thread.sleep(100)
           insertOne(acmeTradingWithVatNo1)
 
@@ -119,7 +119,7 @@ class VatregCoControllerISpec extends IntegrationSpecBase {
       "contains a target that is the newest payload for the vatNumber and no requester" when {
         "there is more than one record matching the vatNumber and no records matching requester" in {
           stubAudit
-          insertOne(deltaTradingWithVatNo1)
+          insertOne(getVatRegCompany(testVatNo1, "Acme Company"))
           Thread.sleep(100)
           insertOne(acmeTradingWithVatNo1)
 
@@ -171,7 +171,7 @@ class VatregCoControllerISpec extends IntegrationSpecBase {
       "contains a target that is the newest payload for the vatNumber and a requester" when {
         "there is more than one record matching the vatNumber and a record matching requester" in {
           stubAudit
-          insertOne(deltaTradingWithVatNo1)
+          insertOne(getVatRegCompany(testVatNo1, "Test Company"))
           Thread.sleep(100)
           insertOne(acmeTradingWithVatNo1)
           insertOne(acmeTradingWithVatNo2)
