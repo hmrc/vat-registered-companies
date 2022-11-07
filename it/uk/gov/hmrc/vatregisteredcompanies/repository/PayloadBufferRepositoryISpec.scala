@@ -162,28 +162,49 @@ class PayloadBufferRepositoryISpec extends IntegrationSpecBase {
     }
   }
 
-//      "Method: getOne" when {
-//        "there are no records in the database" should {
-//          "Have no records" in {
-//            bufferTotalCount shouldBe 0
-//          }
-//        }
-//
-//        "there is 1 record in the database" should {
-//          "Have one record" in {
-//            insertOne(getVatRegCompany(testVatNo1))
-//            bufferTotalCount shouldBe 0
-//          }
-//        }
-//
-//        "there are multiple records in the database" should {
-//          "Have three records" in {
-//            insertMany(List(getVatRegCompany(testVatNo1), getVatRegCompany(testVatNo2), getVatRegCompany(testVatNo3)))
-//            bufferTotalCount shouldBe 0
-//          }
-//        }
-//      }
-//
+      "Method: getOne" when {
+        "there are no records in the database" should {
+          "Have no records" in {
+            val res = payloadBufferRepository.one
+
+            whenReady(res) {result => result shouldBe empty}
+            bufferTotalCount shouldBe 0
+          }
+        }
+
+        "there is 1 record in the database" should {
+          "Have one record" in {
+            bufferTotalCount shouldBe 0
+            insertOneBuffer(testPayloadCreateAndUpdates1)
+            Thread.sleep(200)
+            bufferTotalCount shouldBe 1
+            val res = payloadBufferRepository.one
+
+            whenReady(res) { result =>
+              result.head.payload shouldBe testPayloadCreateAndUpdates1
+              bufferTotalCount shouldBe 1
+            }
+          }
+        }
+
+        "there are multiple records in the database" should {
+          "Have three records" in {
+            insertOneBuffer(testPayloadCreateAndUpdates)
+            insertOneBuffer(testPayloadCreateAndUpdates1)
+            insertOneBuffer(testPayloadCreateAndUpdates)
+            bufferTotalCount shouldBe 3
+
+            val res = payloadBufferRepository.one
+
+            whenReady(res) { result =>
+              result.head.payload shouldBe testPayloadCreateAndUpdates
+              bufferTotalCount shouldBe 3
+            }
+
+          }
+        }
+      }
+
       "Method: deleteOne" when {
         "there are no records in the database" should {
           "Have no records" in {
@@ -234,11 +255,9 @@ class PayloadBufferRepositoryISpec extends IntegrationSpecBase {
 
             val payloadWrapperToDelete = await(currentRecordsList).apply(1)
             bufferTotalCount shouldBe 3
-            println("^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ printing list of records ^^^")
-            println(currentRecordsList)
+
             val res = payloadBufferRepository.deleteOne(payloadWrapperToDelete)
-            println("****************** printing payloadWrapper to delete ")
-            println(payloadWrapperToDelete)
+
             whenReady(res) { result =>
               result shouldBe ((): Unit)
               bufferTotalCount shouldBe 2
