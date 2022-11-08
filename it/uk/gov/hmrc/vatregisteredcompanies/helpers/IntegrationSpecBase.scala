@@ -94,6 +94,7 @@ trait IntegrationSpecBase
   val vatRegisteredCompaniesRepository = app.injector.instanceOf[VatRegisteredCompaniesRepository]
 
   val persistenceService = app.injector.instanceOf[PersistenceService]
+  val AUTHORISATION_TOKEN = "Bearer ab9e219d-0d9d-4a1d-90e5-f2a5c287668c"
 
   override def beforeEach(): Unit = {
     resetWiremock()
