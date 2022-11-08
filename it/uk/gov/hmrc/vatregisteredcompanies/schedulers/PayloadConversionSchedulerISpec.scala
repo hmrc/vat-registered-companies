@@ -352,7 +352,7 @@ class PayloadConversionSchedulerISpec extends IntegrationSpecBase {
           insertOne(acmeTradingWithVatNo3)
           totalCount shouldBe 4
           // insert a lock within TTL
-          testLock
+          insert(testLock)
           lockCount shouldBe 1
 
           val res = persistenceService.processOneData
@@ -360,9 +360,15 @@ class PayloadConversionSchedulerISpec extends IntegrationSpecBase {
           whenReady(res) {result =>
             result shouldBe ((): Unit)
             //check no records inserted into vatRegisteredCompanies database
+            totalCount shouldBe 4
             //check no records deleted from vatRegisteredCompanies database
             //check buffer record is still present with payload containing createsAndUpdates and deletes
+            bufferTotalCount shouldBe 1
+
+            val bufferList = await(payloadBufferRepository.list)
+            bufferList.head.payload shouldBe testPayloadCreateAndDeletes1
             //check lock is still present removed
+            lockCount shouldBe 1
           }
 
         }
