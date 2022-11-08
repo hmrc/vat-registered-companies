@@ -46,28 +46,30 @@ class VatRegisteredCompaniesRepositoryISpec extends IntegrationSpecBase {
 
     "there is 1 record in the database" should {
       "Have one record" in {
-      "return unit and delete the record" in {
-        insertOne(acmeTradingWithVatNo1)
-        totalCount shouldBe 1
-        val res = vatRegisteredCompaniesRepository.deleteAll()
+        "return unit and delete the record" in {
+          insertOne(acmeTradingWithVatNo1)
+          totalCount shouldBe 1
+          val res = vatRegisteredCompaniesRepository.deleteAll()
 
-        whenReady(res) {result =>
-          result shouldBe ((): Unit)
-          totalCount shouldBe 0
+          whenReady(res) { result =>
+            result shouldBe ((): Unit)
+            totalCount shouldBe 0
+          }
         }
       }
     }
 
     "there are multiple records in the database" should {
       "Have three records" in {
-      "return unit and delete all records" in {
-        insertMany(List(acmeTradingWithVatNo1, acmeTradingWithVatNo2, acmeTradingWithVatNo3))
-        totalCount shouldBe 3
-        val res = vatRegisteredCompaniesRepository.deleteAll()
+        "return unit and delete all records" in {
+          insertMany(List(acmeTradingWithVatNo1, acmeTradingWithVatNo2, acmeTradingWithVatNo3))
+          totalCount shouldBe 3
+          val res = vatRegisteredCompaniesRepository.deleteAll()
 
-        whenReady(res) {result =>
-          result shouldBe ((): Unit)
-          totalCount shouldBe 0
+          whenReady(res) {result =>
+            result shouldBe ((): Unit)
+            totalCount shouldBe 0
+          }
         }
       }
     }
@@ -123,7 +125,7 @@ class VatRegisteredCompaniesRepositoryISpec extends IntegrationSpecBase {
           }
         }
         "the database has one record that matches the VAT number" in {
-          insertOne(getVatRegCompany(testVatNo1))
+          insertOne(acmeTradingWithVatNo1)
 
           val payload = PayloadWrapper(payload = testPayloadDeletes)
           val result = vatRegisteredCompaniesRepository.process(payload)
