@@ -4,7 +4,6 @@ import sbt._
 object AppDependencies {
 
   val compile = Seq(
-
     "uk.gov.hmrc"                                %% "simple-reactivemongo"      % "8.1.0-play-28",
     "uk.gov.hmrc"                                %% "bootstrap-backend-play-28" % "7.8.0",
     "org.typelevel"                              %% "cats-core"                 % "2.8.0",
@@ -26,5 +25,6 @@ object AppDependencies {
     "org.scalatestplus.play"  %% "scalatestplus-play"       % "5.1.0"         % "test, it",
     "org.scalatestplus"       %% "scalacheck-1-14"          % "3.2.2.0"       % "test, it",
     "com.vladsch.flexmark"    %  "flexmark-all"             % "0.62.2"        % "test, it"
+
   )
 }
