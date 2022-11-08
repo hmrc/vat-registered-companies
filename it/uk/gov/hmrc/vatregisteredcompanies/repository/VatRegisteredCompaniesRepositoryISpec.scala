@@ -22,12 +22,6 @@ import uk.gov.hmrc.vatregisteredcompanies.repositories.PayloadWrapper
 
 class VatRegisteredCompaniesRepositoryISpec extends IntegrationSpecBase {
   override def beforeEach(): Unit = {
-    await(vatRegisteredCompaniesRepository.deleteAll())
-    val result = vatRegisteredCompaniesRepository.deleteAll()
-
-    whenReady(result) { res =>
-      println("DB cleared")
-    }
     deleteAll
   }
 
@@ -45,31 +39,27 @@ class VatRegisteredCompaniesRepositoryISpec extends IntegrationSpecBase {
     }
 
     "there is 1 record in the database" should {
-      "Have one record" in {
-        "return unit and delete the record" in {
-          insertOne(acmeTradingWithVatNo1)
-          totalCount shouldBe 1
-          val res = vatRegisteredCompaniesRepository.deleteAll()
+      "return unit and delete the record" in {
+        insertOne(acmeTradingWithVatNo1)
+        totalCount shouldBe 1
+        val res = vatRegisteredCompaniesRepository.deleteAll()
 
-          whenReady(res) { result =>
-            result shouldBe ((): Unit)
-            totalCount shouldBe 0
-          }
+        whenReady(res) {result =>
+          result shouldBe ((): Unit)
+          totalCount shouldBe 0
         }
       }
     }
 
     "there are multiple records in the database" should {
-      "Have three records" in {
-        "return unit and delete all records" in {
-          insertMany(List(acmeTradingWithVatNo1, acmeTradingWithVatNo2, acmeTradingWithVatNo3))
-          totalCount shouldBe 3
-          val res = vatRegisteredCompaniesRepository.deleteAll()
+      "return unit and delete all records" in {
+        insertMany(List(acmeTradingWithVatNo1, acmeTradingWithVatNo2, acmeTradingWithVatNo3))
+        totalCount shouldBe 3
+        val res = vatRegisteredCompaniesRepository.deleteAll()
 
-          whenReady(res) {result =>
-            result shouldBe ((): Unit)
-            totalCount shouldBe 0
-          }
+        whenReady(res) {result =>
+          result shouldBe ((): Unit)
+          totalCount shouldBe 0
         }
       }
     }
@@ -109,32 +99,6 @@ class VatRegisteredCompaniesRepositoryISpec extends IntegrationSpecBase {
           }
         }
 
-      }
-    }
-    "the payload contains only deletes" should {
-      "return unit and deletes the records if present in the database" when {
-        "the database has no records" in {
-
-          totalCount shouldBe 0
-          val payload = PayloadWrapper(payload = testPayloadDeletes)
-          val result = vatRegisteredCompaniesRepository.process(payload)
-
-          whenReady(result) { res =>
-            res shouldBe ((): Unit)
-            totalCount shouldBe 0
-          }
-        }
-        "the database has one record that matches the VAT number" in {
-          insertOne(acmeTradingWithVatNo1)
-
-          val payload = PayloadWrapper(payload = testPayloadDeletes)
-          val result = vatRegisteredCompaniesRepository.process(payload)
-
-          whenReady(result) { res =>
-            res shouldBe ((): Unit)
-            totalCount shouldBe 1
-          }
-        }
       }
     }
   }
