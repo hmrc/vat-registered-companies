@@ -17,6 +17,7 @@
 package uk.gov.hmrc.vatregisteredcompanies.schedulers
 
 import uk.gov.hmrc.vatregisteredcompanies.helpers.IntegrationSpecBase
+import uk.gov.hmrc.vatregisteredcompanies.helpers.TestData._
 
 class OldRecordsDeleteSchedulerISpec extends IntegrationSpecBase {
 
@@ -27,26 +28,35 @@ class OldRecordsDeleteSchedulerISpec extends IntegrationSpecBase {
       "not remove any documents" when {
         "there are no records with repeated vatNumbers" in {
           //insert into vatRegisteredCompanies records with different vatNumbers
+          insertMany(List(acmeTradingWithVatNo1, acmeTradingWithVatNo2))
           val res = persistenceService.deleteOld(limit)
 
           whenReady(res) { result =>
             result shouldBe ((): Unit)
             //check no records deleted
+            totalCount shouldBe 2
             //check lock has been removed
+            lockCount shouldBe 0
           }
         }
       }
       "remove the oldest record(s)" when {
         "there is one VatNumber with more than one record associated with" in {
           //insert into vatRegisteredCompanies records with different vatNumbers
-          //Thread.sleep(100)
+          insertMany(List(acmeTradingWithVatNo1, acmeTradingWithVatNo2, acmeTradingWithVatNo3))
+          Thread.sleep(100)
           //insert into vatRegisteredCompanies a record with a vatNumber used above but slightly different details
+          insertOne(deltaTradingWithVatNo1)
           val res = persistenceService.deleteOld(limit)
 
           whenReady(res) { result =>
             result shouldBe ((): Unit)
-            //check only 1 record exists with VatNumber and is the newest
+            val record = getRecord(testVatNo1)
+            record shouldBe defined
+            record.get.name shouldBe "Delta Trading"
+            totalCount shouldBe 3
             //check lock has been removed
+            lockCount shouldBe 0
           }
         }
 

@@ -47,7 +47,6 @@ trait VatRegisteredCompaniesDatabaseOperations {
   def totalCount: Int = {
     await(vatRegisteredCompaniesRepository.count)
   }
-
 //  def getRecords: List[VatRegisteredCompany] = {
 //    await(
 //      vatRegisteredCompaniesRepository
@@ -57,6 +56,10 @@ trait VatRegisteredCompaniesDatabaseOperations {
 //      .cursor[VatRegisteredCompany]()
 //      .collect[List](100, Cursor.FailOnError[List[VatRegisteredCompany]]()))
 //  }
+  def getRecord(vatNumber: String): Option[VatRegisteredCompany] ={
+    val record = await(vatRegisteredCompaniesRepository.lookup(vatNumber))
+    record.get.target
+  }
 
   def deleteAll: Boolean = {
     await(vatRegisteredCompaniesRepository.removeAll().map(_.ok))
