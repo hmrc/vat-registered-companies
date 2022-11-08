@@ -30,14 +30,14 @@ import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.test.{DefaultAwaitTimeout, FutureAwaits}
 import play.api.{Application, Environment, Mode}
 import uk.gov.hmrc.vatregisteredcompanies.helpers.WiremockHelper.stubPost
-import uk.gov.hmrc.vatregisteredcompanies.repositories.{DefaultLockRepository, PayloadBufferRepository, VatRegisteredCompaniesRepository}
+import uk.gov.hmrc.vatregisteredcompanies.repositories.{DefaultLockRepository, LockRepository, PayloadBufferRepository, VatRegisteredCompaniesRepository}
 import uk.gov.hmrc.vatregisteredcompanies.services.PersistenceService
 
 import scala.concurrent.duration.Duration
 import scala.concurrent.{Await, ExecutionContext, Future}
 
 trait IntegrationSpecBase
-    extends AnyWordSpec
+  extends AnyWordSpec
     with GivenWhenThen
     with TestSuite
     with ScalaFutures
@@ -62,7 +62,6 @@ trait IntegrationSpecBase
   val interval: Interval = Interval(Span(100, Millis))
 
   val DEFAULT_JOB_ENABLED       = "false"
-  val AUTHORISATION_TOKEN = "Bearer ab9e219d-0d9d-4a1d-90e5-f2a5c287668c"
 
   def config: Map[String, String] = Map(
     "application.router"                                      -> "testOnlyDoNotUseInAppConf.Routes",

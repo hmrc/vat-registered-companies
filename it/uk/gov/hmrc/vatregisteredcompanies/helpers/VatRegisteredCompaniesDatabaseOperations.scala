@@ -48,15 +48,15 @@ trait VatRegisteredCompaniesDatabaseOperations {
     await(vatRegisteredCompaniesRepository.count)
   }
 
-//  def getRecords: List[VatRegisteredCompany] = {
-//    await(
-//      vatRegisteredCompaniesRepository
-//        .collection
-//      .find(BSONDocument(), Option.empty[JsObject])
-//      .sort(Json.obj("_id" -> 1))
-//      .cursor[VatRegisteredCompany]()
-//      .collect[List](100, Cursor.FailOnError[List[VatRegisteredCompany]]()))
-//  }
+  //  def getRecords: List[VatRegisteredCompany] = {
+  //    await(
+  //      vatRegisteredCompaniesRepository
+  //        .collection
+  //      .find(BSONDocument(), Option.empty[JsObject])
+  //      .sort(Json.obj("_id" -> 1))
+  //      .cursor[VatRegisteredCompany]()
+  //      .collect[List](100, Cursor.FailOnError[List[VatRegisteredCompany]]()))
+  //  }
 
   def deleteAll: Boolean = {
     await(vatRegisteredCompaniesRepository.removeAll().map(_.ok))

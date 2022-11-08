@@ -37,30 +37,30 @@ trait PayloadBufferDatabaseOperations {
   }
   def insertOneBuffer(payload: Payload): Boolean = {
 
-      val payloadWrapper = createPayloadWrapper(payload)
+    val payloadWrapper = createPayloadWrapper(payload)
     await(
       payloadBufferRepository.insert(payloadWrapper).map(_.ok)
     )
   }
 
   def listBuffer: Future[List[PayloadWrapper]] =
-      payloadBufferRepository.findAll()
+    payloadBufferRepository.findAll()
 
   def bufferTotalCount: Int = {
     await(payloadBufferRepository.count)
   }
 
-//  def getOneBuffer: Future[List[PayloadWrapper]] = {
-//    val query = BSONDocument()
-//    await(
-//      payloadBufferRepository
-//        .collection
-//        .find(query, Option.empty[JsObject])
-//        .sort(Json.obj("_id" -> 1))
-//        .cursor[BSONDocument](ReadPreference.primaryPreferred)
-//        .collect[List](1, Cursor.FailOnError[List[PayloadWrapper]]())
-//    )
-//  }
+  //  def getOneBuffer: Future[List[PayloadWrapper]] = {
+  //    val query = BSONDocument()
+  //    await(
+  //      payloadBufferRepository
+  //        .collection
+  //        .find(query, Option.empty[JsObject])
+  //        .sort(Json.obj("_id" -> 1))
+  //        .cursor[BSONDocument](ReadPreference.primaryPreferred)
+  //        .collect[List](1, Cursor.FailOnError[List[PayloadWrapper]]())
+  //    )
+  //  }
 
   def deleteOneBuffer(payload: Payload): Future[Boolean] = {
     val payloadWrapper = createPayloadWrapper(payload)
@@ -68,7 +68,7 @@ trait PayloadBufferDatabaseOperations {
       .remove("_id" -> payloadWrapper._id).map(_.ok)
   }
   def deleteAllBuffer: Boolean = {
-      await(payloadBufferRepository.removeAll().map(_.ok))
+    await(payloadBufferRepository.removeAll().map(_.ok))
   }
 
 }

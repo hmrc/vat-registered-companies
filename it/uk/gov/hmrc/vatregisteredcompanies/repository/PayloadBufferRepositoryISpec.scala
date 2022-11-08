@@ -162,105 +162,105 @@ class PayloadBufferRepositoryISpec extends IntegrationSpecBase {
     }
   }
 
-      "Method: getOne" when {
-        "there are no records in the database" should {
-          "Have no records" in {
-            val res = payloadBufferRepository.one
+  "Method: getOne" when {
+    "there are no records in the database" should {
+      "Have no records" in {
+        val res = payloadBufferRepository.one
 
-            whenReady(res) {result => result shouldBe empty}
-            bufferTotalCount shouldBe 0
-          }
-        }
-
-        "there is 1 record in the database" should {
-          "Have one record" in {
-            bufferTotalCount shouldBe 0
-            insertOneBuffer(testPayloadCreateAndUpdates1)
-            Thread.sleep(200)
-            bufferTotalCount shouldBe 1
-            val res = payloadBufferRepository.one
-
-            whenReady(res) { result =>
-              result.head.payload shouldBe testPayloadCreateAndUpdates1
-              bufferTotalCount shouldBe 1
-            }
-          }
-        }
-
-        "there are multiple records in the database" should {
-          "Have three records" in {
-            insertOneBuffer(testPayloadCreateAndUpdates)
-            insertOneBuffer(testPayloadCreateAndUpdates1)
-            insertOneBuffer(testPayloadCreateAndUpdates)
-            bufferTotalCount shouldBe 3
-
-            val res = payloadBufferRepository.one
-
-            whenReady(res) { result =>
-              result.head.payload shouldBe testPayloadCreateAndUpdates
-              bufferTotalCount shouldBe 3
-            }
-
-          }
-        }
-      }
-
-      "Method: deleteOne" when {
-        "there are no records in the database" should {
-          "Have no records" in {
-            bufferTotalCount shouldBe 0
-            val currentRecordsList = {
-              await(payloadBufferRepository.list)
-            }
-
-            val res = payloadBufferRepository.deleteOne(createPayloadWrapper(testPayloadDeletes))
-
-            whenReady(res) { result =>
-              result shouldBe ((): Unit)
-              currentRecordsList shouldBe empty
-              bufferTotalCount shouldBe 0
-
-            }
-          }
-        }
-
-        "there is 1 record in the database" should {
-          "Have one record" in {
-            insertOneBuffer(testPayloadCreateAndUpdates)
-            bufferTotalCount shouldBe 1
-
-            val currentRecordsList = {
-              payloadBufferRepository.list
-            }
-            val payloadWrapperToDelete = whenReady(currentRecordsList) { first => first.head }
-            val res = payloadBufferRepository.deleteOne(payloadWrapperToDelete)
-
-            whenReady(res) { result =>
-              result shouldBe ((): Unit)
-              bufferTotalCount shouldBe 0
-            }
-          }
-        }
-
-        "there are multiple records in the database" should {
-          "Have three records" in {
-            insertOneBuffer(testPayloadCreateAndUpdates1)
-            insertOneBuffer(testPayloadCreateAndUpdates)
-            insertOneBuffer(testPayloadCreateAndUpdates1)
-            val currentRecordsList = {
-              payloadBufferRepository.list
-            }
-
-            val payloadWrapperToDelete = await(currentRecordsList).apply(1)
-            bufferTotalCount shouldBe 3
-
-            val res = payloadBufferRepository.deleteOne(payloadWrapperToDelete)
-
-            whenReady(res) { result =>
-              result shouldBe ((): Unit)
-              bufferTotalCount shouldBe 2
-            }
-          }
+        whenReady(res) {result => result shouldBe empty}
+        bufferTotalCount shouldBe 0
       }
     }
+
+    "there is 1 record in the database" should {
+      "Have one record" in {
+        bufferTotalCount shouldBe 0
+        insertOneBuffer(testPayloadCreateAndUpdates1)
+        Thread.sleep(200)
+        bufferTotalCount shouldBe 1
+        val res = payloadBufferRepository.one
+
+        whenReady(res) { result =>
+          result.head.payload shouldBe testPayloadCreateAndUpdates1
+          bufferTotalCount shouldBe 1
+        }
+      }
+    }
+
+    "there are multiple records in the database" should {
+      "Have three records" in {
+        insertOneBuffer(testPayloadCreateAndUpdates)
+        insertOneBuffer(testPayloadCreateAndUpdates1)
+        insertOneBuffer(testPayloadCreateAndUpdates)
+        bufferTotalCount shouldBe 3
+
+        val res = payloadBufferRepository.one
+
+        whenReady(res) { result =>
+          result.head.payload shouldBe testPayloadCreateAndUpdates
+          bufferTotalCount shouldBe 3
+        }
+
+      }
+    }
+  }
+
+  "Method: deleteOne" when {
+    "there are no records in the database" should {
+      "Have no records" in {
+        bufferTotalCount shouldBe 0
+        val currentRecordsList = {
+          await(payloadBufferRepository.list)
+        }
+
+        val res = payloadBufferRepository.deleteOne(createPayloadWrapper(testPayloadDeletes))
+
+        whenReady(res) { result =>
+          result shouldBe ((): Unit)
+          currentRecordsList shouldBe empty
+          bufferTotalCount shouldBe 0
+
+        }
+      }
+    }
+
+    "there is 1 record in the database" should {
+      "Have one record" in {
+        insertOneBuffer(testPayloadCreateAndUpdates)
+        bufferTotalCount shouldBe 1
+
+        val currentRecordsList = {
+          payloadBufferRepository.list
+        }
+        val payloadWrapperToDelete = whenReady(currentRecordsList) { first => first.head }
+        val res = payloadBufferRepository.deleteOne(payloadWrapperToDelete)
+
+        whenReady(res) { result =>
+          result shouldBe ((): Unit)
+          bufferTotalCount shouldBe 0
+        }
+      }
+    }
+
+    "there are multiple records in the database" should {
+      "Have three records" in {
+        insertOneBuffer(testPayloadCreateAndUpdates1)
+        insertOneBuffer(testPayloadCreateAndUpdates)
+        insertOneBuffer(testPayloadCreateAndUpdates1)
+        val currentRecordsList = {
+          payloadBufferRepository.list
+        }
+
+        val payloadWrapperToDelete = await(currentRecordsList).apply(1)
+        bufferTotalCount shouldBe 3
+
+        val res = payloadBufferRepository.deleteOne(payloadWrapperToDelete)
+
+        whenReady(res) { result =>
+          result shouldBe ((): Unit)
+          bufferTotalCount shouldBe 2
+        }
+      }
+    }
+  }
 }

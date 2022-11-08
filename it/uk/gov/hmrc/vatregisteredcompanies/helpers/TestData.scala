@@ -55,4 +55,3 @@ object TestData {
       address = Address("line 1", None, None, None, None, None, countryCode = "GB")
     )
 }
-
