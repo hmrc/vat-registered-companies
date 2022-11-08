@@ -16,6 +16,11 @@
 
 package uk.gov.hmrc.vatregisteredcompanies.helpers
 
+
+import play.api.libs.json.{JsObject, Json}
+import reactivemongo.play.json.ImplicitBSONHandlers._
+import reactivemongo.api.Cursor
+import reactivemongo.bson.BSONDocument
 import uk.gov.hmrc.vatregisteredcompanies.models.VatRegisteredCompany
 import uk.gov.hmrc.vatregisteredcompanies.repositories.{VatRegisteredCompaniesRepository, Wrapper}
 
@@ -43,4 +48,19 @@ trait VatRegisteredCompaniesDatabaseOperations {
   def totalCount: Int = {
     await(vatRegisteredCompaniesRepository.count)
   }
+
+//  def getRecords: List[VatRegisteredCompany] = {
+//    await(
+//      vatRegisteredCompaniesRepository
+//        .collection
+//      .find(BSONDocument(), Option.empty[JsObject])
+//      .sort(Json.obj("_id" -> 1))
+//      .cursor[VatRegisteredCompany]()
+//      .collect[List](100, Cursor.FailOnError[List[VatRegisteredCompany]]()))
+//  }
+
+  def deleteAll: Boolean = {
+    await(vatRegisteredCompaniesRepository.removeAll().map(_.ok))
+  }
+
 }

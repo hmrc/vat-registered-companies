@@ -115,7 +115,6 @@ class DefaultLockRepository @Inject()(
   def getLock(id: Int): Future[Option[Lock]] =
     collection.find(BSONDocument("_id" -> id),None)
       .one[Lock]
-
 }
 
 @ImplementedBy(classOf[DefaultLockRepository])

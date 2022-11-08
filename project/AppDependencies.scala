@@ -4,16 +4,14 @@ import sbt._
 object AppDependencies {
 
   val compile = Seq(
-
-    "uk.gov.hmrc"                                %% "simple-reactivemongo"      % "8.1.0-play-28",
-    "uk.gov.hmrc"                                %% "bootstrap-backend-play-28" % "7.8.0",
-    "org.typelevel"                              %% "cats-core"                 % "2.8.0",
-    "com.github.fge"                             %  "json-schema-validator"     % "2.2.6",
-    "com.typesafe.akka"                          %% "akka-stream"               % "2.6.19",
-    compilerPlugin("com.github.ghik" %  "silencer-plugin"           % "1.7.11" cross CrossVersion.full),
-    "com.github.ghik"                            %  "silencer-lib"              % "1.7.11" % Provided cross CrossVersion.full
+    "uk.gov.hmrc" %% "simple-reactivemongo" % "8.0.0-play-28",
+    "uk.gov.hmrc" %% "bootstrap-backend-play-28" % "5.7.0",
+    "org.typelevel" %% "cats-core" % "2.4.2",
+    "com.github.fge" % "json-schema-validator" % "2.2.6",
+    "com.typesafe.akka" %% "akka-stream" % "2.5.18",
+    compilerPlugin("com.github.ghik" % "silencer-plugin" % "1.7.5" cross CrossVersion.full),
+    "com.github.ghik" % "silencer-lib" % "1.7.5" % Provided cross CrossVersion.full
   )
-
   val test = Seq(
     "uk.gov.hmrc"             %% "bootstrap-test-play-28"   % "7.8.0"             % "test",
     "org.scalatest"           %% "scalatest"                % "3.2.14"             % "test",
