@@ -272,7 +272,6 @@ class PayloadConversionSchedulerISpec extends IntegrationSpecBase {
               result shouldBe ((): Unit)
               //check records deleted from vatRegisteredCompanies database
               totalCount shouldBe 3
-              println("*********")
               val records = await(vatRegisteredCompaniesRepository.findAll())
               records(2).company shouldBe acmeTradingWithVatNo3
               records.mkString shouldNot include (testVatNo1)
@@ -291,17 +290,48 @@ class PayloadConversionSchedulerISpec extends IntegrationSpecBase {
 
           "has a oldest record containing a payload with both createsAndUpdates and deletes" in {
             //insert one record into buffer repository that has a payload with createAndUpdates and deletes
+            insertOneBuffer(testPayloadCreateAndDeletes1)
+                //inserts 2 companies with vatNo1 and vatNo2 AND deletes records with vatNo 2 and 3
             //insert one record into buffer repository that has a payload with only deletes
+            insertOneBuffer(testPayloadDeletes1)
+                //deletes records with vatNo 1
             //insert one record into buffer repository that has a payload with only createsAndUpdates
-            //insert records in vatRegisteredCompanies to be deleted
+            insertOneBuffer(testPayloadCreateAndUpdates1)
+                //inserts 2 companies with vatNo3 and vatNo4
+            bufferTotalCount shouldBe 3
+
+            // insert records in vatRegisteredCompanies to be deleted
+            insertOne(acmeTradingWithVatNo4)
+            insertOne(acmeTradingWithVatNo2)
+            insertOne(acmeTradingWithVatNo1)
+            insertOne(acmeTradingWithVatNo3)
+            totalCount shouldBe 4
+
             val res = persistenceService.processOneData
 
             whenReady(res) {result =>
               result shouldBe ((): Unit)
+
               //check records inserted into vatRegisteredCompanies database
               //check records deleted from vatRegisteredCompanies database
+              totalCount shouldBe 3
+                  //after buffer insert - there would be 6 companies (vat 1 x 2, vat 2 x 2, vat 3, vat 4
+                  // then the deletes would remove any vat2 and vat 3 companies (-3 records)
+              val records = await(vatRegisteredCompaniesRepository.findAll())
+                  records(0).company shouldBe acmeTradingWithVatNo4
+                  records(1).company shouldBe acmeTradingWithVatNo1
+                  records(2).company shouldBe acmeTradingWithVatNo1
+                  records.mkString shouldNot include(testVatNo2)
+                  records.mkString shouldNot include(testVatNo3)
               //check buffer record deleted with payload containing createsAndUpdates and deletes
+              val bufferList = await(payloadBufferRepository.list)
+
+              bufferTotalCount shouldBe 2
+              bufferList.head.payload shouldBe testPayloadDeletes1
+              bufferList.tail.last.payload shouldBe testPayloadCreateAndUpdates1
+
               //check lock has been removed
+              lockCount shouldBe 0
             }
           }
         }
