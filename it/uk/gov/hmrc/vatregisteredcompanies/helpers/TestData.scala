@@ -38,6 +38,7 @@ object TestData {
   val testPayloadCreateAndUpdates1: Payload = Payload(List(acmeTradingWithVatNo3, acmeTradingWithVatNo4), List())
   val testPayloadCreateAndUpdates: Payload = Payload(List(acmeTradingWithVatNo1, acmeTradingWithVatNo2), List())
   val testPayloadDeletes: Payload = Payload(List(), List(testVatNo1, testVatNo2))
+  val testPayloadDeletes1: Payload = Payload(List(), List(testVatNo1))
 
   val testPayloadCreateAndDeletes: Payload = Payload(List(acmeTradingWithVatNo1, acmeTradingWithVatNo2), List(testVatNo1, testVatNo3))
   val testPayloadCreateAndDeletes1: Payload = Payload(List(acmeTradingWithVatNo1, acmeTradingWithVatNo2), List(testVatNo2, testVatNo3))
