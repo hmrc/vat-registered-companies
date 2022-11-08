@@ -131,7 +131,7 @@ class PayloadConversionSchedulerISpec extends IntegrationSpecBase {
               result shouldBe ((): Unit)
               //check records deleted from vatRegisteredCompanies database
               val checkCompanyInserted = await(vatRegisteredCompaniesRepository.findAll())
-              checkCompanyInserted shouldBe(empty)
+              checkCompanyInserted shouldBe empty
               totalCount shouldBe 0
               //check buffer record deleted
               bufferTotalCount shouldBe 0
@@ -143,18 +143,25 @@ class PayloadConversionSchedulerISpec extends IntegrationSpecBase {
           "contains a payload with both createsAndUpdates and deletes" in {
             //insert one record into buffer repository that has a payload with createAndUpdates and deletes
             // insert records into vatRegisteredCompanies with at least one with the same vatNumber in the buffer paylod
-            insertOneBuffer(testPayloadDeletes)
+            insertOneBuffer(testPayloadCreateAndDeletes1)
             bufferTotalCount shouldBe 1
             totalCount shouldBe 0
             Thread.sleep(20)
             insertOne(deltaTradingWithVatNo1)
             totalCount shouldBe 1
+
             val res = persistenceService.processOneData
 
             whenReady(res) {result =>
               result shouldBe ((): Unit)
               //check records inserted into vatRegisteredCompanies database
               //check records deleted from vatRegisteredCompanies database
+              val checkCompanyInserted = await(vatRegisteredCompaniesRepository.findAll())
+              // 2 companies were inserted, 1 present through VRC insertion = 3, 2 listed for delete, only 1 found = 2 companies present.
+              checkCompanyInserted.head.company shouldBe deltaTradingWithVatNo1
+              checkCompanyInserted.last.company shouldBe acmeTradingWithVatNo1
+              totalCount shouldBe 2
+
               //check buffer record deleted
               bufferTotalCount shouldBe 0
               //check lock has been removed
