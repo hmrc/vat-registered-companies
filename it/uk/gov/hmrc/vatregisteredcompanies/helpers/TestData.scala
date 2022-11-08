@@ -43,7 +43,6 @@ object TestData {
   val testPayloadCreateAndDeletes: Payload = Payload(List(acmeTradingWithVatNo1, acmeTradingWithVatNo2), List(testVatNo1, testVatNo3))
   val testPayloadCreateAndDeletes1: Payload = Payload(List(acmeTradingWithVatNo1, acmeTradingWithVatNo2), List(testVatNo2, testVatNo3))
 
-
   val testLockId = 1234
   val testLock: Lock = Lock(testLockId)
   val formattedDateString = "2020-07-01T00:00:00Z"
