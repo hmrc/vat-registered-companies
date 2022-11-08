@@ -34,6 +34,7 @@ object TestData {
   val acmeTradingWithVatNo4: VatRegisteredCompany = getVatRegCompany(testVatNo4, "ACME Trading")
 
   val deltaTradingWithVatNo1: VatRegisteredCompany = getVatRegCompany(testVatNo1, "Delta Trading")
+  val deltaTradingWithVatNo2: VatRegisteredCompany = getVatRegCompany(testVatNo2, "Delta Trading")
 
   val testPayloadCreateAndUpdates1: Payload = Payload(List(acmeTradingWithVatNo3, acmeTradingWithVatNo4), List())
   val testPayloadCreateAndUpdates: Payload = Payload(List(acmeTradingWithVatNo1, acmeTradingWithVatNo2), List())
