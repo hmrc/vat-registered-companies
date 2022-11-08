@@ -22,6 +22,7 @@ trait LockDatabaseOperations {
   self: IntegrationSpecBase =>
 
   val lockRepository: LockRepository
+  val testLockId = 1
 
   def insert(lock: Lock): Unit = {
     await(lockRepository.collection.insert(true).one(lock).map(_.ok))
@@ -31,7 +32,7 @@ trait LockDatabaseOperations {
     await(lockRepository.removeAll().map(_.ok))
   }
 
-  def lockCount(): Int = {
-    await(lockRepository.count)
+  def isLocked: Boolean = {
+    await(lockRepository.isLocked(testLockId))
   }
 }
