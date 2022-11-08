@@ -342,8 +342,19 @@ class PayloadConversionSchedulerISpec extends IntegrationSpecBase {
       "is within the TTL" should {
         "not run the processing job and return unit" in {
           //insert one record into buffer repository that has a payload with createAndUpdates and deletes
-          //insert records in vatRegisteredCompanies to be deleted
+          insertOneBuffer(testPayloadCreateAndDeletes1)
+              //inserts 2 companies with vatNo1 and vatNo2 AND deletes records with vatNo 2 and 3
+          bufferTotalCount shouldBe 1
+          // insert records in vatRegisteredCompanies to be deleted
+          insertOne(acmeTradingWithVatNo4)
+          insertOne(acmeTradingWithVatNo2)
+          insertOne(acmeTradingWithVatNo1)
+          insertOne(acmeTradingWithVatNo3)
+          totalCount shouldBe 4
           // insert a lock within TTL
+          testLock
+          lockCount shouldBe 1
+
           val res = persistenceService.processOneData
 
           whenReady(res) {result =>
