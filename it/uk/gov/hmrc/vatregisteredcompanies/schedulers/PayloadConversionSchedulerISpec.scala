@@ -23,6 +23,9 @@ class PayloadConversionSchedulerISpec extends IntegrationSpecBase {
 
               //check records inserted into vatRegisteredCompanies database
               totalCount shouldBe 2
+              val checkCompanyInserted = await(vatRegisteredCompaniesRepository.findAll())
+              checkCompanyInserted.mkString should include(testVatNo1)
+              checkCompanyInserted.mkString should include(testVatNo2)
               //check buffer record deleted
               bufferTotalCount shouldBe 0
               //check lock has been removed
@@ -57,8 +60,8 @@ class PayloadConversionSchedulerISpec extends IntegrationSpecBase {
                 //this inserts companies with vatNo1 and vatNo2
                 //deletes is deleting vatNo1 and vatNo3
 
-            bufferTotalCount shouldBe(1)
-            totalCount shouldBe(0)
+            bufferTotalCount shouldBe 1
+            totalCount shouldBe 0
 
             val payloadSentToBufferRepo = await(payloadBufferRepository.list)
             payloadSentToBufferRepo.mkString should include (testVatNo1)
@@ -71,14 +74,14 @@ class PayloadConversionSchedulerISpec extends IntegrationSpecBase {
               result shouldBe ((): Unit)
               //check records inserted into vatRegisteredCompanies database
               //check records deleted from vatRegisteredCompanies database
-              totalCount shouldBe(1)
+              totalCount shouldBe 1
               val secondCompanyStillPresent = await(vatRegisteredCompaniesRepository.findAll())
               secondCompanyStillPresent.mkString shouldNot  include (testVatNo1)
               secondCompanyStillPresent.mkString should include (testVatNo2)
               //check buffer record deleted
-              bufferTotalCount shouldBe(0)
+              bufferTotalCount shouldBe 0
               //check lock has been removed
-              lockCount shouldBe(0)
+              lockCount shouldBe 0
             }
           }
         }
@@ -87,32 +90,65 @@ class PayloadConversionSchedulerISpec extends IntegrationSpecBase {
           "contains a payload with only createsAndUpdates" in {
             //insert one record into buffer repository that has a payload with only createsAndUpdates
             // insert records into vatRegisteredCompanies with at least one with the same vatNumber in the buffer paylod
+            insertOneBuffer(testPayloadCreateAndUpdates)
+            bufferTotalCount shouldBe 1
+            totalCount shouldBe 0
+            Thread.sleep(20)
+            insertOne(deltaTradingWithVatNo1)
+            totalCount shouldBe 1
+
              val res = persistenceService.processOneData
 
             whenReady(res) {result =>
               result shouldBe ((): Unit)
               //check records inserted into vatRegisteredCompanies database
+
+              val checkCompanyInserted = await(vatRegisteredCompaniesRepository.findAll())
+              checkCompanyInserted.head.company shouldBe deltaTradingWithVatNo1
+              checkCompanyInserted.last.company shouldBe acmeTradingWithVatNo2
+              totalCount shouldBe 3
+                // 2 records in buffer were inserted.  1 record through vat company
               //check buffer record deleted
+              bufferTotalCount shouldBe 0
               //check lock has been removed
+              lockCount shouldBe 0
             }
           }
 
           "contains a payload with only deletes" in {
             //insert one record into buffer repository that has a payload with only deletes
             // insert records into vatRegisteredCompanies with at least one with the same vatNumber in the buffer paylod
+            insertOneBuffer(testPayloadDeletes)
+            bufferTotalCount shouldBe 1
+            totalCount shouldBe 0
+            Thread.sleep(20)
+            insertOne(deltaTradingWithVatNo1)
+            totalCount shouldBe 1
+
             val res = persistenceService.processOneData
 
             whenReady(res) {result =>
               result shouldBe ((): Unit)
               //check records deleted from vatRegisteredCompanies database
+              val checkCompanyInserted = await(vatRegisteredCompaniesRepository.findAll())
+              checkCompanyInserted shouldBe(empty)
+              totalCount shouldBe 0
               //check buffer record deleted
+              bufferTotalCount shouldBe 0
               //check lock has been removed
+              lockCount shouldBe 0
             }
           }
 
           "contains a payload with both createsAndUpdates and deletes" in {
             //insert one record into buffer repository that has a payload with createAndUpdates and deletes
             // insert records into vatRegisteredCompanies with at least one with the same vatNumber in the buffer paylod
+            insertOneBuffer(testPayloadDeletes)
+            bufferTotalCount shouldBe 1
+            totalCount shouldBe 0
+            Thread.sleep(20)
+            insertOne(deltaTradingWithVatNo1)
+            totalCount shouldBe 1
             val res = persistenceService.processOneData
 
             whenReady(res) {result =>
@@ -120,7 +156,9 @@ class PayloadConversionSchedulerISpec extends IntegrationSpecBase {
               //check records inserted into vatRegisteredCompanies database
               //check records deleted from vatRegisteredCompanies database
               //check buffer record deleted
+              bufferTotalCount shouldBe 0
               //check lock has been removed
+              lockCount shouldBe 0
             }
           }
         }
