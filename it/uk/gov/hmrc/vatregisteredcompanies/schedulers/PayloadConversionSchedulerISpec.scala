@@ -360,14 +360,16 @@ class PayloadConversionSchedulerISpec extends IntegrationSpecBase {
           whenReady(res) {result =>
             result shouldBe ((): Unit)
             //check no records inserted into vatRegisteredCompanies database
-            totalCount shouldBe 4
             //check no records deleted from vatRegisteredCompanies database
+            totalCount shouldBe 4
+            val records = await(vatRegisteredCompaniesRepository.findAll())
+                records(2).company shouldBe acmeTradingWithVatNo1
             //check buffer record is still present with payload containing createsAndUpdates and deletes
             bufferTotalCount shouldBe 1
 
             val bufferList = await(payloadBufferRepository.list)
             bufferList.head.payload shouldBe testPayloadCreateAndDeletes1
-            //check lock is still present removed
+            //check lock is still present
             lockCount shouldBe 1
           }
 
@@ -377,16 +379,34 @@ class PayloadConversionSchedulerISpec extends IntegrationSpecBase {
       "is outside of the TTL" should {
         "not run the processing job, remove the lock and return unit" in {
           //insert one record into buffer repository that has a payload with createAndUpdates and deletes
-          //insert records in vatRegisteredCompanies to be deleted
-          // insert a lock within TTL
+          insertOneBuffer(testPayloadCreateAndDeletes1)
+              //inserts 2 companies with vatNo1 and vatNo2 AND deletes records with vatNo 2 and 3
+          bufferTotalCount shouldBe 1
+          // insert records in vatRegisteredCompanies to be deleted
+          insertOne(acmeTradingWithVatNo4)
+          insertOne(acmeTradingWithVatNo2)
+          insertOne(acmeTradingWithVatNo1)
+          insertOne(acmeTradingWithVatNo3)
+          totalCount shouldBe 4
+          // insert a lock outside TTL
+          insert(expiredTestLock)
+          lockCount shouldBe 1
+
           val res = persistenceService.processOneData
 
           whenReady(res) {result =>
             result shouldBe ((): Unit)
             //check no records inserted into vatRegisteredCompanies database
             //check no records deleted from vatRegisteredCompanies database
+            totalCount shouldBe 4
+            val records = await(vatRegisteredCompaniesRepository.findAll())
+                records(2).company shouldBe acmeTradingWithVatNo1
             //check buffer record is still present with payload containing createsAndUpdates and deletes
+            bufferTotalCount shouldBe 1
+            val bufferList = await(payloadBufferRepository.list)
+            bufferList.head.payload shouldBe testPayloadCreateAndDeletes1
             //check lock has been removed
+            lockCount shouldBe 0
           }
         }
       }
