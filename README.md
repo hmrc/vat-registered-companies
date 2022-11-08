@@ -6,7 +6,9 @@ More updates are needed.
 
 Both unit tests and Integration tests exist for this repo.
 To run Integration tests, run
-IntegrationTest / test
+sbt IntegrationTest / test 
+or
+within SBT Shell: IntegrationTest / test
 
 ### License
 
