@@ -236,12 +236,9 @@ class PayloadConversionSchedulerISpec extends IntegrationSpecBase {
               checkCompanyInserted.head.company shouldBe acmeTradingWithVatNo3
               totalCount shouldBe 2
 
-              //check buffer record with payload containing only deletes is deleted
-              //TODO: The above should say, check buffer record with payload containing only createsandupdates deleted
-              // (the processOneData function returns payloadWrapper based on ascending order
+              //check buffer record with payload containing only createsandupdates is deleted
               val bufferList = await(payloadBufferRepository.list)
-              println("*************************")
-              println(bufferList)
+
               bufferTotalCount shouldBe 2
               bufferList.head.payload.createsAndUpdates.mkString shouldNot include (testVatNo3)
               bufferList.head.payload shouldBe testPayloadCreateAndDeletes1
@@ -253,16 +250,42 @@ class PayloadConversionSchedulerISpec extends IntegrationSpecBase {
 
           "has a oldest record containing a payload with only deletes" in {
             //insert one record into buffer repository that has a payload with only deletes
+            insertOneBuffer(testPayloadDeletes1)
+                  //deletes records with vatNo 1
             //insert one record into buffer repository that has a payload with only createsAndUpdates
+            insertOneBuffer(testPayloadCreateAndUpdates1)
+                  //inserts 2 companies with vatNo3 and vatNo4
             //insert one record into buffer repository that has a payload with createAndUpdates and deletes
+            insertOneBuffer(testPayloadCreateAndDeletes1)
+                  //inserts 2 companies with vatNo1 and vatNo2 AND deletes records with vatNo 2 and 3
+            bufferTotalCount shouldBe 3
             // insert records in vatRegisteredCompanies to be deleted
+            insertOne(acmeTradingWithVatNo4)
+            insertOne(acmeTradingWithVatNo2)
+            insertOne(acmeTradingWithVatNo1)
+            insertOne(acmeTradingWithVatNo3)
+            totalCount shouldBe 4
+
             val res = persistenceService.processOneData
 
             whenReady(res) {result =>
               result shouldBe ((): Unit)
               //check records deleted from vatRegisteredCompanies database
+              totalCount shouldBe 3
+              println("*********")
+              val records = await(vatRegisteredCompaniesRepository.findAll())
+              records(2).company shouldBe acmeTradingWithVatNo3
+              records.mkString shouldNot include (testVatNo1)
+
               //check buffer record deleted with payload containing only deletes
+              val bufferList = await(payloadBufferRepository.list)
+
+              bufferTotalCount shouldBe 2
+              bufferList.head.payload shouldBe testPayloadCreateAndUpdates1
+              bufferList.tail.last.payload shouldBe testPayloadCreateAndDeletes1
+
               //check lock has been removed
+              lockCount shouldBe 0
             }
           }
 
