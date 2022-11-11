@@ -47,15 +47,7 @@ trait VatRegisteredCompaniesDatabaseOperations {
   def totalCount: Int = {
     await(vatRegisteredCompaniesRepository.count)
   }
-//  def getRecords: List[VatRegisteredCompany] = {
-//    await(
-//      vatRegisteredCompaniesRepository
-//        .collection
-//      .find(BSONDocument(), Option.empty[JsObject])
-//      .sort(Json.obj("_id" -> 1))
-//      .cursor[VatRegisteredCompany]()
-//      .collect[List](100, Cursor.FailOnError[List[VatRegisteredCompany]]()))
-//  }
+
   def getRecord(vatNumber: String): Option[VatRegisteredCompany] ={
     val record = await(vatRegisteredCompaniesRepository.lookup(vatNumber))
     record.get.target

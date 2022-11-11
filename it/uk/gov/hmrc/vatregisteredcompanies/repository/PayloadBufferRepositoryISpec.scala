@@ -40,7 +40,7 @@ class PayloadBufferRepositoryISpec extends IntegrationSpecBase {
     }
 
     "there is 1 record in the database" should {
-      "Have one record" in {
+      "Delete the record" in {
         insertOneBuffer(testPayloadCreateAndUpdates1)
         bufferTotalCount shouldBe 1
         val res = payloadBufferRepository.deleteAll()
@@ -53,7 +53,7 @@ class PayloadBufferRepositoryISpec extends IntegrationSpecBase {
     }
 
     "there are multiple records in the database" should {
-      "Have two records" in {
+      "Delete those records" in {
         insertOneBuffer(testPayloadCreateAndUpdates)
         insertOneBuffer(testPayloadCreateAndUpdates1)
         bufferTotalCount shouldBe 2

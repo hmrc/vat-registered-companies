@@ -46,7 +46,7 @@ import uk.gov.hmrc.vatregisteredcompanies.helpers.TestData._
       }
     }
     "lock exists outside TTL" should {
-      "Return " in {
+      "Return false" in {
         insert(expiredTestLock)
         val act = lockRepository.lock(testLockId)
         Thread.sleep(200)
