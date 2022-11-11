@@ -50,18 +50,6 @@ trait PayloadBufferDatabaseOperations {
     await(payloadBufferRepository.count)
   }
 
-//  def getOneBuffer: Future[List[PayloadWrapper]] = {
-//    val query = BSONDocument()
-//    await(
-//      payloadBufferRepository
-//        .collection
-//        .find(query, Option.empty[JsObject])
-//        .sort(Json.obj("_id" -> 1))
-//        .cursor[BSONDocument](ReadPreference.primaryPreferred)
-//        .collect[List](1, Cursor.FailOnError[List[PayloadWrapper]]())
-//    )
-//  }
-
   def deleteOneBuffer(payload: Payload): Future[Boolean] = {
     val payloadWrapper = createPayloadWrapper(payload)
     payloadBufferRepository
