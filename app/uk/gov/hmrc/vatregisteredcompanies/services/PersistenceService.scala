@@ -18,6 +18,8 @@ package uk.gov.hmrc.vatregisteredcompanies.services
 
 import cats.data.OptionT
 import cats.implicits._
+import org.mongodb.scala.Document
+
 import javax.inject.{Inject, Singleton}
 import play.api.Logger
 import uk.gov.hmrc.vatregisteredcompanies.models.{LookupResponse, Payload, VatNumber}
@@ -49,7 +51,8 @@ class PersistenceService @Inject()(
     repository.lookup(target)
 
   def deleteOld(n: Int): Future[Unit] =
-    withLock(1)(repository.deleteOld(n))
+ //   withLock(1)(repository.deleteOld(n))
+  withLock(1)((Future.successful(())))
 
   def processOneData: Future[Unit] = {
     val x = for {
@@ -68,8 +71,9 @@ class PersistenceService @Inject()(
 
   def reportIndexes: Future[Unit] = {
     for {
-      list <- repository.collection.indexesManager.list()
-    } yield list.foreach(index => logger.warn(s"Found mongo index ${index.name}"))
+      list <- repository.collection.listIndexes().toFuture().map(_.toList)
+    } yield {list.foreach(index => logger.warn(s"Found mongo index ${index}"))
+      Future.successful(())}
   }
 
   private def withLock(id: Int)(f: => Future[Unit]): Future[Unit] = {
