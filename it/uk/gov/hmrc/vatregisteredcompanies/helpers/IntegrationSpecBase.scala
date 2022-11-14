@@ -98,16 +98,16 @@ trait IntegrationSpecBase
 
   override def beforeEach(): Unit = {
     resetWiremock()
-    await(lockRepository.drop)
-    await(payloadBufferRepository.drop)
-    await(vatRegisteredCompaniesRepository.drop)
+    lockRepository.collection.drop
+    payloadBufferRepository.collection.drop
+    vatRegisteredCompaniesRepository.collection.drop
   }
 
   override def beforeAll(): Unit = {
     super.beforeAll()
-    await(lockRepository.drop)
-    await(payloadBufferRepository.drop)
-    await(vatRegisteredCompaniesRepository.drop)
+    lockRepository.collection.drop
+    payloadBufferRepository.collection.drop
+    vatRegisteredCompaniesRepository.collection.drop
     startWiremock()
   }
 
