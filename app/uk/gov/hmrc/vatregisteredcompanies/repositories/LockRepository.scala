@@ -33,9 +33,9 @@ import uk.gov.hmrc.mongo.ReactiveRepository
 import scala.concurrent.{ExecutionContext, Future}
 
 final case class Lock(
-  _id: Int,
-  lastUpdated: LocalDateTime = LocalDateTime.now
-)
+                       _id: Int,
+                       lastUpdated: LocalDateTime = LocalDateTime.now
+                     )
 
 trait MongoDateTimeFormats {
 
@@ -59,9 +59,9 @@ object Lock extends MongoDateTimeFormats {
 
 @Singleton
 class DefaultLockRepository @Inject()(
-  reactiveMongoComponent: ReactiveMongoComponent,
-  val runModeConfiguration: Configuration
-)(implicit ec: ExecutionContext)
+                                       reactiveMongoComponent: ReactiveMongoComponent,
+                                       val runModeConfiguration: Configuration
+                                     )(implicit ec: ExecutionContext)
   extends ReactiveRepository(
     "locks",
     reactiveMongoComponent.mongoConnector.db,
@@ -115,7 +115,6 @@ class DefaultLockRepository @Inject()(
   def getLock(id: Int): Future[Option[Lock]] =
     collection.find(BSONDocument("_id" -> id),None)
       .one[Lock]
-
 }
 
 @ImplementedBy(classOf[DefaultLockRepository])

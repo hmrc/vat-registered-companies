@@ -38,9 +38,9 @@ import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success}
 
 final case class Wrapper(
-  vatNumber: VatNumber,
-  company: VatRegisteredCompany
-)
+                          vatNumber: VatNumber,
+                          company: VatRegisteredCompany
+                        )
 
 object Wrapper {
   implicit val instantFormat: Format[Instant] = new Format[Instant] {
@@ -58,11 +58,11 @@ object Wrapper {
 
 @Singleton
 class   VatRegisteredCompaniesRepository @Inject()(
-  reactiveMongoComponent: ReactiveMongoComponent,
-  bufferRepository: PayloadBufferRepository,
-  @Named("deletionThrottleElements") elements: Int,
-  @Named("deletionThrottlePer") per: FiniteDuration
-)(implicit val executionContext: ExecutionContext, mat: Materializer) extends
+                                                    reactiveMongoComponent: ReactiveMongoComponent,
+                                                    bufferRepository: PayloadBufferRepository,
+                                                    @Named("deletionThrottleElements") elements: Int,
+                                                    @Named("deletionThrottlePer") per: FiniteDuration
+                                                  )(implicit val executionContext: ExecutionContext, mat: Materializer) extends
   ReactiveRepository("vatregisteredcompanies", reactiveMongoComponent.mongoConnector.db, Wrapper.format) {
 
   def deleteAll(): Future[Unit] =
@@ -78,36 +78,23 @@ class   VatRegisteredCompaniesRepository @Inject()(
     logger.info(s"inserting ${entries.length} entries")
     bulkInsert(entries).map(_ => (()))
   }
-
-  private def streamingDelete(deletes: List[VatNumber], payload: PayloadWrapper) = {
-    if (deletes.nonEmpty) {
-      logger.info(s"deleting ${deletes.length} records")
-      val source = Source(deletes)
-      // See https://doc.akka.io/docs/akka/current/stream/operators/Source-or-Flow/throttle.html
-      // we could work out how many records we can safely delete given the size of the collection
-      // and pass that in as a costCalculation
-      val sink = Flow[VatNumber]
-        .throttle(elements, per)
-        .map(vrn => {
-          collection.findAndRemove(Json.obj("vatNumber" -> vrn), None, None, writeConcern = WriteConcern.Default, None, None, Seq.empty).map {
-            _.result[VatNumber]
+  private def streamingDelete(deletes: List[VatNumber], payload: PayloadWrapper): Future[Unit] = {
+    deletes match {
+      case vrn :: tail =>
+        remove("vatNumber" -> vrn)
+          .flatMap {_ =>
+            if(tail.nonEmpty) {
+              streamingDelete(tail, payload)
+            }
+            else {
+              bufferRepository.deleteOne(payload).map { _ =>
+                logger.info("Processed streaming deletes")
+              }
+            }
           }
-        }).to(Sink.onComplete{x =>
-          x match {
-            case Failure(e) =>
-              logger.error(s"Unable to process streaming deletes at $elements per ${per._1} ${per._2}: ${e.getMessage}")
-            case Success(_) =>
-              bufferRepository.deleteOne(payload)
-              logger.info("Processed streaming deletes")
-          }
-        logger.info(s"End of deletion stream")
-        })
-      source.to(sink).run()
-    } else {
-      logger.info("No deletes to process, cleaning buffer")
-      bufferRepository.deleteOne(payload)
+      case Nil => logger.info("No deletes to process, cleaning buffer")
+        bufferRepository.deleteOne(payload)
     }
-    Future.successful((()))
   }
 
   private def deleteById(deletes: List[BSONValue]): Future[Unit] = {
@@ -129,10 +116,10 @@ class   VatRegisteredCompaniesRepository @Inject()(
     import collection.BatchCommands.AggregationFramework.{Group, Limit, Match, MinField, SumAll}
     collection.aggregateWith[BSONDocument](allowDiskUse = true, readConcern = Some(ReadConcern.Local), readPreference = ReadPreference.nearest, batchSize = 1000.some) { _ =>
       (Group(JsString("$vatNumber"))( "count" -> SumAll, "oldest" -> MinField("_id")),
-      List(
-        Match(Json.obj("count" -> Json.obj("$gt" -> 1L))),
-        Limit(n)
-      ))
+        List(
+          Match(Json.obj("count" -> Json.obj("$gt" -> 1L))),
+          Limit(n)
+        ))
     }.collect[List](-1, Cursor.FailOnError[List[BSONDocument]]())
   }
 
