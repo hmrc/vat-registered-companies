@@ -25,11 +25,11 @@ trait LockDatabaseOperations {
   val testLockId = 1
 
   def insert(lock: Lock): Unit = {
-    await(lockRepository.collection.insert(true).one(lock).map(_.ok))
+    lockRepository.collection.insertOne(lock)
   }
 
   def clearLock(): Unit = {
-    await(lockRepository.removeAll().map(_.ok))
+    lockRepository.collection.drop()
   }
 
   def isLocked: Boolean = {
