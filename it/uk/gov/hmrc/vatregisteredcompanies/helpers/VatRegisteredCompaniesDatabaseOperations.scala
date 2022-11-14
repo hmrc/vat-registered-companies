@@ -16,10 +16,10 @@
 
 package uk.gov.hmrc.vatregisteredcompanies.helpers
 
-import play.api.libs.json.{JsObject, Json}
-import reactivemongo.play.json.ImplicitBSONHandlers._
-import reactivemongo.api.Cursor
-import reactivemongo.bson.BSONDocument
+import org.mongodb.scala.SingleObservable
+import org.mongodb.scala.bson.BsonDocument
+import org.mongodb.scala.bson.collection.mutable.Document
+import play.api.libs.json._
 import uk.gov.hmrc.vatregisteredcompanies.models.VatRegisteredCompany
 import uk.gov.hmrc.vatregisteredcompanies.repositories.{VatRegisteredCompaniesRepository, Wrapper}
 
@@ -29,23 +29,19 @@ trait VatRegisteredCompaniesDatabaseOperations {
 
   val vatRegisteredCompaniesRepository: VatRegisteredCompaniesRepository
 
-  def insertOne(vatRegisteredCompany: VatRegisteredCompany): Boolean = {
+  def insertOne(vatRegisteredCompany: VatRegisteredCompany): Unit = {
     val wrapper = Wrapper(vatRegisteredCompany.vatNumber, vatRegisteredCompany)
-    await(
-      vatRegisteredCompaniesRepository.insert(wrapper).map(_.ok)
-    )
+      vatRegisteredCompaniesRepository.collection.insertOne(wrapper)
   }
 
-  def insertMany(vatRegisteredCompanyList: List[VatRegisteredCompany]): Boolean = {
+  def insertMany(vatRegisteredCompanyList: List[VatRegisteredCompany]): Unit = {
     val wrappers = vatRegisteredCompanyList
       .map(vatRegisteredCompany => Wrapper(vatRegisteredCompany.vatNumber, vatRegisteredCompany))
-    await(
-      vatRegisteredCompaniesRepository.bulkInsert(wrappers).map(_.ok)
-    )
+      vatRegisteredCompaniesRepository.collection.insertMany(wrappers)
   }
 
-  def totalCount: Int = {
-    await(vatRegisteredCompaniesRepository.count)
+  def totalCount: SingleObservable[Long] = {
+    vatRegisteredCompaniesRepository.collection.countDocuments()
   }
 
   def getRecord(vatNumber: String): Option[VatRegisteredCompany] ={
@@ -53,7 +49,7 @@ trait VatRegisteredCompaniesDatabaseOperations {
     record.get.target
   }
 
-  def deleteAll: Boolean = {
-    await(vatRegisteredCompaniesRepository.removeAll().map(_.ok))
+  def deleteAll: Unit = {
+    vatRegisteredCompaniesRepository.collection.deleteMany(Document())
   }
 }
