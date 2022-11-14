@@ -78,7 +78,7 @@ class   VatRegisteredCompaniesRepository @Inject()(
     logger.info(s"inserting ${entries.length} entries")
     bulkInsert(entries).map(_ => (()))
   }
-  def streamingDelete(deletes: List[VatNumber], payload: PayloadWrapper): Future[Unit] = {
+  private def streamingDelete(deletes: List[VatNumber], payload: PayloadWrapper): Future[Unit] = {
     deletes match {
       case vrn :: tail =>
         remove("vatNumber" -> vrn)
