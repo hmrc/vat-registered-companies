@@ -16,10 +16,7 @@
 
 package uk.gov.hmrc.vatregisteredcompanies.helpers
 
-//import reactivemongo.bson.{BSONDocument, BSONObjectID}
-//import play.api.libs.json._
-//import reactivemongo.play.json.ImplicitBSONHandlers._
-//import reactivemongo.api.{Cursor, ReadPreference}
+import org.mongodb.scala.bson.BsonObjectId
 import uk.gov.hmrc.vatregisteredcompanies.models.Payload
 import uk.gov.hmrc.vatregisteredcompanies.repositories.{PayloadBufferRepository, PayloadWrapper}
 import scala.concurrent.Future
@@ -30,7 +27,7 @@ trait PayloadBufferDatabaseOperations {
 
   val payloadBufferRepository: PayloadBufferRepository
   def createPayloadWrapper(payload: Payload): PayloadWrapper = {
-    val _id: BSONObjectID = BSONObjectID.generate()
+    val _id: BsonObjectId = BsonObjectId()
     val payloadWrapper = PayloadWrapper(_id, payload)
     payloadWrapper
   }
@@ -48,8 +45,6 @@ trait PayloadBufferDatabaseOperations {
 
   def deleteOneBuffer(payload: Payload): Future[Unit] = {
     val payloadWrapper = createPayloadWrapper(payload)
-//    payloadBufferRepository
-//      .remove("_id" -> payloadWrapper._id).map(_.ok)
     payloadBufferRepository.deleteOne(payloadWrapper)
   }
   def deleteAllBuffer: Unit = {
