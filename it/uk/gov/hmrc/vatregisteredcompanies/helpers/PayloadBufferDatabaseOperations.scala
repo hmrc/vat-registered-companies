@@ -16,13 +16,12 @@
 
 package uk.gov.hmrc.vatregisteredcompanies.helpers
 
-import reactivemongo.bson.{BSONDocument, BSONObjectID}
-import play.api.libs.json._
-import reactivemongo.play.json.ImplicitBSONHandlers._
-import reactivemongo.api.{Cursor, ReadPreference}
-import uk.gov.hmrc.vatregisteredcompanies.models.{Payload, VatRegisteredCompany}
+//import reactivemongo.bson.{BSONDocument, BSONObjectID}
+//import play.api.libs.json._
+//import reactivemongo.play.json.ImplicitBSONHandlers._
+//import reactivemongo.api.{Cursor, ReadPreference}
+import uk.gov.hmrc.vatregisteredcompanies.models.Payload
 import uk.gov.hmrc.vatregisteredcompanies.repositories.{PayloadBufferRepository, PayloadWrapper}
-
 import scala.concurrent.Future
 
 trait PayloadBufferDatabaseOperations {
@@ -35,28 +34,26 @@ trait PayloadBufferDatabaseOperations {
     val payloadWrapper = PayloadWrapper(_id, payload)
     payloadWrapper
   }
-  def insertOneBuffer(payload: Payload): Boolean = {
-
+  def insertOneBuffer(payload: Payload): Unit = {
       val payloadWrapper = createPayloadWrapper(payload)
-    await(
-      payloadBufferRepository.insert(payloadWrapper).map(_.ok)
-    )
+      payloadBufferRepository.collection.insertOne(payloadWrapper)
   }
 
   def listBuffer: Future[List[PayloadWrapper]] =
-      payloadBufferRepository.findAll()
+      payloadBufferRepository.list
 
   def bufferTotalCount: Int = {
     await(payloadBufferRepository.count)
   }
 
-  def deleteOneBuffer(payload: Payload): Future[Boolean] = {
+  def deleteOneBuffer(payload: Payload): Future[Unit] = {
     val payloadWrapper = createPayloadWrapper(payload)
-    payloadBufferRepository
-      .remove("_id" -> payloadWrapper._id).map(_.ok)
+//    payloadBufferRepository
+//      .remove("_id" -> payloadWrapper._id).map(_.ok)
+    payloadBufferRepository.deleteOne(payloadWrapper)
   }
-  def deleteAllBuffer: Boolean = {
-      await(payloadBufferRepository.removeAll().map(_.ok))
+  def deleteAllBuffer: Unit = {
+      payloadBufferRepository.collection.drop()
   }
 
 }
