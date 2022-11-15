@@ -46,7 +46,7 @@ import java.time.LocalDateTime
 
         whenReady(act) { res =>
           res shouldBe false
-          isLocked(1) shouldBe true
+          isLocked shouldBe true
         }
       }
     }
@@ -59,7 +59,7 @@ import java.time.LocalDateTime
         whenReady(act) { res =>
           res shouldBe false
           Thread.sleep(5000)
-          isLocked(1) shouldBe false
+          isLocked shouldBe false
         }
       }
     }

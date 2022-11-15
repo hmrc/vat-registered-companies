@@ -49,7 +49,7 @@ class PayloadConversionSchedulerISpec extends IntegrationSpecBase {
               //check buffer record deleted
               bufferTotalCount shouldBe 0
               //check lock has been removed
-              isLocked(1) shouldBe false
+              isLocked shouldBe false
 
               //check records inserted into vatRegisteredCompanies database
               //check buffer record deleted
@@ -75,7 +75,7 @@ class PayloadConversionSchedulerISpec extends IntegrationSpecBase {
               //check lock has been removed
               bufferTotalCount shouldBe 0
               totalCount shouldBe 0
-              isLocked(1) shouldBe false
+              isLocked shouldBe false
 
               //check buffer record deleted
               //check lock has been removed
@@ -115,7 +115,7 @@ class PayloadConversionSchedulerISpec extends IntegrationSpecBase {
 //              //check buffer record deleted
               bufferTotalCount shouldBe 0
               //check lock has been removed
-              isLocked(1) shouldBe false
+              isLocked shouldBe false
 
               //check buffer record deleted
               //check lock has been removed
@@ -151,7 +151,7 @@ class PayloadConversionSchedulerISpec extends IntegrationSpecBase {
               //check buffer record deleted
               bufferTotalCount shouldBe 0
               //check lock has been removed
-              isLocked(1) shouldBe false
+              isLocked shouldBe false
 
             }
           }
@@ -179,7 +179,7 @@ class PayloadConversionSchedulerISpec extends IntegrationSpecBase {
               //check buffer record deleted
               bufferTotalCount shouldBe 0
               //check lock has been removed
-              isLocked(1) shouldBe false
+              isLocked shouldBe false
             }
           }
 
@@ -212,7 +212,7 @@ class PayloadConversionSchedulerISpec extends IntegrationSpecBase {
               //check buffer record deleted
               bufferTotalCount shouldBe 0
               //check lock has been removed
-              isLocked(1) shouldBe false
+              isLocked shouldBe false
             }
           }
         }
@@ -251,7 +251,7 @@ class PayloadConversionSchedulerISpec extends IntegrationSpecBase {
               bufferList.head.payload shouldBe testPayloadCreateAndDeletes1
 
               //check lock has been removed
-              isLocked(1) shouldBe false
+              isLocked shouldBe false
             }
           }
 
@@ -292,7 +292,7 @@ class PayloadConversionSchedulerISpec extends IntegrationSpecBase {
               bufferList.tail.last.payload shouldBe testPayloadCreateAndDeletes1
 
               //check lock has been removed
-              isLocked(1) shouldBe false
+              isLocked shouldBe false
             }
           }
 
@@ -341,7 +341,7 @@ class PayloadConversionSchedulerISpec extends IntegrationSpecBase {
               bufferList.tail.last.payload shouldBe testPayloadCreateAndUpdates1
 
               //check lock has been removed
-              isLocked(1) shouldBe false
+              isLocked shouldBe false
             }
           }
         }
@@ -363,7 +363,7 @@ class PayloadConversionSchedulerISpec extends IntegrationSpecBase {
           totalCount shouldBe 4
           // insert a lock within TTL
           insert(testLock)
-          isLocked(1) shouldBe true
+          isLocked shouldBe true
 
           val res = persistenceService.processOneData
 
@@ -381,7 +381,7 @@ class PayloadConversionSchedulerISpec extends IntegrationSpecBase {
             val bufferList = await(payloadBufferRepository.list)
             bufferList.head.payload shouldBe testPayloadCreateAndDeletes1
             //check lock is still present
-            isLocked(1) shouldBe true
+            isLocked shouldBe true
           }
 
         }
@@ -401,7 +401,7 @@ class PayloadConversionSchedulerISpec extends IntegrationSpecBase {
           totalCount shouldBe 4
           // insert a lock outside TTL
           insert(expiredTestLock)
-          isLocked(1) shouldBe true
+          isLocked shouldBe true
 
           val res = persistenceService.processOneData
 
@@ -418,7 +418,7 @@ class PayloadConversionSchedulerISpec extends IntegrationSpecBase {
             val bufferList = await(payloadBufferRepository.list)
             bufferList.head.payload shouldBe testPayloadCreateAndDeletes1
             //check lock has been removed
-            isLocked(1) shouldBe false
+            isLocked shouldBe false
           }
         }
       }

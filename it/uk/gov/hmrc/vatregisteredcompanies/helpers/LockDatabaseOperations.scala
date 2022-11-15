@@ -34,7 +34,7 @@ trait LockDatabaseOperations {
     await(lockRepository.collection.deleteOne(Filters.empty()).toFuture())
   }
 
-  def isLocked(id: Int): Boolean = {
-    await(lockRepository.isLocked(id))
+  def isLocked: Boolean = {
+    await(lockRepository.isLocked(testLockId))
   }
 }

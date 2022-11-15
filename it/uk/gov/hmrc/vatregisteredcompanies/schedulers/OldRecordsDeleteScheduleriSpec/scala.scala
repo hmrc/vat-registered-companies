@@ -37,7 +37,7 @@ class OldRecordsDeleteSchedulerISpec extends IntegrationSpecBase {
             //check no records deleted
             totalCount shouldBe 2
             //check lock has been removed
-            isLocked(1) shouldBe false
+            isLocked shouldBe false
           }
         }
       }
@@ -57,7 +57,7 @@ class OldRecordsDeleteSchedulerISpec extends IntegrationSpecBase {
             record.get.name shouldBe "Delta Trading"
             totalCount shouldBe 3
             //check lock has been removed
-            isLocked(1) shouldBe false
+            isLocked shouldBe false
           }
         }
 
@@ -79,7 +79,7 @@ class OldRecordsDeleteSchedulerISpec extends IntegrationSpecBase {
             record2 shouldBe defined
             record2.get.name shouldBe "ACME Trading"
             //check lock has been removed
-            isLocked(1) shouldBe false
+            isLocked shouldBe false
           }
         }
       }
@@ -97,7 +97,7 @@ class OldRecordsDeleteSchedulerISpec extends IntegrationSpecBase {
             result shouldBe ((): Unit)
             totalCount shouldBe 3
             //check only 2 records deleted
-            isLocked(1) shouldBe false
+            isLocked shouldBe false
             //check lock has been removed
           }
         }
@@ -122,7 +122,7 @@ class OldRecordsDeleteSchedulerISpec extends IntegrationSpecBase {
             //check no records deleted from vatRegisteredCompanies database
             totalCount shouldBe 4 // Fails but should pass if nothing has been deleted - currently deletes old record
             //check lock is still present
-            isLocked(1) shouldBe true
+            isLocked shouldBe true
           }
         }
       }
@@ -144,7 +144,7 @@ class OldRecordsDeleteSchedulerISpec extends IntegrationSpecBase {
             //check no records deleted from vatRegisteredCompanies database
             totalCount shouldBe 4
             //check lock has been removed
-            isLocked(1) shouldBe false
+            isLocked shouldBe false
           }
         }
       }
