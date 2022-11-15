@@ -40,11 +40,13 @@ final case class Lock(
 
 trait MongoDateTimeFormats {
 
-  implicit val localDateTimeRead: Reads[LocalDateTime] =
+  implicit val localDateTimeRead: Reads[LocalDateTime] = {
+    println("==================================start")
     (__ \ "$date").read[Long].map {
       millis =>
         LocalDateTime.ofInstant(Instant.ofEpochMilli(millis), ZoneOffset.UTC)
     }
+  }
 
   implicit val localDateTimeWrite: Writes[LocalDateTime] = new Writes[LocalDateTime] {
     def writes(dateTime: LocalDateTime): JsValue = Json.obj(
