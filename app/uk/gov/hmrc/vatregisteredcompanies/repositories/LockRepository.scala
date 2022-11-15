@@ -39,28 +39,9 @@ final case class Lock(
   lastUpdated: LocalDateTime = LocalDateTime.now
 )
 
-//trait MongoDateTimeFormats {
-//
-//  implicit val localDateTimeRead: Reads[LocalDateTime] = {
-//    println("==================================start of Reads[LocalDateTime]")
-//    (__ \ "$date").read[Long].map {
-//      millis =>
-//        LocalDateTime.ofInstant(Instant.ofEpochMilli(millis), ZoneOffset.UTC)
-//    }
-//  }
-//
-//  implicit val localDateTimeWrite: Writes[LocalDateTime] = new Writes[LocalDateTime] {
-//    println("==================================start of Writes[LocalDateTime]")
-//    def writes(dateTime: LocalDateTime): JsValue = Json.obj(
-//      "$date" -> dateTime.atZone(ZoneOffset.UTC).toInstant.toEpochMilli
-//    )
-//  }
-//}
-
 object Lock {
 
   implicit val localDateTimeFormats: Format[LocalDateTime] = MongoJavatimeFormats.localDateTimeFormat
-println("!!!!!!!!!!!!!!!!!! Lock - MongoDateTimeFormats !!!!!!")
   implicit val formats: OFormat[Lock] = Json.format
 }
 
@@ -97,6 +78,7 @@ class DefaultLockRepository @Inject()(
       true
     }.recover {
         case e: DuplicateKeyException =>
+          println("in DuplicateKeyException")
           getLock(id).map {o =>
             o.map {t =>
               if (t.lastUpdated.isBefore(LocalDateTime.now.minusMinutes(ttl))) {
@@ -105,16 +87,20 @@ class DefaultLockRepository @Inject()(
             }
           }
           logger.info(s"Unable to lock with $id")
+          (println("After release method"))
           false
         case e =>
           logger.info(s"An exception has occurred. Unable to lock with $id")
+          println("did not call release method")
           false
+
       }
   }
 
   override def release(id: Int): Future[Unit] = {
     //val options =  FindOneAndDeleteOptions().sort(BsonDocument("ascending" -> g))
 
+    println("release method called")
     collection.findOneAndDelete(BsonDocument("_id" -> id))
       .headOption()
             //findAndDelete( WriteConcern.ACKNOWLEDGED, None, None, Seq.empty)
@@ -125,7 +111,7 @@ class DefaultLockRepository @Inject()(
   }
 
   override def isLocked(id: Int): Future[Boolean] = {
-    println("*****************About to start to find a lock**********************")
+    println("*****************Starting isLocked method - searching for a lock**********************")
     collection.find[Lock](equal("_id", id))
       .headOption()
       .map(_.isDefined)
