@@ -42,15 +42,15 @@ trait PayloadBufferDatabaseOperations {
       payloadBufferRepository.list
 
   def bufferTotalCount: Long = {
-   await( payloadBufferRepository.collection.countDocuments().toFuture())
+   await(payloadBufferRepository.collection.countDocuments().toFuture())
   }
 
-  def deleteOneBuffer(payload: Payload): Future[Unit] = {
+  def deleteOneBuffer(payload: Payload): Unit = {
     val payloadWrapper = createPayloadWrapper(payload)
-    payloadBufferRepository.deleteOne(payloadWrapper)
+    await(payloadBufferRepository.deleteOne(payloadWrapper))
   }
   def deleteAllBuffer: Unit = {
-      payloadBufferRepository.collection.drop()
+      payloadBufferRepository.collection.drop().toFuture()
   }
 
 }

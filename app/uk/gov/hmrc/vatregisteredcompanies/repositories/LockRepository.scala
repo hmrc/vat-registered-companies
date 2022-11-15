@@ -41,7 +41,7 @@ final case class Lock(
 trait MongoDateTimeFormats {
 
   implicit val localDateTimeRead: Reads[LocalDateTime] = {
-    println("==================================start")
+    println("==================================start of Reads[LocalDateTime]")
     (__ \ "$date").read[Long].map {
       millis =>
         LocalDateTime.ofInstant(Instant.ofEpochMilli(millis), ZoneOffset.UTC)
@@ -49,6 +49,7 @@ trait MongoDateTimeFormats {
   }
 
   implicit val localDateTimeWrite: Writes[LocalDateTime] = new Writes[LocalDateTime] {
+    println("==================================start of Writes[LocalDateTime]")
     def writes(dateTime: LocalDateTime): JsValue = Json.obj(
       "$date" -> dateTime.atZone(ZoneOffset.UTC).toInstant.toEpochMilli
     )
@@ -56,7 +57,7 @@ trait MongoDateTimeFormats {
 }
 
 object Lock extends MongoDateTimeFormats {
-
+println("!!!!!!!!!!!!!!!!!! Lock - MongoDateTimeFormats !!!!!!")
   implicit val formats: OFormat[Lock] = Json.format
 }
 
@@ -87,6 +88,7 @@ class DefaultLockRepository @Inject()(
   val ttl = runModeConfiguration.getOptional[Int]("microservice.services.lock.ttl.minutes").getOrElse(10)
 
   override def lock(id: Int): Future[Boolean] = {
+    println("@@@@@@@@@@@@@@@@@@@@@@@@@ start of lock method @@@@@@@@@@@@@@@@@@@@@@")
     collection.insertOne(Lock(id)).toFuture().map{_ =>
       logger.info(s"Locking with $id")
       true
@@ -119,10 +121,12 @@ class DefaultLockRepository @Inject()(
       }.fallbackTo(Future.successful(()))
   }
 
-  override def isLocked(id: Int): Future[Boolean] =
+  override def isLocked(id: Int): Future[Boolean] = {
+    println("*****************About to start to find a lock**********************")
     collection.find[Lock](equal("_id", id))
       .headOption()
       .map(_.isDefined)
+  }
 
   def getLock(id: Int): Future[Option[Lock]] =
     collection.find[Lock](equal("_id", id))

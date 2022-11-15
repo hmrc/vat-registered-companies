@@ -15,8 +15,12 @@
  */
 
 package uk.gov.hmrc.vatregisteredcompanies.repository
+import org.mongodb.scala.model.Filters.equal
 import uk.gov.hmrc.vatregisteredcompanies.helpers.IntegrationSpecBase
 import uk.gov.hmrc.vatregisteredcompanies.helpers.TestData._
+import uk.gov.hmrc.vatregisteredcompanies.repositories.Lock
+
+import java.time.LocalDateTime
 
  class LockRepositoryISpec extends IntegrationSpecBase {
    override def beforeEach(): Unit = {
@@ -49,11 +53,17 @@ import uk.gov.hmrc.vatregisteredcompanies.helpers.TestData._
     "lock exists outside TTL" should {
       "Return false" in {
         insert(expiredTestLock)
+        Thread.sleep(5000)
         val act = lockRepository.lock(testLockId)
-        Thread.sleep(1000)
+        Thread.sleep(5000)
 
+        val whatFindDoes = lockRepository.collection.find[Lock].headOption()
+          .map(_.isDefined)
+        Thread.sleep(5000)
+        println("£££££££££££ lockRepo.collection.find results:")
+        println(whatFindDoes)
         whenReady(act) { res =>
-          println("&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&")
+          println("&&&&&&&&&&&&&&")
           println(res)
           res shouldBe false
           isLocked shouldBe false
@@ -99,7 +109,16 @@ import uk.gov.hmrc.vatregisteredcompanies.helpers.TestData._
 
     "A lock exists" should {
       "Return true" in {
+        println("^^^^^^^^^^^^^^")
+        println("Past time is")
+        println(pastTime)
+        println(ZonedDateTime)
+
+        println("$$$$$$$ Test lock to print")
+        println(testLock)
+
         insert(testLock)
+        Thread.sleep(5000)
         val act = lockRepository.isLocked(testLockId)
 
         whenReady(act) { res =>

@@ -47,10 +47,15 @@ object TestData {
   val testLockId = 1
   val testLock: Lock = Lock(testLockId)
   val formattedDateString = "2020-07-01T00:00:00Z"
+  val testTime: LocalDateTime = LocalDateTime.now
   val pastTime: LocalDateTime = LocalDateTime.parse(
     formattedDateString,
     DateTimeFormatter.ISO_INSTANT.withZone(ZoneId.systemDefault())
   );
+
+  val f: DateTimeFormatter = DateTimeFormatter.ISO_INSTANT.withZone(ZoneId.systemDefault());
+  val ZonedDateTime = LocalDateTime.parse("2014-09-02T08:05:23.653Z", f);
+
   val expiredTestLock: Lock = Lock(testLockId, pastTime)
 
   def getVatRegCompany(vatNumber: String, companyName: String): VatRegisteredCompany =
