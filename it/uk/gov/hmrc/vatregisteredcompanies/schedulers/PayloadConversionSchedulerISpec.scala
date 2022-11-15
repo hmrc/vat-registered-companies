@@ -42,7 +42,7 @@ class PayloadConversionSchedulerISpec extends IntegrationSpecBase {
               totalCount shouldBe 2
               val checkCompanyInserted = vatRegisteredCompaniesRepository.collection.find()
               // TODO:fix assertion
-              println("********************************* checkCompanyInserted printed below to identify the object and what it includes **************************")
+              println("****************************************************************************************************************** checkCompanyInserted printed below to identify the object and what it includes **************************")
               println(checkCompanyInserted)
               checkCompanyInserted //.mkString should include(testVatNo1)
                 //checkCompanyInserted.mkString should include(testVatNo2)

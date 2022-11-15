@@ -140,7 +140,7 @@ class   VatRegisteredCompaniesRepository @Inject()(
   def lookup(target: String): Future[Option[LookupResponse]] = {
     collection
       .find(BsonDocument("vatNumber" -> target))
-      .sort(Sorts.ascending("_id"))
+      .sort(Sorts.descending("_id"))
       .headOption()
       .map(x => {
         x match {

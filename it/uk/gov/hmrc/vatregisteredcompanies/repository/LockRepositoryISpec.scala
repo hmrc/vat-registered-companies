@@ -39,6 +39,7 @@ import uk.gov.hmrc.vatregisteredcompanies.helpers.TestData._
         insert(testLock)
         val act = lockRepository.lock(testLockId)
 
+
         whenReady(act) { res =>
           res shouldBe false
           isLocked shouldBe true
@@ -49,9 +50,11 @@ import uk.gov.hmrc.vatregisteredcompanies.helpers.TestData._
       "Return false" in {
         insert(expiredTestLock)
         val act = lockRepository.lock(testLockId)
-        Thread.sleep(200)
+        Thread.sleep(1000)
 
         whenReady(act) { res =>
+          println("&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&")
+          println(res)
           res shouldBe false
           isLocked shouldBe false
         }

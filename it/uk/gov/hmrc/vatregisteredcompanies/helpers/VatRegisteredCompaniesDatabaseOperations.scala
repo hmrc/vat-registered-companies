@@ -19,6 +19,7 @@ package uk.gov.hmrc.vatregisteredcompanies.helpers
 import org.mongodb.scala.SingleObservable
 import org.mongodb.scala.bson.BsonDocument
 import org.mongodb.scala.bson.collection.mutable.Document
+import org.mongodb.scala.model.Filters
 import play.api.libs.json._
 import uk.gov.hmrc.vatregisteredcompanies.models.VatRegisteredCompany
 import uk.gov.hmrc.vatregisteredcompanies.repositories.{VatRegisteredCompaniesRepository, Wrapper}
@@ -31,17 +32,17 @@ trait VatRegisteredCompaniesDatabaseOperations {
 
   def insertOne(vatRegisteredCompany: VatRegisteredCompany): Unit = {
     val wrapper = Wrapper(vatRegisteredCompany.vatNumber, vatRegisteredCompany)
-      vatRegisteredCompaniesRepository.collection.insertOne(wrapper)
+      await(vatRegisteredCompaniesRepository.collection.insertOne(wrapper).toFuture())
   }
 
   def insertMany(vatRegisteredCompanyList: List[VatRegisteredCompany]): Unit = {
     val wrappers = vatRegisteredCompanyList
       .map(vatRegisteredCompany => Wrapper(vatRegisteredCompany.vatNumber, vatRegisteredCompany))
-      vatRegisteredCompaniesRepository.collection.insertMany(wrappers)
+      await(vatRegisteredCompaniesRepository.collection.insertMany(wrappers).toFuture())
   }
 
-  def totalCount: SingleObservable[Long] = {
-    vatRegisteredCompaniesRepository.collection.countDocuments()
+  def totalCount: Long = {
+    await(vatRegisteredCompaniesRepository.collection.countDocuments().toFuture())
   }
 
   def getRecord(vatNumber: String): Option[VatRegisteredCompany] ={
@@ -50,6 +51,6 @@ trait VatRegisteredCompaniesDatabaseOperations {
   }
 
   def deleteAll: Unit = {
-    vatRegisteredCompaniesRepository.collection.deleteMany(Document())
+    await(vatRegisteredCompaniesRepository.collection.deleteMany(Filters.exists("_id")).toFuture())
   }
 }

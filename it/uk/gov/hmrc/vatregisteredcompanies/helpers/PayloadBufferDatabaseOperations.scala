@@ -35,14 +35,14 @@ trait PayloadBufferDatabaseOperations {
   }
   def insertOneBuffer(payload: Payload): Unit = {
       val payloadWrapper = createPayloadWrapper(payload)
-      payloadBufferRepository.collection.insertOne(payloadWrapper)
+      await(payloadBufferRepository.collection.insertOne(payloadWrapper).toFuture())
   }
 
   def listBuffer: Future[List[PayloadWrapper]] =
       payloadBufferRepository.list
 
-  def bufferTotalCount: SingleObservable[Long] = {
-    payloadBufferRepository.collection.countDocuments()
+  def bufferTotalCount: Long = {
+   await( payloadBufferRepository.collection.countDocuments().toFuture())
   }
 
   def deleteOneBuffer(payload: Payload): Future[Unit] = {
