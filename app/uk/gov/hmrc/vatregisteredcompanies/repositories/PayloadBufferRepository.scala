@@ -17,7 +17,6 @@
 package uk.gov.hmrc.vatregisteredcompanies.repositories
 
 import org.bson.types.ObjectId
-import org.mongodb.scala.bson.BsonObjectId
 
 import javax.inject.{Inject, Singleton}
 import play.api.Logging
@@ -31,8 +30,8 @@ import uk.gov.hmrc.vatregisteredcompanies.models.Payload
 import scala.concurrent.{ExecutionContext, Future}
 
 final case class PayloadWrapper (
-                                  _id: BsonObjectId = BsonObjectId(),
-                                  payload: Payload
+  _id: ObjectId = ObjectId.get(),
+  payload: Payload
 )
 
 object PayloadWrapper {

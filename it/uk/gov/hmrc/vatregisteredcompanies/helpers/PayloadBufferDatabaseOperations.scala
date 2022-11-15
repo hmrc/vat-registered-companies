@@ -16,8 +16,8 @@
 
 package uk.gov.hmrc.vatregisteredcompanies.helpers
 
+import org.bson.types.ObjectId
 import org.mongodb.scala.SingleObservable
-import org.mongodb.scala.bson.BsonObjectId
 import uk.gov.hmrc.vatregisteredcompanies.models.Payload
 import uk.gov.hmrc.vatregisteredcompanies.repositories.{PayloadBufferRepository, PayloadWrapper}
 
@@ -29,7 +29,7 @@ trait PayloadBufferDatabaseOperations {
 
   val payloadBufferRepository: PayloadBufferRepository
   def createPayloadWrapper(payload: Payload): PayloadWrapper = {
-    val _id: BsonObjectId = BsonObjectId()
+    val _id: ObjectId = ObjectId.get()
     val payloadWrapper = PayloadWrapper(_id, payload)
     payloadWrapper
   }
