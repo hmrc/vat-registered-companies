@@ -16,9 +16,11 @@
 
 package uk.gov.hmrc.vatregisteredcompanies.helpers
 
+import org.mongodb.scala.SingleObservable
 import org.mongodb.scala.bson.BsonObjectId
 import uk.gov.hmrc.vatregisteredcompanies.models.Payload
 import uk.gov.hmrc.vatregisteredcompanies.repositories.{PayloadBufferRepository, PayloadWrapper}
+
 import scala.concurrent.Future
 
 trait PayloadBufferDatabaseOperations {
@@ -39,8 +41,8 @@ trait PayloadBufferDatabaseOperations {
   def listBuffer: Future[List[PayloadWrapper]] =
       payloadBufferRepository.list
 
-  def bufferTotalCount: Int = {
-    await(payloadBufferRepository.count)
+  def bufferTotalCount: SingleObservable[Long] = {
+    payloadBufferRepository.collection.countDocuments()
   }
 
   def deleteOneBuffer(payload: Payload): Future[Unit] = {
