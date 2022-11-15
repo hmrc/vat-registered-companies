@@ -15,30 +15,14 @@
  */
 
 package uk.gov.hmrc.vatregisteredcompanies.helpers
-import play.api.libs.json.{JsValue, Json, Reads, Writes, __}
+import org.mongodb.scala.model.Filters
 import uk.gov.hmrc.vatregisteredcompanies.repositories.{Lock, LockRepository}
-
-import java.time.{Instant, LocalDateTime, ZoneOffset}
+import uk.gov.hmrc.vatregisteredcompanies.repositories.Lock._
 
 trait LockDatabaseOperations {
 
   self: IntegrationSpecBase =>
 
-  implicit val localDateTimeRead: Reads[LocalDateTime] = {
-    println("==================================start of Test Reads[LocalDateTime]")
-    (__ \ "$date").read[Long].map {
-      millis =>
-        LocalDateTime.ofInstant(Instant.ofEpochMilli(millis), ZoneOffset.UTC)
-    }
-  }
-
-  implicit val localDateTimeWrite: Writes[LocalDateTime] = new Writes[LocalDateTime] {
-    println("==================================start of Test Writes[LocalDateTime]")
-
-    def writes(dateTime: LocalDateTime): JsValue = Json.obj(
-      "$date" -> dateTime.atZone(ZoneOffset.UTC).toInstant.toEpochMilli
-    )
-  }
   val lockRepository: LockRepository
   val testLockId = 1
 
@@ -47,7 +31,7 @@ trait LockDatabaseOperations {
   }
 
   def clearLock(): Unit = {
-    await(lockRepository.collection.drop().toFuture())
+    await(lockRepository.collection.deleteOne(Filters.empty()).toFuture())
   }
 
   def isLocked: Boolean = {

@@ -29,6 +29,7 @@ import play.api.libs.json._
 import play.api.{Configuration, Logging}
 import uk.gov.hmrc.mongo.MongoComponent
 import uk.gov.hmrc.mongo.play.json.PlayMongoRepository
+import uk.gov.hmrc.mongo.play.json.formats.MongoJavatimeFormats
 
 import java.util.concurrent.TimeUnit
 import scala.concurrent.{ExecutionContext, Future}
@@ -38,25 +39,27 @@ final case class Lock(
   lastUpdated: LocalDateTime = LocalDateTime.now
 )
 
-trait MongoDateTimeFormats {
+//trait MongoDateTimeFormats {
+//
+//  implicit val localDateTimeRead: Reads[LocalDateTime] = {
+//    println("==================================start of Reads[LocalDateTime]")
+//    (__ \ "$date").read[Long].map {
+//      millis =>
+//        LocalDateTime.ofInstant(Instant.ofEpochMilli(millis), ZoneOffset.UTC)
+//    }
+//  }
+//
+//  implicit val localDateTimeWrite: Writes[LocalDateTime] = new Writes[LocalDateTime] {
+//    println("==================================start of Writes[LocalDateTime]")
+//    def writes(dateTime: LocalDateTime): JsValue = Json.obj(
+//      "$date" -> dateTime.atZone(ZoneOffset.UTC).toInstant.toEpochMilli
+//    )
+//  }
+//}
 
-  implicit val localDateTimeRead: Reads[LocalDateTime] = {
-    println("==================================start of Reads[LocalDateTime]")
-    (__ \ "$date").read[Long].map {
-      millis =>
-        LocalDateTime.ofInstant(Instant.ofEpochMilli(millis), ZoneOffset.UTC)
-    }
-  }
+object Lock {
 
-  implicit val localDateTimeWrite: Writes[LocalDateTime] = new Writes[LocalDateTime] {
-    println("==================================start of Writes[LocalDateTime]")
-    def writes(dateTime: LocalDateTime): JsValue = Json.obj(
-      "$date" -> dateTime.atZone(ZoneOffset.UTC).toInstant.toEpochMilli
-    )
-  }
-}
-
-object Lock extends MongoDateTimeFormats {
+  implicit val localDateTimeFormats: Format[LocalDateTime] = MongoJavatimeFormats.localDateTimeFormat
 println("!!!!!!!!!!!!!!!!!! Lock - MongoDateTimeFormats !!!!!!")
   implicit val formats: OFormat[Lock] = Json.format
 }

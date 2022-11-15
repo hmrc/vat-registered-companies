@@ -51,6 +51,6 @@ trait VatRegisteredCompaniesDatabaseOperations {
   }
 
   def deleteAll: Unit = {
-    await(vatRegisteredCompaniesRepository.collection.deleteMany(Filters.exists("_id")).toFuture())
+    await(vatRegisteredCompaniesRepository.collection.deleteMany(Filters.empty()).toFuture())
   }
 }
