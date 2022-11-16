@@ -21,6 +21,11 @@ import uk.gov.hmrc.vatregisteredcompanies.helpers.TestData._
 
 class PayloadConversionSchedulerISpec extends IntegrationSpecBase {
 
+  override def beforeEach(): Unit = {
+    deleteAll
+    clearLock()
+    deleteAllBuffer
+  }
   "processOneData" when {
     "the lock is not already acquired" should {
       "get the oldest payload from the buffer repository and process it then delete buffer record" when {
