@@ -53,19 +53,12 @@ import java.time.LocalDateTime
     "lock exists outside TTL" should {
       "Return false" in {
         insert(expiredTestLock)
-        Thread.sleep(5000)
-        val act = lockRepository.lock(testLockId)
-        Thread.sleep(5000)
 
-        val whatFindDoes = lockRepository.collection.find[Lock].headOption()
-          .map(_.isDefined)
-        Thread.sleep(5000)
-        println("£££££££££££ lockRepo.collection.find results:")
-        println(whatFindDoes)
+        val act = lockRepository.lock(testLockId)
+
         whenReady(act) { res =>
-          println("&&&&&&&&&&&&&&")
-          println(res)
           res shouldBe false
+          Thread.sleep(5000)
           isLocked shouldBe false
         }
       }
@@ -109,14 +102,6 @@ import java.time.LocalDateTime
 
     "A lock exists" should {
       "Return true" in {
-        println("^^^^^^^^^^^^^^")
-        println("Past time is")
-        println(pastTime)
-        println(ZonedDateTime)
-
-        println("$$$$$$$ Test lock to print")
-        println(testLock)
-
         insert(testLock)
         Thread.sleep(5000)
         val act = lockRepository.isLocked(testLockId)

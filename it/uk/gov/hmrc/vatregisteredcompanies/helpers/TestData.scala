@@ -51,10 +51,7 @@ object TestData {
   val pastTime: LocalDateTime = LocalDateTime.parse(
     formattedDateString,
     DateTimeFormatter.ISO_INSTANT.withZone(ZoneId.systemDefault())
-  );
-
-  val f: DateTimeFormatter = DateTimeFormatter.ISO_INSTANT.withZone(ZoneId.systemDefault());
-  val ZonedDateTime = LocalDateTime.parse("2014-09-02T08:05:23.653Z", f);
+  )
 
   val expiredTestLock: Lock = Lock(testLockId, pastTime)
 
