@@ -307,8 +307,7 @@ class PayloadConversionSchedulerISpec extends IntegrationSpecBase {
             whenReady(res) {result =>
               result shouldBe ((): Unit)
 
-              //check records inserted into vatRegisteredCompanies database
-              //check records deleted from vatRegisteredCompanies database
+              //check records inserted or deleted into vatRegisteredCompanies database
               totalCount shouldBe 3
               //after buffer insert - there would be 6 companies (vat 1 x 2, vat 2 x 2, vat 3, vat 4
               // then the deletes would remove any vat2 and vat 3 companies (-3 records)
@@ -355,8 +354,7 @@ class PayloadConversionSchedulerISpec extends IntegrationSpecBase {
 
           whenReady(res) {result =>
             result shouldBe ((): Unit)
-            //check no records inserted into vatRegisteredCompanies database
-            //check no records deleted from vatRegisteredCompanies database
+            //check no records inserted or deleted into vatRegisteredCompanies database
             totalCount shouldBe 4
 
             val records = vatRegisteredCompaniesRepository.collection.find().toFuture()
@@ -376,6 +374,7 @@ class PayloadConversionSchedulerISpec extends IntegrationSpecBase {
         "not run the processing job, remove the lock and return unit" in {
           //insert one record into buffer repository that has a payload with createAndUpdates and deletes
           insertOneBuffer(testPayloadCreateAndDeletes1)
+          Thread.sleep(500)
           //inserts 2 companies with vatNo1 and vatNo2 AND deletes records with vatNo 2 and 3
           bufferTotalCount shouldBe 1
           // insert records in vatRegisteredCompanies to be deleted
@@ -392,8 +391,7 @@ class PayloadConversionSchedulerISpec extends IntegrationSpecBase {
 
           whenReady(res) {result =>
             result shouldBe ((): Unit)
-            //check no records inserted into vatRegisteredCompanies database
-            //check no records deleted from vatRegisteredCompanies database
+            //check no records inserted or deleted into vatRegisteredCompanies database
             totalCount shouldBe 4
             val records = vatRegisteredCompaniesRepository.collection.find().toFuture()
             records.futureValue.apply(2).company shouldBe acmeTradingWithVatNo1
