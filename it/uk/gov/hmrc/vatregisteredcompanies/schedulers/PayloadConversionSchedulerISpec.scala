@@ -35,6 +35,7 @@ class PayloadConversionSchedulerISpec extends IntegrationSpecBase {
 
             //insert one record into buffer repository that has a payload with only createsAndUpdates
             insertOneBuffer(testPayloadCreateAndUpdates)
+            Thread.sleep(100)
             bufferTotalCount shouldBe 1
             totalCount shouldBe 0
 
@@ -46,7 +47,7 @@ class PayloadConversionSchedulerISpec extends IntegrationSpecBase {
               //check records inserted into vatRegisteredCompanies database
               totalCount shouldBe 2
               val checkCompanyInserted = vatRegisteredCompaniesRepository.collection.find().toFuture()
-                Thread.sleep(500)
+                Thread.sleep(100)
               checkCompanyInserted.toString should include(testVatNo1)
               checkCompanyInserted.toString should include(testVatNo2)
               //check buffer record deleted
@@ -59,6 +60,7 @@ class PayloadConversionSchedulerISpec extends IntegrationSpecBase {
           "contains a payload with only deletes" in {
             //insert one record into buffer repository that has a payload with only deletes
             insertOneBuffer(testPayloadDeletes)
+            Thread.sleep(500)
             bufferTotalCount shouldBe 1
 
             val res = persistenceService.processOneData
@@ -82,7 +84,7 @@ class PayloadConversionSchedulerISpec extends IntegrationSpecBase {
             insertOneBuffer(testPayloadCreateAndDeletes)
                 //this inserts companies with vatNo1 and vatNo2
                 //deletes is deleting vatNo1 and vatNo3
-
+            Thread.sleep(100)
             bufferTotalCount shouldBe 1
             totalCount shouldBe 0
 
@@ -122,6 +124,7 @@ class PayloadConversionSchedulerISpec extends IntegrationSpecBase {
           "contains a payload with only createsAndUpdates" in {
             //insert one record into buffer repository that has a payload with only createsAndUpdates
             insertOneBuffer(testPayloadCreateAndUpdates)
+            Thread.sleep(100)
             bufferTotalCount shouldBe 1
             totalCount shouldBe 0
             Thread.sleep(20)
@@ -150,11 +153,13 @@ class PayloadConversionSchedulerISpec extends IntegrationSpecBase {
           "contains a payload with only deletes" in {
             //insert one record into buffer repository that has a payload with only deletes
             insertOneBuffer(testPayloadDeletes)
+            Thread.sleep(100)
             bufferTotalCount shouldBe 1
             totalCount shouldBe 0
-            Thread.sleep(20)
+
             // insert records into vatRegisteredCompanies with at least one with the same vatNumber in the buffer paylod
             insertOne(deltaTradingWithVatNo1)
+            Thread.sleep(100)
             totalCount shouldBe 1
 
             val res = persistenceService.processOneData
@@ -164,6 +169,7 @@ class PayloadConversionSchedulerISpec extends IntegrationSpecBase {
 
               //check records deleted from vatRegisteredCompanies database
               vatRegisteredCompaniesRepository.collection.find().toFuture().value shouldBe empty
+              Thread.sleep(100)
               totalCount shouldBe 0
               //check buffer record deleted
               bufferTotalCount shouldBe 0
@@ -177,6 +183,7 @@ class PayloadConversionSchedulerISpec extends IntegrationSpecBase {
             insertOneBuffer(testPayloadCreateAndDeletes1)
             //this inserts companies with vatNo1 and vatNo2
             //deletes is deleting vatNo2 and vatNo3
+            Thread.sleep(100)
             bufferTotalCount shouldBe 1
             totalCount shouldBe 0
             Thread.sleep(20)
@@ -195,6 +202,7 @@ class PayloadConversionSchedulerISpec extends IntegrationSpecBase {
                   // 2 companies were inserted, 1 present through VRC insertion = 3, 2 listed for delete, only 1 found = 2 companies present.
               checkCompanyInserted.futureValue.head.company shouldBe deltaTradingWithVatNo1
               checkCompanyInserted.futureValue.last.company shouldBe acmeTradingWithVatNo1
+              Thread.sleep(100)
               totalCount shouldBe 2
 
               //check buffer record deleted
@@ -232,7 +240,7 @@ class PayloadConversionSchedulerISpec extends IntegrationSpecBase {
 
               //check buffer record with payload containing only createsandupdates is deleted
               val bufferList = await(payloadBufferRepository.list)
-
+              Thread.sleep(50)
               bufferTotalCount shouldBe 2
               bufferList.head.payload.createsAndUpdates.mkString shouldNot include (testVatNo3)
               bufferList.head.payload shouldBe testPayloadCreateAndDeletes1
@@ -259,6 +267,7 @@ class PayloadConversionSchedulerISpec extends IntegrationSpecBase {
             insertOne(acmeTradingWithVatNo2)
             insertOne(acmeTradingWithVatNo1)
             insertOne(acmeTradingWithVatNo3)
+            Thread.sleep(500)
             totalCount shouldBe 4
 
             val res = persistenceService.processOneData
@@ -273,7 +282,7 @@ class PayloadConversionSchedulerISpec extends IntegrationSpecBase {
 
               //check buffer record deleted with payload containing only deletes
               val bufferList = await(payloadBufferRepository.list)
-
+              Thread.sleep(50)
               bufferTotalCount shouldBe 2
               bufferList.head.payload shouldBe testPayloadCreateAndUpdates1
               bufferList.tail.last.payload shouldBe testPayloadCreateAndDeletes1
@@ -293,6 +302,7 @@ class PayloadConversionSchedulerISpec extends IntegrationSpecBase {
             //insert one record into buffer repository that has a payload with only createsAndUpdates
             insertOneBuffer(testPayloadCreateAndUpdates1)
             //inserts 2 companies with vatNo3 and vatNo4
+            Thread.sleep(100)
             bufferTotalCount shouldBe 3
 
             // insert records in vatRegisteredCompanies to be deleted
@@ -300,6 +310,7 @@ class PayloadConversionSchedulerISpec extends IntegrationSpecBase {
             insertOne(acmeTradingWithVatNo2)
             insertOne(acmeTradingWithVatNo1)
             insertOne(acmeTradingWithVatNo3)
+            Thread.sleep(100)
             totalCount shouldBe 4
 
             val res = persistenceService.processOneData
@@ -320,7 +331,7 @@ class PayloadConversionSchedulerISpec extends IntegrationSpecBase {
               records.futureValue.toString shouldNot include(testVatNo3)
 //              //check buffer record deleted with payload containing createsAndUpdates and deletes
               val bufferList = await(payloadBufferRepository.list)
-
+              Thread.sleep(100)
               bufferTotalCount shouldBe 2
               bufferList.head.payload shouldBe testPayloadDeletes1
               bufferList.tail.last.payload shouldBe testPayloadCreateAndUpdates1
@@ -339,12 +350,14 @@ class PayloadConversionSchedulerISpec extends IntegrationSpecBase {
           //insert one record into buffer repository that has a payload with createAndUpdates and deletes
           insertOneBuffer(testPayloadCreateAndDeletes1)
           //inserts 2 companies with vatNo1 and vatNo2 AND deletes records with vatNo 2 and 3
+          Thread.sleep(100)
           bufferTotalCount shouldBe 1
           // insert records in vatRegisteredCompanies to be deleted
           insertOne(acmeTradingWithVatNo4)
           insertOne(acmeTradingWithVatNo2)
           insertOne(acmeTradingWithVatNo1)
           insertOne(acmeTradingWithVatNo3)
+          Thread.sleep(100)
           totalCount shouldBe 4
           // insert a lock within TTL
           insert(testLock)
@@ -382,6 +395,7 @@ class PayloadConversionSchedulerISpec extends IntegrationSpecBase {
           insertOne(acmeTradingWithVatNo2)
           insertOne(acmeTradingWithVatNo1)
           insertOne(acmeTradingWithVatNo3)
+          Thread.sleep(100)
           totalCount shouldBe 4
           // insert a lock outside TTL
           insert(expiredTestLock)

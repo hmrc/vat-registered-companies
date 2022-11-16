@@ -18,25 +18,22 @@ package uk.gov.hmrc.vatregisteredcompanies.repositories
 
 import java.time.{Instant, LocalDateTime}
 import akka.stream.Materializer
-import akka.stream.scaladsl.{Flow, Sink, Source}
-
 import javax.inject.{Inject, Named, Singleton}
 import play.api.Logging
 import play.api.libs.json._
 import org.mongodb.scala.bson.{BsonDocument, BsonValue, ObjectId}
-import org.mongodb.scala.model.Aggregates.{group, limit, out, project}
+import org.mongodb.scala.model.Aggregates.{group, limit, project}
 import org.mongodb.scala.model.Indexes.ascending
-import org.mongodb.scala.model.Projections.{fields, include}
-import org.mongodb.scala.model.{Accumulators, Aggregates, Filters, FindOneAndDeleteOptions, IndexModel, IndexOptions, Sorts}
+import org.mongodb.scala.model.Projections.include
+import org.mongodb.scala.model.{Accumulators, Aggregates, Filters, IndexModel, IndexOptions, Sorts}
 import uk.gov.hmrc.mongo.MongoComponent
 import uk.gov.hmrc.mongo.play.json.{Codecs, PlayMongoRepository}
 import uk.gov.hmrc.mongo.play.json.formats.MongoFormats
 import uk.gov.hmrc.vatregisteredcompanies.models.{LookupResponse, Payload, VatNumber, VatRegisteredCompany}
-
 import java.time.ZoneOffset
 import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.{ExecutionContext, Future}
-import scala.util.{Failure, Success}
+
 
 final case class Wrapper(
   vatNumber: VatNumber,
@@ -97,7 +94,7 @@ class   VatRegisteredCompaniesRepository @Inject()(
       Future.successful(())
     }
   }
-    // TODO Christine - please see that above if !=null code and future.successful is okay
+
   private def streamingDelete(deletes: List[VatNumber], payload: PayloadWrapper): Future[Unit] = {
     deletes match {
       case vrn :: tail =>
@@ -160,23 +157,6 @@ class   VatRegisteredCompaniesRepository @Inject()(
       })
   }
 
-//  override def indexes: Seq[Index] = Seq(
-//    Index(
-//      name = "vatNumberIndexNew".some,
-//      key = Seq( "vatNumber" -> IndexType.Ascending),
-//      background = true,
-//      unique = false
-//    )
-//  )
-//
-//  val getIndexes: Future[Unit] = {
-//    for {
-//      list <- im.list()
-//    } yield list.foreach { x =>
-//      logger.info(s"Found index ${x.name}")
-//    }
-//  }
-
   private def findOld(n: Int): Future[Seq[VatRegCompId]] = {
     collection.aggregate[BsonValue](Seq(
       group("$vatNumber", Accumulators.sum("count", 1), Accumulators.min(
@@ -186,10 +166,7 @@ class   VatRegisteredCompaniesRepository @Inject()(
       project(include("oldest"))
     )).toFuture()
       .map(res => {
-        println("$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$")
-        println(res)
         res.map(Codecs.fromBson[VatRegCompId](_))
       })
   }
-
 }
