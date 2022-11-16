@@ -90,10 +90,12 @@ class   VatRegisteredCompaniesRepository @Inject()(
     implicit val formatVatRegCompId = Json.format[VatRegCompId]
 
   private def insert(entries: List[Wrapper]): Future[Unit] = {
-    if(entries != null && entries.size >  0) {
+    if(entries.nonEmpty) {
       logger.info(s"inserting ${entries.length} entries")
-      collection.insertMany(entries).headOption().map(_ => (()))
-    } else {(Future.successful(()))}
+      collection.insertMany(entries).headOption().map(_ => ())
+    } else {
+      Future.successful(())
+    }
   }
     // TODO Christine - please see that above if !=null code and future.successful is okay
   private def streamingDelete(deletes: List[VatNumber], payload: PayloadWrapper): Future[Unit] = {
