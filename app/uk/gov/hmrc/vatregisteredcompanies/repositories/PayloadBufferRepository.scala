@@ -21,6 +21,7 @@ import org.bson.types.ObjectId
 import javax.inject.{Inject, Singleton}
 import play.api.Logging
 import play.api.libs.json._
+import uk.gov.hmrc.mongo.play.json.formats.MongoFormats.Implicits.objectIdFormat
 import org.mongodb.scala.model.{Filters, Sorts}
 import uk.gov.hmrc.mongo.MongoComponent
 import uk.gov.hmrc.mongo.play.json.PlayMongoRepository
@@ -74,4 +75,5 @@ class   PayloadBufferRepository@Inject()(
         ()
       }.fallbackTo(Future.successful(()))
   }
+
 }
