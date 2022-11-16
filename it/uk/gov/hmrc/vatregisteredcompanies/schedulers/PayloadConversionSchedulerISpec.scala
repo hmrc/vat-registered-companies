@@ -46,11 +46,7 @@ class PayloadConversionSchedulerISpec extends IntegrationSpecBase {
               //check records inserted into vatRegisteredCompanies database
               totalCount shouldBe 2
               val checkCompanyInserted = vatRegisteredCompaniesRepository.collection.find().toFuture()
-              // TODO:fix assertion
-              println("**************** checkCompanyInserted printed below to identify the object and what it includes **********")
-              // TODO: Outcome is Future(Success(List(Wrapper(123456789012,VatRegisteredCompany(ACME Trading,123456789012,Address(line 1,None,None,None,None,None,GB))), Wrapper(223456789012,VatRegisteredCompany(ACME Trading,223456789012,Address(line 1,None,None,None,None,None,GB))))))
-              Thread.sleep(500)
-              println(checkCompanyInserted)
+                Thread.sleep(500)
               checkCompanyInserted.toString should include(testVatNo1)
               checkCompanyInserted.toString should include(testVatNo2)
               //check buffer record deleted
@@ -62,37 +58,30 @@ class PayloadConversionSchedulerISpec extends IntegrationSpecBase {
 
           "contains a payload with only deletes" in {
             //insert one record into buffer repository that has a payload with only deletes
-
             insertOneBuffer(testPayloadDeletes)
             bufferTotalCount shouldBe 1
-            println("vvvvvvvvvvvv   About to call processOneData method vvvvvvvvvvvvv")
+
             val res = persistenceService.processOneData
-            println("^^^^^   Just called processOneData method - Before then when ready part of test      ^^^^^^^^")
+
             whenReady(res) {result =>
               result shouldBe ((): Unit)
               //check records deleted from vatRegisteredCompanies database
-                vatRegisteredCompaniesRepository.collection.find().toFuture().value shouldBe empty
+              vatRegisteredCompaniesRepository.collection.find().toFuture().value shouldBe empty
 
-              //TODO: based on above request, no records would be present. - Will have another dev confirm assumption
               //check buffer record deleted
               //check lock has been removed
               bufferTotalCount shouldBe 0
               totalCount shouldBe 0
               isLocked shouldBe false
-
-              //check buffer record deleted
-              //check lock has been removed
-
             }
           }
 
           "contains a payload with both createsAndUpdates and deletes" in {
             //insert one record into buffer repository that has a payload with createAndUpdates and deletes
-
             bufferTotalCount shouldBe 0
             insertOneBuffer(testPayloadCreateAndDeletes)
-            //this inserts companies with vatNo1 and vatNo2
-            //deletes is deleting vatNo1 and vatNo3
+                //this inserts companies with vatNo1 and vatNo2
+                //deletes is deleting vatNo1 and vatNo3
 
             bufferTotalCount shouldBe 1
             totalCount shouldBe 0
@@ -100,8 +89,6 @@ class PayloadConversionSchedulerISpec extends IntegrationSpecBase {
             val payloadSentToBufferRepo = await(payloadBufferRepository.list)
             payloadSentToBufferRepo.mkString should include (testVatNo1)
             payloadSentToBufferRepo.mkString should include (testVatNo2)
-            // payloadSentToBufferRepo.head.payload should include(testPayloadCreateAndUpdates.toString)
-
 
             val res = persistenceService.processOneData
 
@@ -109,6 +96,10 @@ class PayloadConversionSchedulerISpec extends IntegrationSpecBase {
               result shouldBe ((): Unit)
               //check records inserted into vatRegisteredCompanies database
               //check records deleted from vatRegisteredCompanies database
+              // TODO:fix assertion
+              println("**************** checkCompanyInserted printed below to identify the object and what it includes **********")
+              //checkCompanyInserted.toString should include(testVatNo1)
+              // TODO: Outcome is Future(Success(List(Wrapper(123456789012,VatRegisteredCompany(ACME Trading,123456789012,Address(line 1,None,None,None,None,None,GB))), Wrapper(223456789012,VatRegisteredCompany(ACME Trading,223456789012,Address(line 1,None,None,None,None,None,GB))))))
 
               totalCount shouldBe 1
               // TODO:fix assertion
