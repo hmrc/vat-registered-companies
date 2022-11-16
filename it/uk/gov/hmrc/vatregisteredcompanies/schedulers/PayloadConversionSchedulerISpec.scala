@@ -209,10 +209,10 @@ class PayloadConversionSchedulerISpec extends IntegrationSpecBase {
           "has the oldest record containing a payload with only createsAndUpdates" in {
             //insert one record into buffer repository that has a payload with only createsAndUpdates
             insertOneBuffer(testPayloadCreateAndUpdates1)
-            //inserts 2 companies with vatNo3 and vatNo4
+                //inserts 2 companies with vatNo3 and vatNo4
             //insert one record into buffer repository that has a payload with createAndUpdates and deletes
             insertOneBuffer(testPayloadCreateAndDeletes1)
-            //inserts 2 companies with vatNo1 and vatNo2 AND deletes records with vatNo 2 and 3
+                //inserts 2 companies with vatNo1 and vatNo2 AND deletes records with vatNo 2 and 3
             //insert one record into buffer repository that has a payload with only deletes
             insertOneBuffer(testPayloadDeletes1)
             //deletes records with vatNo 1
@@ -245,13 +245,14 @@ class PayloadConversionSchedulerISpec extends IntegrationSpecBase {
           "has a oldest record containing a payload with only deletes" in {
             //insert one record into buffer repository that has a payload with only deletes
             insertOneBuffer(testPayloadDeletes1)
-            //deletes records with vatNo 1
+                //deletes records with vatNo 1
             //insert one record into buffer repository that has a payload with only createsAndUpdates
             insertOneBuffer(testPayloadCreateAndUpdates1)
-            //inserts 2 companies with vatNo3 and vatNo4
+                //inserts 2 companies with vatNo3 and vatNo4
             //insert one record into buffer repository that has a payload with createAndUpdates and deletes
             insertOneBuffer(testPayloadCreateAndDeletes1)
-            //inserts 2 companies with vatNo1 and vatNo2 AND deletes records with vatNo 2 and 3
+                //inserts 2 companies with vatNo1 and vatNo2 AND deletes records with vatNo 2 and 3
+            Thread.sleep(500)
             bufferTotalCount shouldBe 3
             // insert records in vatRegisteredCompanies to be deleted
             insertOne(acmeTradingWithVatNo4)
