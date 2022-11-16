@@ -51,8 +51,7 @@ class PersistenceService @Inject()(
     repository.lookup(target)
 
   def deleteOld(n: Int): Future[Unit] =
- //   withLock(1)(repository.deleteOld(n))
-  withLock(1)((Future.successful(())))
+    withLock(1)(repository.deleteOld(n))
 
   def processOneData: Future[Unit] = {
     val x = for {

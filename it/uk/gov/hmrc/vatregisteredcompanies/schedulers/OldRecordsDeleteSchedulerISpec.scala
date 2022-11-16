@@ -1,28 +1,16 @@
-/*
- * Copyright 2022 HM Revenue & Customs
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
 package uk.gov.hmrc.vatregisteredcompanies.schedulers
 
 import uk.gov.hmrc.vatregisteredcompanies.helpers.IntegrationSpecBase
-import uk.gov.hmrc.vatregisteredcompanies.helpers.TestData._
-import uk.gov.hmrc.vatregisteredcompanies.models.VatRegisteredCompany
+import uk.gov.hmrc.vatregisteredcompanies.helpers.TestData.{acmeTradingWithVatNo1, acmeTradingWithVatNo2, acmeTradingWithVatNo3, deltaTradingWithVatNo1, deltaTradingWithVatNo2, expiredTestLock, testLock, testVatNo1, testVatNo2}
 
-class OldRecordsDeleteSchedulerISpec extends IntegrationSpecBase {
+class OldRecordsDeleteSchedulerISpec  extends IntegrationSpecBase {
 
   val limit = 2
+
+  override def beforeEach(): Unit = {
+    deleteAll
+    clearLock()
+  }
 
   "deleteOld with limit 2" when {
     "the lock is not already acquired" should {
@@ -136,8 +124,6 @@ class OldRecordsDeleteSchedulerISpec extends IntegrationSpecBase {
           insertOne(deltaTradingWithVatNo1)
           // insert a lock outside the TTL
           insert(expiredTestLock)
-          Thread.sleep(100)
-
           val res = persistenceService.deleteOld(limit)
           whenReady(res) {result =>
             result shouldBe ((): Unit)
@@ -150,4 +136,5 @@ class OldRecordsDeleteSchedulerISpec extends IntegrationSpecBase {
       }
     }
   }
+
 }

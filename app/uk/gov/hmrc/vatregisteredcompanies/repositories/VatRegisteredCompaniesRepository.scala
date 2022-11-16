@@ -19,15 +19,20 @@ package uk.gov.hmrc.vatregisteredcompanies.repositories
 import java.time.{Instant, LocalDateTime}
 import akka.stream.Materializer
 import akka.stream.scaladsl.{Flow, Sink, Source}
+
 import javax.inject.{Inject, Named, Singleton}
 import play.api.Logging
 import play.api.libs.json._
-import org.mongodb.scala.bson.BsonDocument
+import org.mongodb.scala.bson.{BsonDocument, BsonValue, ObjectId}
+import org.mongodb.scala.model.Aggregates.{group, limit, out, project}
 import org.mongodb.scala.model.Indexes.ascending
-import org.mongodb.scala.model.{Filters, FindOneAndDeleteOptions, IndexModel, IndexOptions, Sorts}
+import org.mongodb.scala.model.Projections.{fields, include}
+import org.mongodb.scala.model.{Accumulators, Aggregates, Filters, FindOneAndDeleteOptions, IndexModel, IndexOptions, Sorts}
 import uk.gov.hmrc.mongo.MongoComponent
-import uk.gov.hmrc.mongo.play.json.PlayMongoRepository
+import uk.gov.hmrc.mongo.play.json.{Codecs, PlayMongoRepository}
+import uk.gov.hmrc.mongo.play.json.formats.MongoFormats
 import uk.gov.hmrc.vatregisteredcompanies.models.{LookupResponse, Payload, VatNumber, VatRegisteredCompany}
+
 import java.time.ZoneOffset
 import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.{ExecutionContext, Future}
@@ -70,59 +75,60 @@ class   VatRegisteredCompaniesRepository @Inject()(
   def deleteAll(): Future[Unit] =
     collection.deleteMany(Filters.empty()).toFuture().map(_ => ())
 
+  def deleteOld(n: Int): Future[Unit] = {
+    for {
+      vatRegCompId <- findOld(n)
+      _ <- deleteById(vatRegCompId)
+    } yield (): Unit
+  }
+
   implicit val format: OFormat[Wrapper] = Json.format[Wrapper]
 
+  case class VatRegCompId(oldest: ObjectId)
+
+    implicit val objectIdFormat = MongoFormats.objectIdFormat
+    implicit val formatVatRegCompId = Json.format[VatRegCompId]
 
   private def insert(entries: List[Wrapper]): Future[Unit] = {
     logger.info(s"inserting ${entries.length} entries")
     collection.insertMany(entries).headOption().map(_ => (()))
   }
 
-  private def streamingDelete(deletes: List[VatNumber], payload: PayloadWrapper) = {
-    if (deletes.nonEmpty) {
-      logger.info(s"deleting ${deletes.length} records")
-      val source = Source(deletes)
-      val sink = Flow[VatNumber]
-        .throttle(elements, per)
-        .map(vrn => {
-          collection.findOneAndDelete(Filters.equal("vatNumber", vrn)).headOption().map {
-            _ => ()
+  private def streamingDelete(deletes: List[VatNumber], payload: PayloadWrapper): Future[Unit] = {
+    deletes match {
+      case vrn :: tail =>
+        collection.deleteMany(Filters.equal("vatNumber", vrn))
+          .toFuture()
+          .flatMap {_ =>
+            if(tail.nonEmpty) {
+              streamingDelete(tail, payload)
+            }
+            else {
+              bufferRepository.deleteOne(payload).map { _ =>
+                logger.info("Processed streaming deletes")
+              }
+            }
           }
-        }).to(Sink.onComplete{x =>
-          x match {
-            case Failure(e) =>
-              logger.error(s"Unable to process streaming deletes at $elements per ${per._1} ${per._2}: ${e.getMessage}")
-            case Success(_) =>
-              bufferRepository.deleteOne(payload)
-              logger.info("Processed streaming deletes")
-          }
-        logger.info(s"End of deletion stream")
-        })
-      source.to(sink).run()
-    } else {
-      logger.info("No deletes to process, cleaning buffer")
-      bufferRepository.deleteOne(payload)
+      case Nil => logger.info("No deletes to process, cleaning buffer")
+        bufferRepository.deleteOne(payload)
     }
-    Future.successful((()))
   }
 
-  private def deleteById(deletes: List[Wrapper]): Future[Unit] = {
-    if(deletes.nonEmpty) {
-      logger.info(s"Deleting ${deletes.length} old entries")
-      val source = Source(deletes)
-      val sink = Flow[Wrapper]
-        .map(_id =>
-           collection.findOneAndDelete(Filters.equal("_id", _id))
-            .map{_=>
-              logger.info(s"Releasing lock ${_id}")
-              ()
-            })
-        .to(Sink.onComplete { _ =>
-        logger.info("End of old entries deletion stream")
-      })
-      source.to(sink).run()
+  private def deleteById(deletes: Seq[VatRegCompId]): Future[Unit] = {
+    deletes match {
+      case vrcid :: tail =>
+        collection.deleteOne(Filters.equal("_id", vrcid.oldest))
+          .toFuture()
+          .flatMap {_ =>
+            if(tail.nonEmpty) {
+              deleteById(tail)
+            }
+            else {
+              Future.successful(logger.info("End of old entries deletion stream"))
+            }
+          }
+      case Nil => Future.successful(logger.info("No old entries to delete"))
     }
-    Future.successful((()))
   }
 
   private def wrap(payload: Payload): List[Wrapper] =
@@ -166,5 +172,20 @@ class   VatRegisteredCompaniesRepository @Inject()(
 //      logger.info(s"Found index ${x.name}")
 //    }
 //  }
+
+  private def findOld(n: Int): Future[Seq[VatRegCompId]] = {
+    collection.aggregate[BsonValue](Seq(
+      group("$vatNumber", Accumulators.sum("count", 1), Accumulators.min(
+        "oldest", "$_id")),
+      Aggregates.filter(Filters.gt("count", 1)),
+      limit(n),
+      project(include("oldest"))
+    )).toFuture()
+      .map(res => {
+        println("$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$")
+        println(res)
+        res.map(Codecs.fromBson[VatRegCompId](_))
+      })
+  }
 
 }

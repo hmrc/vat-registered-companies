@@ -19,7 +19,7 @@ package uk.gov.hmrc.vatregisteredcompanies.repositories
 import java.time.{Instant, LocalDateTime, ZoneOffset}
 import com.google.inject.ImplementedBy
 import org.mongodb.scala.bson.BsonDocument
-import org.mongodb.scala.{DuplicateKeyException, MongoException, ReadPreference, WriteConcern}
+import org.mongodb.scala.{DuplicateKeyException, MongoException, MongoWriteException, ReadPreference, WriteConcern}
 import org.mongodb.scala.model.Filters.equal
 import org.mongodb.scala.model.Indexes.ascending
 import org.mongodb.scala.model.{FindOneAndDeleteOptions, IndexModel, IndexOptions}
@@ -95,20 +95,17 @@ class DefaultLockRepository @Inject()(
     collection.insertOne(Lock(id)).toFuture().map{_ =>
       logger.info(s"Locking with $id")
       true
-    }.recover {
-        case e: DuplicateKeyException =>
-          getLock(id).map {o =>
-            o.map {t =>
-              if (t.lastUpdated.isBefore(LocalDateTime.now.minusMinutes(ttl))) {
-                release(id)
-              }
-            }
-          }
+    }.recoverWith {
+        case e: MongoWriteException if e.getError.getCode == 11000 =>
           logger.info(s"Unable to lock with $id")
-          false
+          getLock(id).flatMap {
+            case Some(lock) if lock.lastUpdated.isBefore(LocalDateTime.now.minusMinutes(ttl)) =>
+              release(id).map(_ => false)
+            case _ => Future.successful(false)
+          }
         case e =>
           logger.info(s"An exception has occurred. Unable to lock with $id")
-          false
+          Future.successful(false)
       }
   }
 
