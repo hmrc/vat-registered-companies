@@ -72,7 +72,6 @@ class DefaultLockRepository @Inject()(
   val ttl = runModeConfiguration.getOptional[Int]("microservice.services.lock.ttl.minutes").getOrElse(10)
 
   override def lock(id: Int): Future[Boolean] = {
-    println("@@@@@@@@@@@@@@@@@@@@@@@@@ start of lock method @@@@@@@@@@@@@@@@@@@@@@")
     collection.insertOne(Lock(id)).toFuture().map{_ =>
       logger.info(s"Locking with $id")
       true
@@ -92,8 +91,6 @@ class DefaultLockRepository @Inject()(
 
   override def release(id: Int): Future[Unit] = {
     //val options =  FindOneAndDeleteOptions().sort(BsonDocument("ascending" -> g))
-
-    println("release method called")
     collection.findOneAndDelete(BsonDocument("_id" -> id))
       .headOption()
             //findAndDelete( WriteConcern.ACKNOWLEDGED, None, None, Seq.empty)
@@ -104,7 +101,6 @@ class DefaultLockRepository @Inject()(
   }
 
   override def isLocked(id: Int): Future[Boolean] = {
-    println("*****************Starting isLocked method - searching for a lock**********************")
     collection.find[Lock](equal("_id", id))
       .headOption()
       .map(_.isDefined)

@@ -90,10 +90,12 @@ class   VatRegisteredCompaniesRepository @Inject()(
     implicit val formatVatRegCompId = Json.format[VatRegCompId]
 
   private def insert(entries: List[Wrapper]): Future[Unit] = {
-    logger.info(s"inserting ${entries.length} entries")
-    collection.insertMany(entries).headOption().map(_ => (()))
+    if(entries != null && entries.size >  0) {
+      logger.info(s"inserting ${entries.length} entries")
+      collection.insertMany(entries).headOption().map(_ => (()))
+    } else {(Future.successful(()))}
   }
-
+    // TODO Christine - please see that above if !=null code and future.successful is okay
   private def streamingDelete(deletes: List[VatNumber], payload: PayloadWrapper): Future[Unit] = {
     deletes match {
       case vrn :: tail =>
@@ -140,7 +142,7 @@ class   VatRegisteredCompaniesRepository @Inject()(
     for {
       a <- insert(wrap(payload.payload))
       b <- streamingDelete(payload.payload.deletes, payload)
-    } yield (())
+    } yield ()
   }
 
   def lookup(target: String): Future[Option[LookupResponse]] = {

@@ -45,21 +45,18 @@ class PayloadConversionSchedulerISpec extends IntegrationSpecBase {
 
               //check records inserted into vatRegisteredCompanies database
               totalCount shouldBe 2
-              val checkCompanyInserted = vatRegisteredCompaniesRepository.collection.find()
+              val checkCompanyInserted = vatRegisteredCompaniesRepository.collection.find().toFuture()
               // TODO:fix assertion
-              println("****************************************************************************************************************** checkCompanyInserted printed below to identify the object and what it includes **************************")
+              println("**************** checkCompanyInserted printed below to identify the object and what it includes **********")
+              // TODO: Outcome is Future(Success(List(Wrapper(123456789012,VatRegisteredCompany(ACME Trading,123456789012,Address(line 1,None,None,None,None,None,GB))), Wrapper(223456789012,VatRegisteredCompany(ACME Trading,223456789012,Address(line 1,None,None,None,None,None,GB))))))
+              Thread.sleep(500)
               println(checkCompanyInserted)
-              checkCompanyInserted //.mkString should include(testVatNo1)
-                //checkCompanyInserted.mkString should include(testVatNo2)
+              checkCompanyInserted.toString should include(testVatNo1)
+              checkCompanyInserted.toString should include(testVatNo2)
               //check buffer record deleted
               bufferTotalCount shouldBe 0
               //check lock has been removed
               isLocked shouldBe false
-
-              //check records inserted into vatRegisteredCompanies database
-              //check buffer record deleted
-              //check lock has been removed
-
             }
           }
 
@@ -68,12 +65,13 @@ class PayloadConversionSchedulerISpec extends IntegrationSpecBase {
 
             insertOneBuffer(testPayloadDeletes)
             bufferTotalCount shouldBe 1
-
+            println("vvvvvvvvvvvv   About to call processOneData method vvvvvvvvvvvvv")
             val res = persistenceService.processOneData
-
+            println("^^^^^   Just called processOneData method - Before then when ready part of test      ^^^^^^^^")
             whenReady(res) {result =>
               result shouldBe ((): Unit)
               //check records deleted from vatRegisteredCompanies database
+                vatRegisteredCompaniesRepository.collection.find().toFuture().value shouldBe empty
 
               //TODO: based on above request, no records would be present. - Will have another dev confirm assumption
               //check buffer record deleted

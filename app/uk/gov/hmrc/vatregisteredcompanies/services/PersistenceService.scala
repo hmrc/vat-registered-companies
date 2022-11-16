@@ -58,8 +58,7 @@ class PersistenceService @Inject()(
       bp <- OptionT(buffer.one)
       _  <- OptionT.liftF(withLock(1)(repository.process(bp)))
     } yield {}
-
-    x.fold((())) {_=> (())}
+    x.fold(()) { _=> ()}
   }
 
   def bufferData(payload: Payload): Future[Unit] =
@@ -98,5 +97,3 @@ class PersistenceService @Inject()(
   }
 
 }
-
-
