@@ -43,7 +43,7 @@ final case class Wrapper(
 )
 
 object Wrapper {
-    implicit val localDateTimeFormats: Format[LocalDateTime] = MongoJavatimeFormats.localDateTimeFormat
+    implicit val localDateTimeFormats: Format[Instant] = MongoJavatimeFormats.instantFormat
     implicit val formats: OFormat[Wrapper] = Json.format
 }
 

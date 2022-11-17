@@ -211,6 +211,7 @@ class PayloadBufferRepositoryISpec extends IntegrationSpecBase {
         "there are no records in the database" should {
           "Have no records" in {
             bufferTotalCount shouldBe 0
+            Thread.sleep(100)
             val currentRecordsList = {
               await(payloadBufferRepository.list)
             }

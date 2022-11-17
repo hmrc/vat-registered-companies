@@ -153,7 +153,7 @@ class PayloadConversionSchedulerISpec extends IntegrationSpecBase {
           "contains a payload with only deletes" in {
             //insert one record into buffer repository that has a payload with only deletes
             insertOneBuffer(testPayloadDeletes)
-            Thread.sleep(100)
+            Thread.sleep(500)
             bufferTotalCount shouldBe 1
             totalCount shouldBe 0
 
