@@ -61,14 +61,6 @@ class DefaultLockRepository @Inject()(
 
   private val cacheTtl = 60 * 30 // TODO configure
 
-  /*private val index = Index(
-    key     = Seq("lastUpdated" -> IndexType.Ascending),
-    name    = Some("locks-index"),
-    options = BSONDocument("expireAfterSeconds" -> cacheTtl)
-  )
-
-  override def indexes: Seq[Index] = Seq(index)*/
-
   val ttl = runModeConfiguration.getOptional[Int]("microservice.services.lock.ttl.minutes").getOrElse(10)
 
   override def lock(id: Int): Future[Boolean] = {
@@ -90,10 +82,8 @@ class DefaultLockRepository @Inject()(
   }
 
   override def release(id: Int): Future[Unit] = {
-    //val options =  FindOneAndDeleteOptions().sort(BsonDocument("ascending" -> g))
     collection.findOneAndDelete(BsonDocument("_id" -> id))
       .headOption()
-            //findAndDelete( WriteConcern.ACKNOWLEDGED, None, None, Seq.empty)
       .map{_=>
         logger.info(s"Releasing lock $id")
         ()
@@ -109,7 +99,6 @@ class DefaultLockRepository @Inject()(
   def getLock(id: Int): Future[Option[Lock]] =
     collection.find[Lock](equal("_id", id))
       .headOption()
-
 }
 
 @ImplementedBy(classOf[DefaultLockRepository])

@@ -18,6 +18,7 @@ package uk.gov.hmrc.vatregisteredcompanies.repositories
 
 import java.time.{Instant, LocalDateTime}
 import akka.stream.Materializer
+
 import javax.inject.{Inject, Named, Singleton}
 import play.api.Logging
 import play.api.libs.json._
@@ -28,8 +29,9 @@ import org.mongodb.scala.model.Projections.include
 import org.mongodb.scala.model.{Accumulators, Aggregates, Filters, IndexModel, IndexOptions, Sorts}
 import uk.gov.hmrc.mongo.MongoComponent
 import uk.gov.hmrc.mongo.play.json.{Codecs, PlayMongoRepository}
-import uk.gov.hmrc.mongo.play.json.formats.MongoFormats
+import uk.gov.hmrc.mongo.play.json.formats.{MongoFormats, MongoJavatimeFormats}
 import uk.gov.hmrc.vatregisteredcompanies.models.{LookupResponse, Payload, VatNumber, VatRegisteredCompany}
+
 import java.time.ZoneOffset
 import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.{ExecutionContext, Future}
@@ -41,17 +43,8 @@ final case class Wrapper(
 )
 
 object Wrapper {
-  implicit val instantFormat: Format[Instant] = new Format[Instant] {
-    override def writes(o: Instant): JsValue = {
-      Json.toJson(LocalDateTime.ofEpochSecond(o.toEpochMilli, 0, ZoneOffset.UTC))
-    }
-
-    override def reads(json: JsValue): JsResult[Instant] = {
-      json.validate[LocalDateTime] map { dt => Instant.ofEpochMilli(dt.toEpochSecond(ZoneOffset.UTC)) }
-    }
-  }
-
-  val format: Format[Wrapper] = Json.format[Wrapper]
+    implicit val localDateTimeFormats: Format[LocalDateTime] = MongoJavatimeFormats.localDateTimeFormat
+    implicit val formats: OFormat[Wrapper] = Json.format
 }
 
 @Singleton
@@ -64,7 +57,7 @@ class   VatRegisteredCompaniesRepository @Inject()(
   PlayMongoRepository[Wrapper](
     mongoComponent = mongoComponent,
     collectionName = "vatregisteredcompanies",
-    domainFormat = Wrapper.format,
+    domainFormat = Wrapper.formats,
     indexes = Seq(IndexModel(ascending("vatNumber"),
       IndexOptions().name("vatNumberIndexNew").unique(false).background(true)))) with Logging {
 
@@ -78,8 +71,6 @@ class   VatRegisteredCompaniesRepository @Inject()(
       _ <- deleteById(vatRegCompId)
     } yield (): Unit
   }
-
-  implicit val format: OFormat[Wrapper] = Json.format[Wrapper]
 
   case class VatRegCompId(oldest: ObjectId)
 

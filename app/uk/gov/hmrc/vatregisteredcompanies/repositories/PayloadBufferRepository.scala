@@ -68,7 +68,7 @@ class   PayloadBufferRepository@Inject()(
   def one: Future[Option[PayloadWrapper]] = getOne.map(_.headOption)
 
   def deleteOne(payload: PayloadWrapper): Future[Unit] = {
-    collection.findOneAndDelete(Filters.equal("_id", payload._id))
+    collection.deleteOne(Filters.equal("_id", payload._id))
       .headOption()
       .map{_=>
         logger.info(s"Releasing lock $payload._id")
