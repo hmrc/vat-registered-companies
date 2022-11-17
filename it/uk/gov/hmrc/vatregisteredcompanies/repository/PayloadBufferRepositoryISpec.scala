@@ -26,47 +26,6 @@ class PayloadBufferRepositoryISpec extends IntegrationSpecBase {
     deleteAllBuffer
   }
 
-  "Method: deleteAll" when {
-    "there are no records in the database" should {
-      "Have no records" in {
-        bufferTotalCount shouldBe 0
-        val res = payloadBufferRepository.deleteAll()
-
-        whenReady(res) { result =>
-          result shouldBe ((): Unit)
-          bufferTotalCount shouldBe 0
-        }
-      }
-    }
-
-    "there is 1 record in the database" should {
-      "Delete the record" in {
-        insertOneBuffer(testPayloadCreateAndUpdates1)
-        bufferTotalCount shouldBe 1
-        val res = payloadBufferRepository.deleteAll()
-
-        whenReady(res) { result =>
-          result shouldBe ((): Unit)
-          bufferTotalCount shouldBe 0
-        }
-      }
-    }
-
-    "there are multiple records in the database" should {
-      "Delete those records" in {
-        insertOneBuffer(testPayloadCreateAndUpdates)
-        insertOneBuffer(testPayloadCreateAndUpdates1)
-        bufferTotalCount shouldBe 2
-        val res = payloadBufferRepository.deleteAll()
-
-        whenReady(res) { result =>
-          result shouldBe ((): Unit)
-          bufferTotalCount shouldBe 0
-        }
-      }
-    }
-  }
-
   "Method: insert" when {
     "there are no records in the database" should {
       "Add one record" in {
