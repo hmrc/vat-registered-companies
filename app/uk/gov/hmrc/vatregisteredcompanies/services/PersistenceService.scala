@@ -34,17 +34,6 @@ class PersistenceService @Inject()(
 
   lazy val logger: Logger = Logger(this.getClass)
 
-  def deleteAll: Future[Unit] = {
-    val bd = buffer.deleteAll
-    val rd = repository.deleteAll
-    for {
-      _ <- bd
-      _ <- rd
-    } yield {
-      logger.info("Finished delete all")
-    }
-  }
-
   def lookup(target: VatNumber): Future[Option[LookupResponse]] =
     repository.lookup(target)
 
