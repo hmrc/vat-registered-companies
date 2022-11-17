@@ -18,8 +18,6 @@ package uk.gov.hmrc.vatregisteredcompanies.services
 
 import cats.data.OptionT
 import cats.implicits._
-import org.mongodb.scala.Document
-
 import javax.inject.{Inject, Singleton}
 import play.api.Logger
 import uk.gov.hmrc.vatregisteredcompanies.models.{LookupResponse, Payload, VatNumber}
