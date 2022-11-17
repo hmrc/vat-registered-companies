@@ -15,7 +15,9 @@
  */
 
 package uk.gov.hmrc.vatregisteredcompanies.helpers
+import org.mongodb.scala.model.Filters
 import uk.gov.hmrc.vatregisteredcompanies.repositories.{Lock, LockRepository}
+import uk.gov.hmrc.vatregisteredcompanies.repositories.Lock._
 
 trait LockDatabaseOperations {
 
@@ -25,11 +27,11 @@ trait LockDatabaseOperations {
   val testLockId = 1
 
   def insert(lock: Lock): Unit = {
-    await(lockRepository.collection.insert(true).one(lock).map(_.ok))
+    await(lockRepository.collection.insertOne(lock).toFuture())
   }
 
   def clearLock(): Unit = {
-    await(lockRepository.removeAll().map(_.ok))
+    await(lockRepository.collection.deleteOne(Filters.empty()).toFuture())
   }
 
   def isLocked: Boolean = {

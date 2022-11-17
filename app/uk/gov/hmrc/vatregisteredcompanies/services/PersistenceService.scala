@@ -56,8 +56,7 @@ class PersistenceService @Inject()(
       bp <- OptionT(buffer.one)
       _  <- OptionT.liftF(withLock(1)(repository.process(bp)))
     } yield {}
-
-    x.fold((())) {_=> (())}
+    x.fold(()) { _=> ()}
   }
 
   def bufferData(payload: Payload): Future[Unit] =
@@ -68,8 +67,9 @@ class PersistenceService @Inject()(
 
   def reportIndexes: Future[Unit] = {
     for {
-      list <- repository.collection.indexesManager.list()
-    } yield list.foreach(index => logger.warn(s"Found mongo index ${index.name}"))
+      list <- repository.collection.listIndexes().toFuture().map(_.toList)
+    } yield {list.foreach(index => logger.warn(s"Found mongo index ${index}"))
+      Future.successful(())}
   }
 
   private def withLock(id: Int)(f: => Future[Unit]): Future[Unit] = {
@@ -95,5 +95,3 @@ class PersistenceService @Inject()(
   }
 
 }
-
-

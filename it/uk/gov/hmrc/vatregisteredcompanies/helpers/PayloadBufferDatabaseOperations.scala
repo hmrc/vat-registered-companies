@@ -16,11 +16,10 @@
 
 package uk.gov.hmrc.vatregisteredcompanies.helpers
 
-import reactivemongo.bson.{BSONDocument, BSONObjectID}
-import play.api.libs.json._
-import reactivemongo.play.json.ImplicitBSONHandlers._
-import reactivemongo.api.{Cursor, ReadPreference}
-import uk.gov.hmrc.vatregisteredcompanies.models.{Payload, VatRegisteredCompany}
+import org.bson.types.ObjectId
+import org.mongodb.scala.SingleObservable
+import org.mongodb.scala.model.Filters
+import uk.gov.hmrc.vatregisteredcompanies.models.Payload
 import uk.gov.hmrc.vatregisteredcompanies.repositories.{PayloadBufferRepository, PayloadWrapper}
 
 import scala.concurrent.Future
@@ -31,32 +30,28 @@ trait PayloadBufferDatabaseOperations {
 
   val payloadBufferRepository: PayloadBufferRepository
   def createPayloadWrapper(payload: Payload): PayloadWrapper = {
-    val _id: BSONObjectID = BSONObjectID.generate()
+    val _id: ObjectId = ObjectId.get()
     val payloadWrapper = PayloadWrapper(_id, payload)
     payloadWrapper
   }
-  def insertOneBuffer(payload: Payload): Boolean = {
-
+  def insertOneBuffer(payload: Payload): Unit = {
       val payloadWrapper = createPayloadWrapper(payload)
-    await(
-      payloadBufferRepository.insert(payloadWrapper).map(_.ok)
-    )
+      await(payloadBufferRepository.collection.insertOne(payloadWrapper).toFuture())
   }
 
   def listBuffer: Future[List[PayloadWrapper]] =
-      payloadBufferRepository.findAll()
+      payloadBufferRepository.list
 
-  def bufferTotalCount: Int = {
-    await(payloadBufferRepository.count)
+  def bufferTotalCount: Long = {
+   await(payloadBufferRepository.collection.countDocuments().toFuture())
   }
 
-  def deleteOneBuffer(payload: Payload): Future[Boolean] = {
+  def deleteOneBuffer(payload: Payload): Unit = {
     val payloadWrapper = createPayloadWrapper(payload)
-    payloadBufferRepository
-      .remove("_id" -> payloadWrapper._id).map(_.ok)
+    await(payloadBufferRepository.deleteOne(payloadWrapper))
   }
-  def deleteAllBuffer: Boolean = {
-      await(payloadBufferRepository.removeAll().map(_.ok))
+  def deleteAllBuffer: Unit = {
+      payloadBufferRepository.collection.deleteMany(Filters.empty()).toFuture()
   }
 
 }

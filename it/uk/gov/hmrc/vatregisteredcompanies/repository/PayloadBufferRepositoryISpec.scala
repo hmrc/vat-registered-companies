@@ -98,6 +98,7 @@ class PayloadBufferRepositoryISpec extends IntegrationSpecBase {
       "Increase the database by two records" in {
         insertOneBuffer(testPayloadCreateAndUpdates1)
         insertOneBuffer(testPayloadCreateAndUpdates)
+        Thread.sleep(500)
         bufferTotalCount shouldBe 2
 
         val res = {
@@ -149,6 +150,7 @@ class PayloadBufferRepositoryISpec extends IntegrationSpecBase {
         insertOneBuffer(testPayloadCreateAndUpdates1)
         insertOneBuffer(testPayloadCreateAndUpdates)
         insertOneBuffer(testPayloadCreateAndUpdates1)
+        Thread.sleep(500)
         val res = {
           payloadBufferRepository.list
         }
@@ -209,6 +211,7 @@ class PayloadBufferRepositoryISpec extends IntegrationSpecBase {
         "there are no records in the database" should {
           "Have no records" in {
             bufferTotalCount shouldBe 0
+            Thread.sleep(100)
             val currentRecordsList = {
               await(payloadBufferRepository.list)
             }
