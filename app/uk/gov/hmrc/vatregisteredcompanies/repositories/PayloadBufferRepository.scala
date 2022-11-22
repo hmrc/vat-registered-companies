@@ -48,9 +48,6 @@ class   PayloadBufferRepository@Inject()(
     domainFormat = PayloadWrapper.format,
     indexes = Seq()) with Logging {
 
-  def deleteAll(): Future[Unit] =
-    collection.deleteMany(Filters.empty()).toFuture().map(_ => ())
-
   def insert(payload: Payload): Future[Unit] =
     collection.insertOne(PayloadWrapper(payload = payload)).toFuture().map(_ => ())
 

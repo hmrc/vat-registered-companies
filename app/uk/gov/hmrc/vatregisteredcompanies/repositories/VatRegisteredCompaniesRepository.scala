@@ -61,10 +61,6 @@ class   VatRegisteredCompaniesRepository @Inject()(
     indexes = Seq(IndexModel(ascending("vatNumber"),
       IndexOptions().name("vatNumberIndexNew").unique(false).background(true)))) with Logging {
 
-
-  def deleteAll(): Future[Unit] =
-    collection.deleteMany(Filters.empty()).toFuture().map(_ => ())
-
   def deleteOld(n: Int): Future[Unit] = {
     for {
       vatRegCompId <- findOld(n)
