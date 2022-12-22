@@ -5,7 +5,7 @@ val appName = "vat-registered-companies"
 
 PlayKeys.playDefaultPort := 8731
 
-scalaVersion := "2.12.13"
+scalaVersion := "2.13.10"
 
 lazy val scoverageSettings = {
   import scoverage.ScoverageKeys
@@ -30,5 +30,4 @@ lazy val microservice = Project(appName, file("."))
   .configs(IntegrationTest)
   .settings(integrationTestSettings(): _*)
   .settings(resolvers += Resolver.jcenterRepo)
-  .settings(scalacOptions ++= Seq("-Yrangepos", "-P:silencer:globalFilters=Unused import"))
-
+  .settings(scalacOptions += "-Wconf:src=routes/.*:s")
