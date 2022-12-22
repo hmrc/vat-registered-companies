@@ -3,13 +3,18 @@ import sbt._
 
 object AppDependencies {
 
+  val akkaSite = "com.typesafe.akka"
+  val akkaVersion = "2.7.0" // Do not update as this may cause a Bobby Violation
   val compile = Seq(
 
-    "uk.gov.hmrc.mongo"       %% "hmrc-mongo-play-28"        % "0.68.0",
-    "uk.gov.hmrc"             %% "bootstrap-backend-play-28" % "7.12.0",
-    "org.typelevel"           %% "cats-core"                 % "2.9.0",
-    "com.github.fge"          %  "json-schema-validator"     % "2.2.6",
-    "com.typesafe.akka"       %% "akka-stream"               % "2.7.0"
+    "uk.gov.hmrc.mongo"   %% "hmrc-mongo-play-28"         % "0.68.0",
+    "uk.gov.hmrc"         %% "bootstrap-backend-play-28"  % "7.12.0",
+    "org.typelevel"       %% "cats-core"                  % "2.9.0",
+    "com.github.fge"      %  "json-schema-validator"      % "2.2.6",
+    akkaSite              %% "akka-stream"                % akkaVersion,
+    akkaSite              %% "akka-slf4j"                 % akkaVersion,
+    akkaSite              %% "akka-actor-typed"           % akkaVersion,
+    akkaSite              %% "akka-serialization-jackson" % akkaVersion
   )
 
   val test = Seq(
