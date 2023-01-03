@@ -4,7 +4,7 @@ import sbt._
 object AppDependencies {
 
   val akkaSite = "com.typesafe.akka"
-  val akkaVersion = "2.7.0" // Do not update as this may cause a Bobby Violation
+  val akkaVersion = "2.6.20" // Do not update as this may cause a Bobby Violation
   val compile = Seq(
 
     "uk.gov.hmrc.mongo"   %% "hmrc-mongo-play-28"         % "0.68.0",
