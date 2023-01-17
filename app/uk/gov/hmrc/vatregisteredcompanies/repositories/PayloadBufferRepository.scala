@@ -68,7 +68,7 @@ class   PayloadBufferRepository@Inject()(
     collection.deleteOne(Filters.equal("_id", payload._id))
       .headOption()
       .map{_=>
-        logger.info(s"Releasing lock $payload._id")
+        logger.info(s"Releasing lock ${payload._id}")
         ()
       }.fallbackTo(Future.successful(()))
   }
