@@ -39,7 +39,7 @@ class PayloadConversionScheduler @Inject()(
 
   if(enabled) {
     logger.info(s"Initialising payload processing every $interval")
-    actorSystem.scheduler.schedule(FiniteDuration(10, TimeUnit.SECONDS), interval) {
+    actorSystem.scheduler.scheduleWithFixedDelay(FiniteDuration(10, TimeUnit.SECONDS), interval) { () =>
       logger.info(s"Scheduling inbound data processing, next run in $interval")
       persistenceService.processOneData.recover {
         case e: RuntimeException => logger.error(s"Error processing inbound vat registration data: $e")
