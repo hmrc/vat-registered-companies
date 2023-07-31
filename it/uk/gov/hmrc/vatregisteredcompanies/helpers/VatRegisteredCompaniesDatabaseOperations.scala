@@ -24,6 +24,8 @@ import play.api.libs.json._
 import uk.gov.hmrc.vatregisteredcompanies.models.VatRegisteredCompany
 import uk.gov.hmrc.vatregisteredcompanies.repositories.{VatRegisteredCompaniesRepository, Wrapper}
 
+import java.time.Instant
+
 trait VatRegisteredCompaniesDatabaseOperations {
 
   self: IntegrationSpecBase =>

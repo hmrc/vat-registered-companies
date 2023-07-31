@@ -29,7 +29,8 @@ import uk.gov.hmrc.mongo.play.json.formats.{MongoFormats, MongoJavatimeFormats}
 import uk.gov.hmrc.mongo.play.json.{Codecs, PlayMongoRepository}
 import uk.gov.hmrc.vatregisteredcompanies.models.{LookupResponse, Payload, VatNumber, VatRegisteredCompany}
 
-import java.time.Instant
+import java.time.{Instant, LocalDateTime, ZoneId}
+import java.util.concurrent.TimeUnit
 import javax.inject.{Inject, Named, Singleton}
 import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.{ExecutionContext, Future}
@@ -37,7 +38,8 @@ import scala.concurrent.{ExecutionContext, Future}
 
 final case class Wrapper(
   vatNumber: VatNumber,
-  company: VatRegisteredCompany
+  company: VatRegisteredCompany,
+  timestamp: LocalDateTime = LocalDateTime.now(ZoneId.of("UTC"))
 )
 
 object Wrapper {
@@ -56,8 +58,17 @@ class   VatRegisteredCompaniesRepository @Inject()(
     mongoComponent = mongoComponent,
     collectionName = "vatregisteredcompanies",
     domainFormat = Wrapper.formats,
-    indexes = Seq(IndexModel(ascending("vatNumber"),
-      IndexOptions().name("vatNumberIndexNew").unique(false).background(true)))) with Logging {
+    indexes = Seq(
+      IndexModel(
+        ascending("vatNumber"),
+        IndexOptions().name("vatNumberIndexNew").unique(false).background(true)
+      ),
+      IndexModel(
+        ascending("timestamp"),
+        // TODO: Set correct expiry time from config when known
+        IndexOptions().name("expiryDate").expireAfter(20, TimeUnit.SECONDS)
+      )
+    )) with Logging {
 
   def deleteOld(n: Int): Future[Unit] = {
     for {
@@ -68,11 +79,11 @@ class   VatRegisteredCompaniesRepository @Inject()(
 
   case class VatRegCompId(oldest: ObjectId)
 
-    implicit val objectIdFormat = MongoFormats.objectIdFormat
-    implicit val formatVatRegCompId = Json.format[VatRegCompId]
+  implicit val objectIdFormat = MongoFormats.objectIdFormat
+  implicit val formatVatRegCompId = Json.format[VatRegCompId]
 
   private def insert(entries: List[Wrapper]): Future[Unit] = {
-    if(entries.nonEmpty) {
+    if (entries.nonEmpty) {
       logger.info(s"inserting ${entries.length} entries")
       collection.insertMany(entries).headOption().map(_ => ())
     } else {
@@ -85,8 +96,8 @@ class   VatRegisteredCompaniesRepository @Inject()(
       case vrn :: tail =>
         collection.deleteMany(Filters.equal("vatNumber", vrn))
           .toFuture()
-          .flatMap {_ =>
-            if(tail.nonEmpty) {
+          .flatMap { _ =>
+            if (tail.nonEmpty) {
               streamingDelete(tail, payload)
             }
             else {
@@ -105,8 +116,8 @@ class   VatRegisteredCompaniesRepository @Inject()(
       case vrcid :: tail =>
         collection.deleteOne(Filters.equal("_id", vrcid.oldest))
           .toFuture()
-          .flatMap {_ =>
-            if(tail.nonEmpty) {
+          .flatMap { _ =>
+            if (tail.nonEmpty) {
               deleteById(tail)
             }
             else {
@@ -155,3 +166,4 @@ class   VatRegisteredCompaniesRepository @Inject()(
       })
   }
 }
+
