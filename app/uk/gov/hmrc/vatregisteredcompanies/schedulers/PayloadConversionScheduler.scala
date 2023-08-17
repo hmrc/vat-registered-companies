@@ -53,6 +53,13 @@ class PayloadConversionSchedulerModule(environment: Environment, val runModeConf
   AbstractModule {
 
   @Provides
+  @Named("payloadProcessingEnabled")
+  def enabled(): Boolean =
+    runModeConfiguration
+      .getOptional[Boolean]("microservice.services.schedulers.payload.conversion.enabled")
+      .getOrElse(true)
+
+  @Provides
   @Named("payloadInterval")
   def interval(): FiniteDuration =
     new FiniteDuration(
@@ -62,14 +69,6 @@ class PayloadConversionSchedulerModule(environment: Environment, val runModeConf
         .toLong,
       TimeUnit.SECONDS
     )
-
-  @Provides
-  @Named("payloadProcessingEnabled")
-  def enabled(): Boolean =
-    runModeConfiguration
-      .getOptional[Boolean]("microservice.services.schedulers.payload.conversion.enabled")
-      .getOrElse(true)
-
 
   @Provides
   @Named("deletionThrottleElements")

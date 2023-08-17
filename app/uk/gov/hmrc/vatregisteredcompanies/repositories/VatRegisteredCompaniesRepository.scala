@@ -149,7 +149,7 @@ class   VatRegisteredCompaniesRepository @Inject()(
       Aggregates.filter(Filters.gt("count", 1)),
       limit(n),
       project(include("oldest"))
-    )).toFuture()
+    )).allowDiskUse(true).toFuture()
       .map(res => {
         res.map(Codecs.fromBson[VatRegCompId](_))
       })
