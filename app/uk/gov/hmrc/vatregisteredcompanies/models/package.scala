@@ -30,7 +30,7 @@ package object models {
   object ConsultationNumber {
     def generate: ConsultationNumber =
       new Random().alphanumeric.filter(x =>
-        x.toLower >= 'a' && x.toLower <= 'z'
+        x.toString.matches("[A-Z&&[^BGIOSZ]]")
       ).take(9).toList.mkString.replaceAll("...(?!$)", "$0-")
   }
 
