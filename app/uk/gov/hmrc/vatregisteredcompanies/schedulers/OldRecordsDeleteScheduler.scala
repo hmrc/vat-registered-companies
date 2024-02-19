@@ -18,7 +18,7 @@ package uk.gov.hmrc.vatregisteredcompanies.schedulers
 
 import java.util.concurrent.TimeUnit
 
-import akka.actor.ActorSystem
+import org.apache.pekko.actor.ActorSystem
 import com.google.inject.{AbstractModule, Provides}
 import javax.inject.{Inject, Named, Singleton}
 import play.api.{Configuration, Environment, Logger}

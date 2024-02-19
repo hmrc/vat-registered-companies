@@ -16,7 +16,7 @@
 
 package uk.gov.hmrc.vatregisteredcompanies.repositories
 
-import akka.stream.Materializer
+import org.apache.pekko.stream.Materializer
 import org.mongodb.scala.bson.{BsonDocument, BsonValue, ObjectId}
 import org.mongodb.scala.model.Aggregates.{group, limit, project}
 import org.mongodb.scala.model.Indexes.ascending
