@@ -25,5 +25,5 @@ object AppDependencies {
     "org.scalatestplus"      %% "scalacheck-1-17"                % "3.2.17.0",
     "org.scalatestplus.play" %% "scalatestplus-play"             % "7.0.0",
     "uk.gov.hmrc"            %% s"bootstrap-test-$playVersion"   % bootstrapVersion
-  )
+  ).map(_ % "test, it")
 }
