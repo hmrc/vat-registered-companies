@@ -8,6 +8,7 @@ object AppDependencies {
   val playVersion = "play-30"
   val bootstrapVersion = "8.4.0"
   val hmrcMongoVersion = "1.7.0"
+
   val compile = Seq(
 
     "uk.gov.hmrc.mongo"    %% s"hmrc-mongo-$playVersion"         % hmrcMongoVersion,
@@ -21,9 +22,9 @@ object AppDependencies {
   )
 
   val test = Seq(
+    "uk.gov.hmrc"            %% s"bootstrap-test-$playVersion"   % bootstrapVersion,
     "org.mockito"            %% "mockito-scala-scalatest"        % "1.17.30",
     "org.scalatestplus"      %% "scalacheck-1-17"                % "3.2.17.0",
-    "org.scalatestplus.play" %% "scalatestplus-play"             % "7.0.0",
-    "uk.gov.hmrc"            %% s"bootstrap-test-$playVersion"   % bootstrapVersion
+    "org.scalatestplus.play" %% "scalatestplus-play"             % "7.0.0"
   ).map(_ % "test, it")
 }
