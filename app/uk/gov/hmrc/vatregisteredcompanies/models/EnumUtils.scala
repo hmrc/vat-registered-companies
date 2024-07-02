@@ -24,14 +24,14 @@ import scala.language.implicitConversions
   * Utility class for creating json formatters for enumerations.
   */
 object EnumUtils {
-  def enumReads[E <: Enumeration](enum: E): Reads[E#Value] = new Reads[E#Value] {
+  def enumReads[E <: Enumeration](`enum`: E): Reads[E#Value] = new Reads[E#Value] {
     def reads(json: JsValue): JsResult[E#Value] = json match {
       case JsString(s) =>
         try {
-          JsSuccess(enum.withName(s))
+          JsSuccess(`enum`.withName(s))
         } catch {
           case _: NoSuchElementException =>
-            JsError(s"Enumeration expected of type: '${enum.getClass}'," ++
+            JsError(s"Enumeration expected of type: '${`enum`.getClass}'," ++
               s" but it does not appear to contain the value: '$s'")
         }
       case _ => JsError("String value expected")
@@ -42,8 +42,8 @@ object EnumUtils {
     def writes(v: E#Value): JsValue = JsString(v.toString)
   }
 
-  implicit def enumFormat[E <: Enumeration](enum: E): Format[E#Value] = {
-    Format(enumReads(enum), enumWrites)
+  implicit def enumFormat[E <: Enumeration](`enum`: E): Format[E#Value] = {
+    Format(enumReads(`enum`), enumWrites)
   }
 
 }

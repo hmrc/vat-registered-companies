@@ -16,14 +16,12 @@
 
 package uk.gov.hmrc.vatregisteredcompanies.repository
 
-import net.bytebuddy.pool.TypePool.Empty
 import uk.gov.hmrc.vatregisteredcompanies.helpers.IntegrationSpecBase
 import uk.gov.hmrc.vatregisteredcompanies.helpers.TestData._
-import uk.gov.hmrc.vatregisteredcompanies.repositories.PayloadWrapper
 
 class PayloadBufferRepositoryISpec extends IntegrationSpecBase {
   override def beforeEach(): Unit = {
-    deleteAllBuffer
+    deleteAllBuffer()
   }
 
   "Method: insert" when {
