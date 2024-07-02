@@ -30,7 +30,7 @@ import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.test.{DefaultAwaitTimeout, FutureAwaits}
 import play.api.{Application, Environment, Mode}
 import uk.gov.hmrc.vatregisteredcompanies.helpers.WiremockHelper.stubPost
-import uk.gov.hmrc.vatregisteredcompanies.repositories.{DefaultLockRepository, LockRepository, PayloadBufferRepository, VatRegisteredCompaniesRepository}
+import uk.gov.hmrc.vatregisteredcompanies.repositories.{DefaultLockRepository, PayloadBufferRepository, VatRegisteredCompaniesRepository}
 import uk.gov.hmrc.vatregisteredcompanies.services.PersistenceService
 
 import scala.concurrent.duration.Duration
@@ -83,7 +83,7 @@ trait IntegrationSpecBase
   override implicit lazy val app: Application = new GuiceApplicationBuilder()
     .in(Environment.simple(mode = Mode.Dev))
     .configure(config)
-    .build
+    .build()
 
   implicit lazy val ec: ExecutionContext = app.injector.instanceOf[ExecutionContext]
 
@@ -98,16 +98,16 @@ trait IntegrationSpecBase
 
   override def beforeEach(): Unit = {
     resetWiremock()
-    lockRepository.collection.drop
-    payloadBufferRepository.collection.drop
-    vatRegisteredCompaniesRepository.collection.drop
+    lockRepository.collection.drop()
+    payloadBufferRepository.collection.drop()
+    vatRegisteredCompaniesRepository.collection.drop()
   }
 
   override def beforeAll(): Unit = {
     super.beforeAll()
-    lockRepository.collection.drop
-    payloadBufferRepository.collection.drop
-    vatRegisteredCompaniesRepository.collection.drop
+    lockRepository.collection.drop()
+    payloadBufferRepository.collection.drop()
+    vatRegisteredCompaniesRepository.collection.drop()
     startWiremock()
   }
 

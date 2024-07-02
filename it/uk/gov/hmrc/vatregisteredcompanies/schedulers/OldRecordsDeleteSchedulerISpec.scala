@@ -24,7 +24,7 @@ class OldRecordsDeleteSchedulerISpec  extends IntegrationSpecBase {
   val limit = 2
 
   override def beforeEach(): Unit = {
-    deleteAll
+    deleteAll()
     clearLock()
   }
 

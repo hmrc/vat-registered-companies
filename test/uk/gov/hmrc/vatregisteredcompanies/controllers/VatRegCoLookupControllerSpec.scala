@@ -104,7 +104,7 @@ class VatRegCoLookupControllerSpec extends AnyWordSpec
       Json.fromJson[LookupResponse](contentAsJson(result)).map { lr =>
         lr.target shouldBe Some(knownCo)
         lr.requester shouldBe Some(testVatNo)
-        lr.consultationNumber shouldBe 'defined
+        lr.consultationNumber shouldBe Symbol("defined")
       }
     }
   }

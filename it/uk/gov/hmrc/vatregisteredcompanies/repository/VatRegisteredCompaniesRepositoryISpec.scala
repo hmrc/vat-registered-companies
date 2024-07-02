@@ -22,7 +22,7 @@ import uk.gov.hmrc.vatregisteredcompanies.repositories.PayloadWrapper
 
 class VatRegisteredCompaniesRepositoryISpec extends IntegrationSpecBase {
   override def beforeEach(): Unit = {
-    deleteAll
+    deleteAll()
   }
 
   "Method: process" when {

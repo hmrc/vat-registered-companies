@@ -56,10 +56,6 @@ class DefaultLockRepository @Inject()(
     indexes = Seq(IndexModel(ascending("lastUpdated"),
       IndexOptions().name("locks-index").expireAfter ((60 * 30).toLong, TimeUnit.SECONDS) .unique(false).sparse(false)))) with LockRepository with Logging {
 
-  private lazy val documentExistsErrorCode = Some(11000)
-
-  private val cacheTtl = 60 * 30 // TODO configure
-
   val ttl = runModeConfiguration.getOptional[Int]("microservice.services.lock.ttl.minutes").getOrElse(10)
 
   override def lock(id: Int): Future[Boolean] = {

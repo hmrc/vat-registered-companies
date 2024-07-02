@@ -17,7 +17,6 @@
 package uk.gov.hmrc.vatregisteredcompanies.helpers
 
 import org.bson.types.ObjectId
-import org.mongodb.scala.SingleObservable
 import org.mongodb.scala.model.Filters
 import uk.gov.hmrc.vatregisteredcompanies.models.Payload
 import uk.gov.hmrc.vatregisteredcompanies.repositories.{PayloadBufferRepository, PayloadWrapper}
@@ -50,7 +49,7 @@ trait PayloadBufferDatabaseOperations {
     val payloadWrapper = createPayloadWrapper(payload)
     await(payloadBufferRepository.deleteOne(payloadWrapper))
   }
-  def deleteAllBuffer: Unit = {
+  def deleteAllBuffer(): Unit = {
       payloadBufferRepository.collection.deleteMany(Filters.empty()).toFuture()
   }
 

@@ -16,7 +16,6 @@
 
 package uk.gov.hmrc.vatregisteredcompanies.repositories
 
-import org.apache.pekko.stream.Materializer
 import org.mongodb.scala.bson.{BsonDocument, BsonValue, ObjectId}
 import org.mongodb.scala.model.Aggregates.{group, limit, project}
 import org.mongodb.scala.model.Indexes.ascending
@@ -51,7 +50,7 @@ class   VatRegisteredCompaniesRepository @Inject()(
   bufferRepository: PayloadBufferRepository,
   @Named("deletionThrottleElements") elements: Int,
   @Named("deletionThrottlePer") per: FiniteDuration
-)(implicit val executionContext: ExecutionContext, mat: Materializer) extends
+)(implicit val executionContext: ExecutionContext) extends
   PlayMongoRepository[Wrapper](
     mongoComponent = mongoComponent,
     collectionName = "vatregisteredcompanies",
@@ -68,8 +67,8 @@ class   VatRegisteredCompaniesRepository @Inject()(
 
   case class VatRegCompId(oldest: ObjectId)
 
-    implicit val objectIdFormat = MongoFormats.objectIdFormat
-    implicit val formatVatRegCompId = Json.format[VatRegCompId]
+    implicit val objectIdFormat: Format[ObjectId] = MongoFormats.objectIdFormat
+    implicit val formatVatRegCompId: OFormat[VatRegCompId] = Json.format[VatRegCompId]
 
   private def insert(entries: List[Wrapper]): Future[Unit] = {
     if(entries.nonEmpty) {
@@ -100,8 +99,9 @@ class   VatRegisteredCompaniesRepository @Inject()(
     }
   }
 
-  private def deleteById(deletes: Seq[VatRegCompId]): Future[Unit] = {
+  private def deleteById(deletes: Seq[VatRegCompId]): Future[Unit] =
     deletes match {
+      case Nil => Future.successful(logger.info("No old entries to delete"))
       case vrcid :: tail =>
         collection.deleteOne(Filters.equal("_id", vrcid.oldest))
           .toFuture()
@@ -113,9 +113,7 @@ class   VatRegisteredCompaniesRepository @Inject()(
               Future.successful(logger.info("End of old entries deletion stream"))
             }
           }
-      case Nil => Future.successful(logger.info("No old entries to delete"))
     }
-  }
 
   private def wrap(payload: Payload): List[Wrapper] =
     payload.createsAndUpdates.map { company =>
