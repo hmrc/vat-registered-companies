@@ -15,12 +15,8 @@
  */
 
 package uk.gov.hmrc.vatregisteredcompanies.repository
-import org.mongodb.scala.model.Filters.equal
 import uk.gov.hmrc.vatregisteredcompanies.helpers.IntegrationSpecBase
 import uk.gov.hmrc.vatregisteredcompanies.helpers.TestData._
-import uk.gov.hmrc.vatregisteredcompanies.repositories.Lock
-
-import java.time.LocalDateTime
 
  class LockRepositoryISpec extends IntegrationSpecBase {
    override def beforeEach(): Unit = {

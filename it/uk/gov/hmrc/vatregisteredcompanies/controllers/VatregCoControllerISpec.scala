@@ -24,7 +24,7 @@ import uk.gov.hmrc.vatregisteredcompanies.models.LookupResponse
 class VatregCoControllerISpec extends IntegrationSpecBase {
 
   override def beforeEach(): Unit = {
-    deleteAll
+    deleteAll()
   }
 
 

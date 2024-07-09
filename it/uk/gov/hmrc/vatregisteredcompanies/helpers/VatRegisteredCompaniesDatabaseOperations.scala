@@ -16,11 +16,7 @@
 
 package uk.gov.hmrc.vatregisteredcompanies.helpers
 
-import org.mongodb.scala.SingleObservable
-import org.mongodb.scala.bson.BsonDocument
-import org.mongodb.scala.bson.collection.mutable.Document
 import org.mongodb.scala.model.Filters
-import play.api.libs.json._
 import uk.gov.hmrc.vatregisteredcompanies.models.VatRegisteredCompany
 import uk.gov.hmrc.vatregisteredcompanies.repositories.{VatRegisteredCompaniesRepository, Wrapper}
 
@@ -50,7 +46,7 @@ trait VatRegisteredCompaniesDatabaseOperations {
     record.get.target
   }
 
-  def deleteAll: Unit = {
+  def deleteAll(): Unit = {
     await(vatRegisteredCompaniesRepository.collection.deleteMany(Filters.empty()).toFuture())
   }
 }

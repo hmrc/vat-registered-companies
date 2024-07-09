@@ -23,8 +23,7 @@ import com.github.fge.jsonschema.main.JsonSchemaFactory
 import play.api.Logger
 import play.api.libs.json.{Format, Json}
 
-
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters._
 
 object JsonSchemaChecker {
 
@@ -34,7 +33,7 @@ object JsonSchemaChecker {
 
   private def schema(path: String): JsonNode = {
     val stream = getClass.getResourceAsStream(path)
-    val schemaText = scala.io.Source.fromInputStream(stream).getLines.mkString
+    val schemaText = scala.io.Source.fromInputStream(stream).getLines().mkString
     stream.close()
     JsonLoader.fromString(schemaText)
   }

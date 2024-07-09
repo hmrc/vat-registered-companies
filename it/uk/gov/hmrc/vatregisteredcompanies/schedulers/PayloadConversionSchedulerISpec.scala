@@ -22,9 +22,9 @@ import uk.gov.hmrc.vatregisteredcompanies.helpers.TestData._
 class PayloadConversionSchedulerISpec extends IntegrationSpecBase {
 
   override def beforeEach(): Unit = {
-    deleteAll
+    deleteAll()
     clearLock()
-    deleteAllBuffer
+    deleteAllBuffer()
   }
   "processOneData" when {
     "the lock is not already acquired" should {
