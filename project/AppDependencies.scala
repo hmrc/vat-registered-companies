@@ -5,8 +5,8 @@ object AppDependencies {
   val pekkoSite = "org.apache.pekko"
   val pekkoVersion = "1.0.2" // Do not update as this may cause a Bobby Violation
   val playVersion = "play-30"
-  val bootstrapVersion = "8.6.0"
-  val hmrcMongoVersion = "1.7.0"
+  val bootstrapVersion = "9.4.0"
+  val hmrcMongoVersion = "2.2.0"
 
   val compile = Seq(
 
@@ -23,6 +23,6 @@ object AppDependencies {
   val test = Seq(
     "uk.gov.hmrc"            %% s"bootstrap-test-$playVersion"   % bootstrapVersion,
     "org.scalatestplus"      %% "scalacheck-1-17"                % "3.2.18.0",
-    "org.mockito"            %% "mockito-scala-scalatest"        % "1.17.31"
+    "org.mockito"            %% "mockito-scala-scalatest"        % "1.17.37"
   ).map(_ % "test, it")
 }
