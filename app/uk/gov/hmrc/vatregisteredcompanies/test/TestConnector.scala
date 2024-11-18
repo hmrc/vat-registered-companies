@@ -17,18 +17,16 @@
 package uk.gov.hmrc.vatregisteredcompanies.test
 
 import javax.inject.Inject
-
 import play.api.{Configuration, Environment}
-import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse}
+import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse, StringContextOps}
 import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
-import uk.gov.hmrc.http.HttpClient
-
+import uk.gov.hmrc.http.client.HttpClientV2
 import uk.gov.hmrc.http.HttpReads.Implicits._
 
 import scala.concurrent.{ExecutionContext, Future}
 
 class TestConnector @Inject()(
-  http: HttpClient,
+  http: HttpClientV2,
   environment: Environment,
   configuration: Configuration,
   servicesConfig: ServicesConfig
@@ -37,9 +35,10 @@ class TestConnector @Inject()(
   private val stubUrl: String = servicesConfig.baseUrl("mdg")
 
   def trigger(url: String)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[HttpResponse] =
-    http.GET[HttpResponse](s"$stubUrl/$url")
+  http.get(url"$stubUrl/$url").execute[HttpResponse]
+
 
   def trigger(url: String, param: String)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[HttpResponse] =
-    http.GET[HttpResponse](s"$stubUrl/$url/$param")
+  http.get(url"$stubUrl/$url/$param").execute[HttpResponse]
 
 }
