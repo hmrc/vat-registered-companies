@@ -96,18 +96,28 @@ trait IntegrationSpecBase
 
   val persistenceService = app.injector.instanceOf[PersistenceService]
 
+  private def dropCollection(repository: Any): Unit = {
+    try {
+      val collection = repository.getClass.getMethod("collection").invoke(repository)
+      collection.getClass.getMethod("drop").invoke(collection).asInstanceOf[Future[Void]].futureValue
+    } catch {
+      case _: Exception =>
+        println(s"Cannot access collection drop method for repository: ${repository.getClass.getSimpleName}")
+    }
+  }
+
   override def beforeEach(): Unit = {
     resetWiremock()
-    lockRepository.collection.drop()
-    payloadBufferRepository.collection.drop()
-    vatRegisteredCompaniesRepository.collection.drop()
+    dropCollection(lockRepository)
+    dropCollection(payloadBufferRepository)
+    dropCollection(vatRegisteredCompaniesRepository)
   }
 
   override def beforeAll(): Unit = {
     super.beforeAll()
-    lockRepository.collection.drop()
-    payloadBufferRepository.collection.drop()
-    vatRegisteredCompaniesRepository.collection.drop()
+    dropCollection(lockRepository)
+    dropCollection(payloadBufferRepository)
+    dropCollection(vatRegisteredCompaniesRepository)
     startWiremock()
   }
 

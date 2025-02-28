@@ -28,6 +28,8 @@ import uk.gov.hmrc.mongo.play.json.PlayMongoRepository
 import uk.gov.hmrc.vatregisteredcompanies.models.Payload
 
 import scala.concurrent.{ExecutionContext, Future}
+import org.mongodb.scala.SingleObservableFuture
+import org.mongodb.scala.ObservableFuture
 
 final case class PayloadWrapper (
   _id: ObjectId = ObjectId.get(),

@@ -25,7 +25,7 @@ import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 import play.api.http.{HeaderNames, Status}
 import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.libs.json.{JsValue, Json}
-import play.api.mvc.Result
+import play.api.mvc.{Action, Result}
 import play.api.test.Helpers.{status, _}
 import play.api.test.{FakeHeaders, FakeRequest}
 import play.api.{Application, Configuration}
@@ -110,36 +110,36 @@ class InboundDataControllerSpec extends AnyWordSpec
 
   "POST of valid json with valid headers to /vat-registered-companies/vatregistrations" should {
     "return 200" in {
-      when(mockPersistence.bufferData(ArgumentMatchers.any())).thenReturn(Future(()))
+      when(mockPersistence.bufferData(ArgumentMatchers.any())).thenReturn(Future.successful(()))
       val controller = new InboundDataController(mockPersistence, sc, cc, mcc)
-      val result: Future[Result] = controller.handle().apply(fakeRequest)
+      val result: Future[Result] = controller.handle(fakeRequest)
       status(result) shouldBe Status.OK
     }
   }
 
   "POST of invalid json with valid headers to /vat-registered-companies/vatregistrations" should {
     "return 400" in {
-      when(mockPersistence.bufferData(ArgumentMatchers.any())).thenReturn(Future(()))
+      when(mockPersistence.bufferData(ArgumentMatchers.any())).thenReturn(Future.successful(()))
       val controller = new InboundDataController(mockPersistence, sc, cc, mcc)
-      val result: Future[Result] = controller.handle().apply(fakeInvalidPayloadRequest)
+      val result: Future[Result] = controller.handle(fakeInvalidPayloadRequest)
       status(result) shouldBe Status.BAD_REQUEST
     }
   }
 
   "POST of valid json with invalid bearer token headers to /vat-registered-companies/vatregistrations" should {
     "return 200" in {
-      when(mockPersistence.bufferData(ArgumentMatchers.any())).thenReturn(Future(()))
+      when(mockPersistence.bufferData(ArgumentMatchers.any())).thenReturn(Future.successful(()))
       val controller = new InboundDataController(mockPersistence, sc, cc, mcc)
-      val result: Future[Result] = controller.handle().apply(fakeBadRequest)
+      val result: Future[Result] = controller.handle(fakeBadRequest)
       status(result) shouldBe Status.UNAUTHORIZED
     }
   }
 
   "POST of valid json with missing bearer token headers to /vat-registered-companies/vatregistrations" should {
     "return 200" in {
-      when(mockPersistence.bufferData(ArgumentMatchers.any())).thenReturn(Future(()))
+      when(mockPersistence.bufferData(ArgumentMatchers.any())).thenReturn(Future.successful(()))
       val controller = new InboundDataController(mockPersistence, sc, cc, mcc)
-      val result: Future[Result] = controller.handle().apply(fakeBadRequest2)
+      val result: Future[Result] = controller.handle(fakeBadRequest2)
       status(result) shouldBe Status.UNAUTHORIZED
     }
   }

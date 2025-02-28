@@ -21,6 +21,8 @@ import play.api.libs.json.Json
 import uk.gov.hmrc.vatregisteredcompanies.helpers.IntegrationSpecBase
 import uk.gov.hmrc.vatregisteredcompanies.helpers.TestData.{invalidVatNo, testPayloadCreateAndUpdates}
 import uk.gov.hmrc.vatregisteredcompanies.models.Payload
+import play.api.libs.ws.JsonBodyWritables.writeableOf_JsValue
+import play.api.libs.ws.DefaultBodyReadables.readableAsString
 
 class InboundDataControllerISpec extends IntegrationSpecBase {
 

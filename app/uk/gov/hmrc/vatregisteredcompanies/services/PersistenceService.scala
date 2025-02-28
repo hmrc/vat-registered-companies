@@ -24,6 +24,7 @@ import uk.gov.hmrc.vatregisteredcompanies.models.{LookupResponse, Payload, VatNu
 import uk.gov.hmrc.vatregisteredcompanies.repositories.{LockRepository, PayloadBufferRepository, PayloadWrapper, VatRegisteredCompaniesRepository}
 
 import scala.concurrent.{ExecutionContext, Future}
+import org.mongodb.scala.ObservableFuture
 
 @Singleton
 class PersistenceService @Inject()(
