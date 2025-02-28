@@ -19,12 +19,11 @@ package uk.gov.hmrc.vatregisteredcompanies.helpers
 import org.mongodb.scala.model.Filters
 import uk.gov.hmrc.vatregisteredcompanies.models.VatRegisteredCompany
 import uk.gov.hmrc.vatregisteredcompanies.repositories.{VatRegisteredCompaniesRepository, Wrapper}
+import org.mongodb.scala.SingleObservableFuture
 
 trait VatRegisteredCompaniesDatabaseOperations {
 
   self: IntegrationSpecBase =>
-
-  val vatRegisteredCompaniesRepository: VatRegisteredCompaniesRepository
 
   def insertOne(vatRegisteredCompany: VatRegisteredCompany): Unit = {
     val wrapper = Wrapper(vatRegisteredCompany.vatNumber, vatRegisteredCompany)

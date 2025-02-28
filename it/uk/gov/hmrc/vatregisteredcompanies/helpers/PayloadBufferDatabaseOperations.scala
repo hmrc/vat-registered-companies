@@ -22,12 +22,12 @@ import uk.gov.hmrc.vatregisteredcompanies.models.Payload
 import uk.gov.hmrc.vatregisteredcompanies.repositories.{PayloadBufferRepository, PayloadWrapper}
 
 import scala.concurrent.Future
+import org.mongodb.scala.SingleObservableFuture
 
 trait PayloadBufferDatabaseOperations {
 
   self: IntegrationSpecBase =>
 
-  val payloadBufferRepository: PayloadBufferRepository
   def createPayloadWrapper(payload: Payload): PayloadWrapper = {
     val _id: ObjectId = ObjectId.get()
     val payloadWrapper = PayloadWrapper(_id, payload)

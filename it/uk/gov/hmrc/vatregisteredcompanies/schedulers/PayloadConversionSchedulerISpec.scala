@@ -18,6 +18,7 @@ package uk.gov.hmrc.vatregisteredcompanies.schedulers
 
 import uk.gov.hmrc.vatregisteredcompanies.helpers.IntegrationSpecBase
 import uk.gov.hmrc.vatregisteredcompanies.helpers.TestData._
+import org.mongodb.scala.ObservableFuture
 
 class PayloadConversionSchedulerISpec extends IntegrationSpecBase {
 

@@ -32,6 +32,7 @@ import java.time.{Instant, LocalDateTime}
 import java.util.concurrent.TimeUnit
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
+import org.mongodb.scala.SingleObservableFuture
 
 final case class Lock(
   _id: Int,

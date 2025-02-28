@@ -38,7 +38,7 @@ class InboundDataController @Inject()(
 
   def handle: Action[JsValue] =
     InboundDataAction.async(parse.json) { implicit request =>
-      withJsonBody[Payload] { payload: Payload =>
+      withJsonBody[Payload] { (payload: Payload) =>
         if (!JsonSchemaChecker[Payload](payload, "mdg-payload")) {
           Future.successful(BadRequest(Json.toJson(Response(Response.Outcome.FAILURE, Response.Code.INVALID_PAYLOAD.some))))
         } else {

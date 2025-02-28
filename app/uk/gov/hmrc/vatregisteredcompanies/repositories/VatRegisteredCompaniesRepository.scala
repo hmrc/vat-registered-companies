@@ -32,7 +32,10 @@ import java.time.Instant
 import javax.inject.{Inject, Named, Singleton}
 import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.{ExecutionContext, Future}
-
+import org.mongodb.scala.SingleObservableFuture
+import org.mongodb.scala.ObservableFuture
+import play.api.libs.json.OFormat.oFormatFromReadsAndOWrites
+import play.api.libs.json.Format.GenericFormat
 
 final case class Wrapper(
   vatNumber: VatNumber,
@@ -41,7 +44,7 @@ final case class Wrapper(
 
 object Wrapper {
     implicit val localDateTimeFormats: Format[Instant] = MongoJavatimeFormats.instantFormat
-    implicit val formats: OFormat[Wrapper] = Json.format
+    implicit val formats: OFormat[Wrapper] = Json.format[Wrapper]
 }
 
 @Singleton
@@ -62,13 +65,15 @@ class   VatRegisteredCompaniesRepository @Inject()(
     for {
       vatRegCompId <- findOld(n)
       _ <- deleteById(vatRegCompId)
-    } yield (): Unit
+    } yield ()
   }
 
   case class VatRegCompId(oldest: ObjectId)
 
+  object VatRegCompId {
     implicit val objectIdFormat: Format[ObjectId] = MongoFormats.objectIdFormat
     implicit val formatVatRegCompId: OFormat[VatRegCompId] = Json.format[VatRegCompId]
+  }
 
   private def insert(entries: List[Wrapper]): Future[Unit] = {
     if(entries.nonEmpty) {
@@ -122,8 +127,8 @@ class   VatRegisteredCompaniesRepository @Inject()(
 
   def process(payload: PayloadWrapper): Future[Unit] = {
     for {
-      a <- insert(wrap(payload.payload))
-      b <- streamingDelete(payload.payload.deletes, payload)
+      _ <- insert(wrap(payload.payload))
+      _ <- streamingDelete(payload.payload.deletes, payload)
     } yield ()
   }
 
@@ -132,12 +137,10 @@ class   VatRegisteredCompaniesRepository @Inject()(
       .find(BsonDocument("vatNumber" -> target))
       .sort(Sorts.descending("_id"))
       .headOption()
-      .map(x => {
-        x match {
-          case Some(y) => Some(LookupResponse(target = Some(y.company)))
-          case None => None
-        }
-      })
+      .map {
+        case Some(y) => Some(LookupResponse(target = Some(y.company)))
+        case None => None
+      }
   }
 
   private def findOld(n: Int): Future[Seq[VatRegCompId]] = {
