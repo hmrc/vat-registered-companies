@@ -57,7 +57,7 @@ class OldRecordsDeleteSchedulerSpec extends AnyWordSpec with Matchers with Mocki
       FiniteDuration(1, SECONDS), // Test interval is 1 second for quicker testing
       enabled = false, // Disabled for this test
       rowCount = 100
-    )(ec)
+    )(using ec)
 
     // Verify that the deleteOld method was never called on PersistenceService
     verify(persistenceServiceMock, times(0)).deleteOld(100)
