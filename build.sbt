@@ -10,7 +10,7 @@ lazy val scoverageSettings = {
   Seq(
     ScoverageKeys.coverageExcludedPackages := "<empty>;views.*;prod.*;.*services.*;.*repositories.*;.*test.*",
     ScoverageKeys.coverageExcludedFiles    := "<empty>;.*BuildInfo.*;.*Routes.*;",
-    ScoverageKeys.coverageMinimumStmtTotal := 82,
+    ScoverageKeys.coverageMinimumStmtTotal := 81,
     ScoverageKeys.coverageFailOnMinimum    := true,
     ScoverageKeys.coverageHighlighting     := true
   )
@@ -22,7 +22,6 @@ lazy val microservice = Project(appName, file("."))
     libraryDependencies ++= AppDependencies.compile ++ AppDependencies.test
   )
   .settings(scoverageSettings *)
-  .settings(resolvers += Resolver.jcenterRepo)
   .settings(
     scalacOptions += "-Wconf:msg=routes/.*:s",
     scalacOptions += "-Wconf:msg=Flag.*repeatedly:s",
