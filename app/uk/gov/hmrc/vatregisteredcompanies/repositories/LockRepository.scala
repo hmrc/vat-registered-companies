@@ -71,7 +71,7 @@ class DefaultLockRepository @Inject()(
               release(id).map(_ => false)
             case _ => Future.successful(false)
           }
-        case e =>
+        case _ =>
           logger.info(s"An exception has occurred. Unable to lock with $id")
           Future.successful(false)
       }
