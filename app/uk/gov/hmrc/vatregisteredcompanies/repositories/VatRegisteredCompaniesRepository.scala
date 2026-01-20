@@ -38,28 +38,33 @@ import play.api.libs.json.OFormat.oFormatFromReadsAndOWrites
 import play.api.libs.json.Format.GenericFormat
 
 final case class Wrapper(
-  vatNumber: VatNumber,
-  company: VatRegisteredCompany
-)
+                          vatNumber: VatNumber,
+                          company: VatRegisteredCompany
+                        )
 
 object Wrapper {
-    implicit val localDateTimeFormats: Format[Instant] = MongoJavatimeFormats.instantFormat
-    implicit val formats: OFormat[Wrapper] = Json.format[Wrapper]
+  implicit val localDateTimeFormats: Format[Instant] = MongoJavatimeFormats.instantFormat
+  implicit val formats: OFormat[Wrapper] = Json.format[Wrapper]
 }
 
 @Singleton
-class   VatRegisteredCompaniesRepository @Inject()(
-  mongoComponent: MongoComponent,
-  bufferRepository: PayloadBufferRepository,
-  @Named("deletionThrottleElements") elements: Int,
-  @Named("deletionThrottlePer") per: FiniteDuration
-)(implicit val executionContext: ExecutionContext) extends
+class VatRegisteredCompaniesRepository @Inject()(
+                                                  mongoComponent: MongoComponent,
+                                                  bufferRepository: PayloadBufferRepository,
+                                                  @Named("deletionThrottleElements") elements: Int,
+                                                  @Named("deletionThrottlePer") per: FiniteDuration
+                                                )(implicit val executionContext: ExecutionContext) extends
   PlayMongoRepository[Wrapper](
     mongoComponent = mongoComponent,
     collectionName = "vatregisteredcompanies",
     domainFormat = Wrapper.formats,
-    indexes = Seq(IndexModel(ascending("vatNumber"),
-      IndexOptions().name("vatNumberIndexNew").unique(false).background(true)))) with Logging {
+    indexes = Seq(
+      IndexModel(
+        ascending("vatNumber", "_id"),
+        IndexOptions().name("vatNumber_id_compound_idx").background(true)
+      )
+    )
+  ) with Logging {
 
   def deleteOld(n: Int): Future[Unit] = {
     for {
@@ -76,7 +81,7 @@ class   VatRegisteredCompaniesRepository @Inject()(
   }
 
   private def insert(entries: List[Wrapper]): Future[Unit] = {
-    if(entries.nonEmpty) {
+    if (entries.nonEmpty) {
       logger.info(s"inserting ${entries.length} entries")
       collection.insertMany(entries).headOption().map(_ => ())
     } else {
@@ -89,8 +94,8 @@ class   VatRegisteredCompaniesRepository @Inject()(
       case vrn :: tail =>
         collection.deleteMany(Filters.equal("vatNumber", vrn))
           .toFuture()
-          .flatMap {_ =>
-            if(tail.nonEmpty) {
+          .flatMap { _ =>
+            if (tail.nonEmpty) {
               streamingDelete(tail, payload)
             }
             else {
@@ -110,8 +115,8 @@ class   VatRegisteredCompaniesRepository @Inject()(
       case vrcid :: tail =>
         collection.deleteOne(Filters.equal("_id", vrcid.oldest))
           .toFuture()
-          .flatMap {_ =>
-            if(tail.nonEmpty) {
+          .flatMap { _ =>
+            if (tail.nonEmpty) {
               deleteById(tail)
             }
             else {
@@ -145,12 +150,13 @@ class   VatRegisteredCompaniesRepository @Inject()(
 
   private def findOld(n: Int): Future[Seq[VatRegCompId]] = {
     collection.aggregate[BsonValue](Seq(
-      group("$vatNumber", Accumulators.sum("count", 1), Accumulators.min(
-        "oldest", "$_id")),
-      Aggregates.filter(Filters.gt("count", 1)),
-      limit(n),
-      project(include("oldest"))
-    )).allowDiskUse(true).toFuture()
+        Aggregates.sort(Sorts.ascending("vatNumber", "_id")),
+        Aggregates.group("$vatNumber", Accumulators.sum("count", 1), Accumulators.min(
+          "oldest", "$_id")),
+        Aggregates.filter(Filters.gt("count", 1)),
+        limit(n),
+        project(include("oldest"))
+      )).allowDiskUse(true).toFuture()
       .map(res => {
         res.map(Codecs.fromBson[VatRegCompId](_))
       })
