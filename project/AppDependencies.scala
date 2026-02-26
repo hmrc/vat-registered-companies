@@ -5,7 +5,7 @@ object AppDependencies {
   val pekkoSite = "org.apache.pekko"
   val pekkoVersion = "1.3.0" // Do not update as this may cause a Bobby Violation
   val playVersion = "play-30"
-  val bootstrapVersion = "9.19.0"
+  val bootstrapVersion = "10.6.0"
   val hmrcMongoVersion = "2.11.0"
 
   val compile = Seq(
