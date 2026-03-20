@@ -17,7 +17,8 @@
 package uk.gov.hmrc.vatregisteredcompanies.services
 
 import cats.data.OptionT
-import cats.implicits._
+import cats.implicits.*
+
 import javax.inject.{Inject, Singleton}
 import play.api.Logger
 import uk.gov.hmrc.vatregisteredcompanies.models.{LookupResponse, Payload, VatNumber}
@@ -25,18 +26,20 @@ import uk.gov.hmrc.vatregisteredcompanies.repositories.{LockRepository, PayloadB
 
 import scala.concurrent.{ExecutionContext, Future}
 import org.mongodb.scala.ObservableFuture
+import uk.gov.hmrc.http.HeaderCarrier
+import play.api.Logging
+
 
 @Singleton
 class PersistenceService @Inject()(
   repository: VatRegisteredCompaniesRepository,
   buffer: PayloadBufferRepository,
   lockRepository: LockRepository
-)(implicit executionContext: ExecutionContext) {
+)(implicit executionContext: ExecutionContext) extends Logging {
 
-  lazy val logger: Logger = Logger(this.getClass)
 
-  def lookup(target: VatNumber): Future[Option[LookupResponse]] =
-    repository.lookup(target)
+  def lookup(target: VatNumber)(implicit hc: HeaderCarrier): Future[Option[LookupResponse]] =
+    repository.lookup(target)(using hc)
 
   def deleteOld(n: Int): Future[Unit] =
     withLock(1)(repository.deleteOld(n))

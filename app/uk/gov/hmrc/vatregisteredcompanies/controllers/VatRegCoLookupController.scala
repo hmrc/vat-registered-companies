@@ -17,8 +17,8 @@
 package uk.gov.hmrc.vatregisteredcompanies.controllers
 
 import javax.inject.Inject
-
-import cats.implicits._
+import cats.implicits.*
+import play.api.Logging
 import play.api.libs.json.Json
 import play.api.mvc.{Action, AnyContent, ControllerComponents}
 import uk.gov.hmrc.http.HeaderCarrier
@@ -33,14 +33,18 @@ class VatRegCoLookupController @Inject()
 (
   persistence: PersistenceService,
   auditConnector: AuditConnector,
-  cc: ControllerComponents
+  cc: ControllerComponents,
 )(
   implicit executionContext: ExecutionContext
-) extends BackendController(cc) {
+) extends BackendController(cc) with Logging  {
 
   def lookup(target: VatNumber): Action[AnyContent] =
-    Action.async {
+    Action.async { implicit request =>
+      val hc = implicitly[HeaderCarrier]
+      val startTime = System.currentTimeMillis()
+      logger.info(s"VatRegCo lookup request vatNumber=$target requestID=${hc.requestId.map(_.value).getOrElse("-")}")
       persistence.lookup(target).map { x =>
+        logger.info(s"VatRegCo lookup response vatNumber=$target requestId=${hc.requestId.map(_.value).getOrElse("-")}")
         Ok(Json.toJson(x.getOrElse(LookupResponse(None))))
       }
     }
