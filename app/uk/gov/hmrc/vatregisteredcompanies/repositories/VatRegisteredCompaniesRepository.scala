@@ -20,9 +20,9 @@ import org.mongodb.scala.bson.{BsonDocument, BsonValue, ObjectId}
 import org.mongodb.scala.model.Aggregates.{group, limit, project}
 import org.mongodb.scala.model.Indexes.ascending
 import org.mongodb.scala.model.Projections.include
-import org.mongodb.scala.model._
+import org.mongodb.scala.model.*
 import play.api.Logging
-import play.api.libs.json._
+import play.api.libs.json.*
 import uk.gov.hmrc.mongo.MongoComponent
 import uk.gov.hmrc.mongo.play.json.formats.{MongoFormats, MongoJavatimeFormats}
 import uk.gov.hmrc.mongo.play.json.{Codecs, PlayMongoRepository}
@@ -36,6 +36,7 @@ import org.mongodb.scala.SingleObservableFuture
 import org.mongodb.scala.ObservableFuture
 import play.api.libs.json.OFormat.oFormatFromReadsAndOWrites
 import play.api.libs.json.Format.GenericFormat
+import uk.gov.hmrc.http.HeaderCarrier
 
 final case class Wrapper(
                           vatNumber: VatNumber,
@@ -137,14 +138,23 @@ class VatRegisteredCompaniesRepository @Inject()(
     } yield ()
   }
 
-  def lookup(target: String): Future[Option[LookupResponse]] = {
+  def lookup(target: String)(implicit hc: HeaderCarrier): Future[Option[LookupResponse]] = {
+    val startTime = System.currentTimeMillis()
+    val requestId = hc.requestId.map(_.value).getOrElse("-")
+    
+    logger.info(s"VatRegisteredCompanies mongo lookup start vatNumber=$target requestId=$requestId")
+
     collection
       .find(BsonDocument("vatNumber" -> target))
       .sort(Sorts.descending("_id"))
       .headOption()
       .map {
-        case Some(y) => Some(LookupResponse(target = Some(y.company)))
-        case None => None
+        case Some(y) => 
+          logger.info(s"VatRegisteredCompanies mongo lookup found vatNumber=$target requestId=$requestId durationMs=${System.currentTimeMillis() - startTime}")
+          Some(LookupResponse(target = Some(y.company)))
+        case None =>
+          logger.info(s"VatRegisteredCompanies mongo lookup not found vatNumber=$target requestId=$requestId durationMs=${System.currentTimeMillis() - startTime}")
+          None
       }
   }
 

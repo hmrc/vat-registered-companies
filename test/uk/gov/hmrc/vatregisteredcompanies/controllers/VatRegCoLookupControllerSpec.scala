@@ -16,21 +16,22 @@
 
 package uk.gov.hmrc.vatregisteredcompanies.controllers
 
-import org.mockito.ArgumentMatchers._
-import org.mockito.Mockito._
+import org.mockito.ArgumentMatchers.*
+import org.mockito.Mockito.*
 import org.scalatest.wordspec.AnyWordSpec
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.OptionValues
 import org.scalatestplus.mockito.MockitoSugar
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
-import play.api.Application
+import play.api.{Application, Logger}
 import play.api.http.Status
 import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.libs.json.Json
 import play.api.test.FakeRequest
-import play.api.test.Helpers.{contentAsJson, status, _}
+import play.api.test.Helpers.{contentAsJson, status, *}
+import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.audit.http.connector.AuditConnector
-import uk.gov.hmrc.vatregisteredcompanies.models._
+import uk.gov.hmrc.vatregisteredcompanies.models.*
 import uk.gov.hmrc.vatregisteredcompanies.services.PersistenceService
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -40,8 +41,7 @@ class VatRegCoLookupControllerSpec extends AnyWordSpec
   with Matchers
   with GuiceOneAppPerSuite
   with MockitoSugar
-  with OptionValues
-{
+  with OptionValues {
 
   override def fakeApplication(): Application =
     new GuiceApplicationBuilder().configure(
@@ -53,23 +53,30 @@ class VatRegCoLookupControllerSpec extends AnyWordSpec
     ).build()
 
   val mockPersistence: PersistenceService = mock[PersistenceService]
-  val mockAudiConnector: AuditConnector = mock[AuditConnector]
+  val mockAuditConnector: AuditConnector = mock[AuditConnector]
+  implicit val hc: HeaderCarrier = HeaderCarrier()
+
   val fakeRequest = FakeRequest("GET", "/lookup/123456789")
   val fakeVerifiedRequest = FakeRequest("GET", "/lookup/123456789/123456789")
   val testVatNo = "123456789"
-  val controller = new VatRegCoLookupController(mockPersistence, mockAudiConnector, cc)
 
-  val knownCo =
-    VatRegisteredCompany(
-      name = "ACME trading",
-      vatNumber = testVatNo,
-      address = Address("line 1", None, None, None, None, None, countryCode = "GB")
-    )
+  val controller = new VatRegCoLookupController(
+    mockPersistence,
+    mockAuditConnector,
+    cc
+  )
 
-  "GET of unknown VAT number " should {
+  val knownCo = VatRegisteredCompany(
+    name = "ACME trading",
+    vatNumber = testVatNo,
+    address = Address("line 1", None, None, None, None, None, countryCode = "GB")
+  )
+
+  "GET of unknown VAT number" should {
     "return 200 but an empty target VAT registered company" in {
-      when(mockPersistence.lookup(any())).thenReturn(Future(Option.empty[LookupResponse]))
-      val result = controller.lookup(any())(fakeRequest)
+      when(mockPersistence.lookup(any())(using any()))
+        .thenReturn(Future(Option.empty[LookupResponse]))
+      val result = controller.lookup(testVatNo)(fakeRequest)
       status(result) shouldBe Status.OK
       Json.fromJson[LookupResponse](contentAsJson(result)).map { lr =>
         lr.target shouldBe Option.empty[VatNumber]
@@ -77,10 +84,11 @@ class VatRegCoLookupControllerSpec extends AnyWordSpec
     }
   }
 
-  "GET of known VAT number " should {
+  "GET of known VAT number" should {
     "return 200 and a target VAT registered company" in {
-      when(mockPersistence.lookup(any())).thenReturn(Future(Some(LookupResponse(target = Some(knownCo)))))
-      val result = controller.lookup(any())(fakeRequest)
+      when(mockPersistence.lookup(any())(using any()))
+        .thenReturn(Future(Some(LookupResponse(target = Some(knownCo)))))
+      val result = controller.lookup(testVatNo)(fakeRequest)
       status(result) shouldBe Status.OK
       Json.fromJson[LookupResponse](contentAsJson(result)).map { lr =>
         lr.target shouldBe Some(knownCo)
@@ -88,17 +96,10 @@ class VatRegCoLookupControllerSpec extends AnyWordSpec
     }
   }
 
-  "GET of known VAT number with known requester supplied " should {
+  "GET of known VAT number with known requester supplied" should {
     "return 200, a target VAT registered company and a consultation number" in {
-      when(mockPersistence.lookup(any())).thenReturn(
-        Future(
-          Some(
-            LookupResponse(
-              target = Some(knownCo)
-            )
-          )
-        )
-      )
+      when(mockPersistence.lookup(any())(using any()))                 // add second any()
+        .thenReturn(Future(Some(LookupResponse(target = Some(knownCo)))))
       val result = controller.lookupVerified(testVatNo, testVatNo)(fakeVerifiedRequest)
       status(result) shouldBe Status.OK
       Json.fromJson[LookupResponse](contentAsJson(result)).map { lr =>
@@ -109,13 +110,10 @@ class VatRegCoLookupControllerSpec extends AnyWordSpec
     }
   }
 
-  "GET of unknown VAT number with requester supplied " should {
-    "return 200, a target VAT registered company and a consultation number" in {
-      when(mockPersistence.lookup(any())).thenReturn(
-        Future(
-          None
-        )
-      )
+  "GET of unknown VAT number with requester supplied" should {
+    "return 200 but an empty target" in {
+      when(mockPersistence.lookup(any())(using any()))
+        .thenReturn(Future(None))
       val result = controller.lookupVerified(testVatNo, testVatNo)(fakeVerifiedRequest)
       status(result) shouldBe Status.OK
       Json.fromJson[LookupResponse](contentAsJson(result)).map { lr =>
@@ -124,30 +122,21 @@ class VatRegCoLookupControllerSpec extends AnyWordSpec
     }
   }
 
-  "GET of known VAT number with unknown requester supplied " should {
+  "GET of known VAT number with unknown requester supplied" should {
     "return 200, a target VAT registered company and no consultation number" in {
-      when(mockPersistence.lookup(any())).thenReturn(
-        Future(
-          Some(
-            LookupResponse(
-              target = Some(knownCo)
-            )
-          )
-        ),
-        Future(
-          None
+      when(mockPersistence.lookup(any())(using any()))
+        .thenReturn(
+          Future(Some(LookupResponse(target = Some(knownCo)))),
+          Future(None)
         )
-      )
       val result = controller.lookupVerified(testVatNo, testVatNo)(fakeVerifiedRequest)
       status(result) shouldBe Status.OK
       Json.fromJson[LookupResponse](contentAsJson(result)).map { lr =>
-        println(lr)
         lr.target shouldBe Some(knownCo)
         lr.requester shouldBe Option.empty[VatNumber]
         lr.consultationNumber shouldBe Option.empty[ConsultationNumber]
       }
     }
   }
-
 }
 
