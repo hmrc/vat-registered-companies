@@ -1,4 +1,4 @@
-import sbt._
+import sbt.*
 
 object AppDependencies {
 
@@ -8,7 +8,7 @@ object AppDependencies {
   val bootstrapVersion = "10.7.0"
   val hmrcMongoVersion = "2.12.0"
 
-  val compile = Seq(
+  val compile: Seq[ModuleID] = Seq(
 
     "uk.gov.hmrc.mongo"    %% s"hmrc-mongo-$playVersion"         % hmrcMongoVersion,
     "uk.gov.hmrc"          %% s"bootstrap-backend-$playVersion"  % bootstrapVersion,
@@ -17,11 +17,13 @@ object AppDependencies {
     pekkoSite              %% "pekko-stream"                     % pekkoVersion,
     pekkoSite              %% "pekko-slf4j"                      % pekkoVersion,
     pekkoSite              %% "pekko-actor-typed"                % pekkoVersion,
-    pekkoSite              %% "pekko-serialization-jackson"      % pekkoVersion
+    (pekkoSite              %% "pekko-serialization-jackson"      % pekkoVersion).exclude("org.lz4","lz4-java")
   )
 
-  val test = Seq(
+  val test: Seq[ModuleID] = Seq(
     "uk.gov.hmrc"            %% s"bootstrap-test-$playVersion"   % bootstrapVersion,
     "org.scalatestplus"      %% "scalacheck-1-17"                % "3.2.18.0",
   ).map(_ % Test)
+
+  val rhinoOverrides: Seq[ModuleID] = Seq("org.mozilla" % "rhino" % "1.9.1")
 }
