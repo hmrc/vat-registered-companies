@@ -19,7 +19,8 @@ lazy val scoverageSettings = {
 lazy val microservice = Project(appName, file("."))
   .enablePlugins(play.sbt.PlayScala, SbtDistributablesPlugin)
   .settings(
-    libraryDependencies ++= AppDependencies.compile ++ AppDependencies.test
+    libraryDependencies ++= AppDependencies.compile ++ AppDependencies.test,
+    dependencyOverrides ++=AppDependencies.rhinoOverrides
   )
   .settings(scoverageSettings *)
   .settings(
@@ -36,6 +37,8 @@ addCommandAlias("testAll", "; test ; it/test")
 
 libraryDependencySchemes +=
   "org.scala-lang.modules" %% "scala-xml" % VersionScheme.Always
+
+
 
 lazy val it = (project in file("it"))
   .enablePlugins(PlayScala)
