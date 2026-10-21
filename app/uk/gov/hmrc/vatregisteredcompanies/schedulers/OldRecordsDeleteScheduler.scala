@@ -37,7 +37,7 @@ class OldRecordsDeleteScheduler @Inject()(
   implicit val ec: ExecutionContext) {
 
   val logger = Logger(getClass)
-
+  logger.info(s"OldRecordsDeleteScheduler enabled status $enabled")
   if (enabled) {
     logger.info(s"Initialising delete every $interval")
     actorSystem.scheduler.scheduleWithFixedDelay(FiniteDuration(60, TimeUnit.SECONDS), interval) { () =>

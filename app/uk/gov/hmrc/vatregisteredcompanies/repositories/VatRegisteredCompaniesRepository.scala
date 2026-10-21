@@ -70,6 +70,10 @@ class VatRegisteredCompaniesRepository @Inject()(
   def deleteOld(n: Int): Future[Unit] = {
     for {
       vatRegCompId <- findOld(n)
+      _ = if (vatRegCompId.isEmpty)
+        logger.info(s"Reconciliation complete: no duplicate vatNumbers remaining")
+      else
+        logger.info(s"Reconciliation in progress: ${vatRegCompId.size} duplicate groups found")
       _ <- deleteById(vatRegCompId)
     } yield ()
   }
@@ -83,8 +87,14 @@ class VatRegisteredCompaniesRepository @Inject()(
 
   private def insert(entries: List[Wrapper]): Future[Unit] = {
     if (entries.nonEmpty) {
-      logger.info(s"inserting ${entries.length} entries")
-      collection.insertMany(entries).headOption().map(_ => ())
+      logger.info(s"upserting ${entries.length} entries")
+      Future.traverse(entries) { entry =>
+        collection.findOneAndUpdate(
+          BsonDocument("vatNumber" -> entry.vatNumber),
+          BsonDocument("$set" -> BsonDocument("company" -> Codecs.toBson(entry.company))),
+          FindOneAndUpdateOptions().sort(Sorts.descending("_id")).upsert(true)
+          ).headOption()
+      }.map(_=> ())
     } else {
       Future.successful(())
     }
