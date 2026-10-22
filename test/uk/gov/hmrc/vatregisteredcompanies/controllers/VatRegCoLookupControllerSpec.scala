@@ -28,16 +28,18 @@ import play.api.http.Status
 import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.libs.json.Json
 import play.api.test.FakeRequest
-import play.api.test.Helpers.{contentAsJson, status, *}
+import play.api.test.Helpers.*
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.audit.http.connector.AuditConnector
 import uk.gov.hmrc.vatregisteredcompanies.models.*
 import uk.gov.hmrc.vatregisteredcompanies.services.PersistenceService
+import uk.gov.hmrc.vatregisteredcompanies.testsupport.{Leakprobes, LogCapture}
 
+import scala.concurrent.{Await, Future}
 import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
+import scala.concurrent.duration.*
 
-class VatRegCoLookupControllerSpec extends AnyWordSpec
+class VatRegCoLookupControllerSpec extends AnyWordSpec with LogCapture
   with Matchers
   with GuiceOneAppPerSuite
   with MockitoSugar
@@ -138,5 +140,33 @@ class VatRegCoLookupControllerSpec extends AnyWordSpec
       }
     }
   }
+
+  "lookup logging" should {
+    Leakprobes.all.foreach{ probe =>
+      s"not log ${probe.label} as the target of lookup" in {
+
+        when(mockPersistence.lookup(any())(using any())).thenReturn(Future.successful(None))
+
+        val logs = capturedLogs {
+          Await.result(controller.lookup(probe.value)(fakeRequest), 5.seconds)
+        }
+
+        Leakprobes.leakingLines(logs, probe) shouldBe empty
+      }
+
+      s"not log ${probe.label} as the target of lookup or requester of lookupVerified" in {
+
+        when(mockPersistence.lookup(any())(using any())).thenReturn(Future.successful(None))
+
+        val logs = capturedLogs {
+          Await.result(controller.lookupVerified(probe.value, probe.value)(fakeRequest), 5.seconds)
+        }
+
+        Leakprobes.leakingLines(logs, probe) shouldBe empty
+      }
+
+    }
+  }
+
 }
 

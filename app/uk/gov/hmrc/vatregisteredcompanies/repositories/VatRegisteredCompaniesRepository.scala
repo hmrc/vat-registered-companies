@@ -142,7 +142,7 @@ class VatRegisteredCompaniesRepository @Inject()(
     val startTime = System.currentTimeMillis()
     val requestId = hc.requestId.map(_.value).getOrElse("-")
     
-    logger.info(s"VatRegisteredCompanies mongo lookup start vatNumber=$target requestId=$requestId")
+    logger.info(s"VatRegisteredCompanies mongo lookup start  requestId=$requestId")
 
     collection
       .find(BsonDocument("vatNumber" -> target))
@@ -150,10 +150,10 @@ class VatRegisteredCompaniesRepository @Inject()(
       .headOption()
       .map {
         case Some(y) => 
-          logger.info(s"VatRegisteredCompanies mongo lookup found vatNumber=$target requestId=$requestId durationMs=${System.currentTimeMillis() - startTime}")
+          logger.info(s"VatRegisteredCompanies mongo lookup found requestId=$requestId durationMs=${System.currentTimeMillis() - startTime}")
           Some(LookupResponse(target = Some(y.company)))
         case None =>
-          logger.info(s"VatRegisteredCompanies mongo lookup not found vatNumber=$target requestId=$requestId durationMs=${System.currentTimeMillis() - startTime}")
+          logger.info(s"VatRegisteredCompanies mongo lookup not found requestId=$requestId durationMs=${System.currentTimeMillis() - startTime}")
           None
       }
   }

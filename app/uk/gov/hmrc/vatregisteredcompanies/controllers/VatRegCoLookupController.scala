@@ -42,9 +42,9 @@ class VatRegCoLookupController @Inject()
     Action.async { implicit request =>
       val hc = implicitly[HeaderCarrier]
       val startTime = System.currentTimeMillis()
-      logger.info(s"VatRegCo lookup request vatNumber=$target requestID=${hc.requestId.map(_.value).getOrElse("-")}")
+      logger.info(s"VatRegCo lookup request requestID=${hc.requestId.map(_.value).getOrElse("-")}")
       persistence.lookup(target).map { x =>
-        logger.info(s"VatRegCo lookup response vatNumber=$target requestId=${hc.requestId.map(_.value).getOrElse("-")}")
+        logger.info(s"VatRegCo lookup response requestId=${hc.requestId.map(_.value).getOrElse("-")}")
         Ok(Json.toJson(x.getOrElse(LookupResponse(None))))
       }
     }
