@@ -61,6 +61,21 @@ class VatRegisteredCompaniesRepositoryISpec extends IntegrationSpecBase {
           }
         }
 
+        "produce the same database state when the same payload is processed twice" in {
+          val payload = PayloadWrapper(payload = testPayloadCreateAndUpdates)
+          val firstResult = vatRegisteredCompaniesRepository.process(payload)
+          whenReady(firstResult) { first =>
+            first shouldBe ((): Unit)
+            totalCount shouldBe 2
+
+            val secondResult = vatRegisteredCompaniesRepository.process(payload)
+            whenReady(secondResult) { second =>
+              second shouldBe ((): Unit)
+              totalCount shouldBe 2
+            }
+          }
+        }
+
       }
     }
   }
