@@ -65,6 +65,40 @@ class OldRecordsDeleteSchedulerISpec  extends IntegrationSpecBase {
           }
         }
 
+        "remove the oldest record(s)" when {
+          "leave the data unchanged when reconciliation runs again" in {
+            //insert into vatRegisteredCompanies records with different vatNumbers
+            insertMany(List(acmeTradingWithVatNo1, acmeTradingWithVatNo2, acmeTradingWithVatNo3))
+            Thread.sleep(100)
+            //insert into vatRegisteredCompanies a record with a vatNumber used above but slightly different details
+            insertOne(deltaTradingWithVatNo1)
+            totalCount shouldBe 4
+
+            //first reconciliation run
+            whenReady(persistenceService.deleteOld(limit)) { result =>
+              result shouldBe ((): Unit)
+              val recordAfterFirstRun = getRecord(testVatNo1)
+              recordAfterFirstRun shouldBe defined
+              recordAfterFirstRun.get.name shouldBe "Delta Trading"
+              totalCount shouldBe 3
+              //check lock has been removed
+              isLocked shouldBe false
+            }
+
+            //Second reconciliation run
+            whenReady(persistenceService.deleteOld(limit)) { result =>
+              result shouldBe ((): Unit)
+              val recordAfterSecondRun = getRecord(testVatNo1)
+              recordAfterSecondRun shouldBe defined
+              recordAfterSecondRun.get.name shouldBe "Delta Trading"
+              totalCount shouldBe 3
+              //check lock has been removed
+              isLocked shouldBe false
+            }
+          }
+
+          }
+
         "there are two VatNumber with more than one record associated with" in {
           //insert into vatRegisteredCompanies records with different vatNumbers
           insertMany(List(acmeTradingWithVatNo1, deltaTradingWithVatNo2, acmeTradingWithVatNo3))

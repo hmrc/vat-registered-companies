@@ -44,7 +44,7 @@ lazy val it = (project in file("it"))
   .enablePlugins(PlayScala)
   .dependsOn(microservice % "compile->compile,test;test->compile,test")
   .settings(
-    Test / scalaSource := baseDirectory.value / "test" / "scala",
+    Test / scalaSource := baseDirectory.value ,
     libraryDependencies ++= AppDependencies.test
   )
 

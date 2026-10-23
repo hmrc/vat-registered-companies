@@ -23,7 +23,7 @@ import uk.gov.hmrc.vatregisteredcompanies.helpers.TestData._
      clearLock()
   }
 
-  "Method: lock" when {
+    "Method: lock" when {
     "no lock exists" should {
       "Return true" in {
         val res = lockRepository.lock(testLockId)
@@ -62,7 +62,7 @@ import uk.gov.hmrc.vatregisteredcompanies.helpers.TestData._
 
   }
 
-  "Method: release" when {
+   "Method: release" when {
     "no lock exists" should {
       "Return (): Unit" in {
         val act = lockRepository.release(testLockId)
@@ -85,7 +85,7 @@ import uk.gov.hmrc.vatregisteredcompanies.helpers.TestData._
     }
   }
 
-  "Method: isLocked" when {
+   "Method: isLocked" when {
     "no lock exists" should {
       "Return false" in {
         val act = lockRepository.isLocked(testLockId)
@@ -109,7 +109,7 @@ import uk.gov.hmrc.vatregisteredcompanies.helpers.TestData._
     }
   }
 
-  "Method: getLock" when {
+   "Method: getLock" when {
     "no lock exists" should {
       "Return None" in {
         val act = lockRepository.getLock(testLockId)

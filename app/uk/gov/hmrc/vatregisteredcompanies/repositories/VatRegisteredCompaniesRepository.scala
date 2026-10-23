@@ -32,8 +32,7 @@ import java.time.Instant
 import javax.inject.{Inject, Named, Singleton}
 import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.{ExecutionContext, Future}
-import org.mongodb.scala.SingleObservableFuture
-import org.mongodb.scala.ObservableFuture
+import org.mongodb.scala.{MongoWriteException, ObservableFuture, SingleObservableFuture}
 import play.api.libs.json.OFormat.oFormatFromReadsAndOWrites
 import play.api.libs.json.Format.GenericFormat
 import uk.gov.hmrc.http.HeaderCarrier
@@ -70,6 +69,10 @@ class VatRegisteredCompaniesRepository @Inject()(
   def deleteOld(n: Int): Future[Unit] = {
     for {
       vatRegCompId <- findOld(n)
+      _ = if (vatRegCompId.isEmpty)
+        logger.info(s"Reconciliation complete: no duplicate vatNumbers remaining")
+      else
+        logger.info(s"Reconciliation in progress: ${vatRegCompId.size} duplicate groups found")
       _ <- deleteById(vatRegCompId)
     } yield ()
   }
@@ -82,13 +85,39 @@ class VatRegisteredCompaniesRepository @Inject()(
   }
 
   private def insert(entries: List[Wrapper]): Future[Unit] = {
-    if (entries.nonEmpty) {
-      logger.info(s"inserting ${entries.length} entries")
-      collection.insertMany(entries).headOption().map(_ => ())
-    } else {
-      Future.successful(())
+    val latest = entries.reverse.distinctBy(_.vatNumber).reverse
+    if (latest.isEmpty) Future.unit
+    else {
+      logger.info(s"upserting ${entries.length} entries")
+
+      latest.grouped(50).foldLeft(Future.unit) { (previousBatch, batch) =>
+        previousBatch.flatMap { _ =>
+          Future.traverse(batch)(entry => upsertOne(entry)).map(_ => ())
+        }
+      }
     }
   }
+
+  private def upsertOne(entry:Wrapper,
+                        retry: Boolean = true): Future[Unit] = {
+
+        val filter = Filters.equal ("vatNumber", entry.vatNumber)
+
+        val update = Updates.combine(
+          Updates.set("vatNumber", entry.vatNumber),
+          Updates.set("company", Codecs.toBson(entry.company))
+        )
+        collection.findOneAndUpdate(
+          filter,
+          update,
+          FindOneAndUpdateOptions().sort(Sorts.descending("_id")).upsert(true)
+          ).headOption().map(_=> ()).recoverWith{
+          case e : MongoWriteException
+            if retry && e.getError.getCode == 11000 =>
+            logger.warn(s"Duplicate key error while upserting VAT number; retrying once")
+            upsertOne(entry, retry = false)}
+    }
+
 
   private def streamingDelete(deletes: List[VatNumber], payload: PayloadWrapper): Future[Unit] = {
     deletes match {
