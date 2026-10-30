@@ -31,11 +31,7 @@ sbt test
 
 To run integration tests use:
 ```
-sbt it:test
-```
-or
-```
-sbt IntegrationTest / test
+sbt it/test
 ```
 
 To run tests and coverage, use the following commands in order:

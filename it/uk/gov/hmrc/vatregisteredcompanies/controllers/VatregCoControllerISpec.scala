@@ -16,15 +16,24 @@
 
 package uk.gov.hmrc.vatregisteredcompanies.controllers
 
+import org.mongodb.scala.{MongoCommandException, SingleObservableFuture}
 import play.api.libs.json.Json
 import uk.gov.hmrc.vatregisteredcompanies.helpers.IntegrationSpecBase
-import uk.gov.hmrc.vatregisteredcompanies.helpers.TestData._
+import uk.gov.hmrc.vatregisteredcompanies.helpers.TestData.*
 import uk.gov.hmrc.vatregisteredcompanies.models.LookupResponse
 
 class VatregCoControllerISpec extends IntegrationSpecBase {
 
+  def allowDuplicates(): Unit = {
+    await(vatRegisteredCompaniesRepository.collection.dropIndex("vatNumber_prepare_unique_idx").toFuture().map(_ => ()).recover {
+      case e: MongoCommandException if e.getErrorCode == 27 => ()
+    }
+    )
+  }
+
   override def beforeEach(): Unit = {
     deleteAll()
+    await(vatRegisteredCompaniesRepository.applyPrepareUnique())
   }
 
 
@@ -65,6 +74,7 @@ class VatregCoControllerISpec extends IntegrationSpecBase {
 
       "contains a target that is the newest payload for the vatNumber" when {
         "there is more than one record matching the vatNumber" in {
+          allowDuplicates()
           stubAudit
           insertOne(getVatRegCompany(testVatNo1, "Acme Trading"))
           Thread.sleep(100)
@@ -118,6 +128,7 @@ class VatregCoControllerISpec extends IntegrationSpecBase {
 
       "contains a target that is the newest payload for the vatNumber and no requester" when {
         "there is more than one record matching the vatNumber and no records matching requester" in {
+          allowDuplicates()
           stubAudit
           insertOne(getVatRegCompany(testVatNo1, "Acme Company"))
           Thread.sleep(100)
@@ -170,6 +181,7 @@ class VatregCoControllerISpec extends IntegrationSpecBase {
 
       "contains a target that is the newest payload for the vatNumber and a requester" when {
         "there is more than one record matching the vatNumber and a record matching requester" in {
+          allowDuplicates()
           stubAudit
           insertOne(getVatRegCompany(testVatNo1, "Test Company"))
           Thread.sleep(100)
