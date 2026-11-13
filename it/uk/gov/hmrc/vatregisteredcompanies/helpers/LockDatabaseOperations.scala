@@ -16,7 +16,7 @@
 
 package uk.gov.hmrc.vatregisteredcompanies.helpers
 import org.mongodb.scala.model.Filters
-import uk.gov.hmrc.vatregisteredcompanies.repositories.{Lock, LockRepository}
+import uk.gov.hmrc.vatregisteredcompanies.repositories.Lock
 import org.mongodb.scala.SingleObservableFuture
 
 trait LockDatabaseOperations {

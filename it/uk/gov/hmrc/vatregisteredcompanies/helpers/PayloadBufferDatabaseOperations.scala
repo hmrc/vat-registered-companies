@@ -19,7 +19,7 @@ package uk.gov.hmrc.vatregisteredcompanies.helpers
 import org.bson.types.ObjectId
 import org.mongodb.scala.model.Filters
 import uk.gov.hmrc.vatregisteredcompanies.models.Payload
-import uk.gov.hmrc.vatregisteredcompanies.repositories.{PayloadBufferRepository, PayloadWrapper}
+import uk.gov.hmrc.vatregisteredcompanies.repositories.PayloadWrapper
 
 import scala.concurrent.Future
 import org.mongodb.scala.SingleObservableFuture

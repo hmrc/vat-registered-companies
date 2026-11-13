@@ -21,7 +21,7 @@ import org.mongodb.scala.model.Aggregates.{group, limit, project}
 import org.mongodb.scala.model.Indexes.ascending
 import org.mongodb.scala.model.Projections.include
 import org.mongodb.scala.model.*
-import play.api.Logging
+import play.api.{Configuration, Logging}
 import play.api.libs.json.*
 import uk.gov.hmrc.mongo.MongoComponent
 import uk.gov.hmrc.mongo.play.json.formats.{MongoFormats, MongoJavatimeFormats}
@@ -32,8 +32,7 @@ import java.time.Instant
 import javax.inject.{Inject, Named, Singleton}
 import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.{ExecutionContext, Future}
-import org.mongodb.scala.SingleObservableFuture
-import org.mongodb.scala.ObservableFuture
+import org.mongodb.scala.{MongoServerException, MongoWriteException, ObservableFuture, SingleObservableFuture}
 import play.api.libs.json.OFormat.oFormatFromReadsAndOWrites
 import play.api.libs.json.Format.GenericFormat
 import uk.gov.hmrc.http.HeaderCarrier
@@ -53,7 +52,8 @@ class VatRegisteredCompaniesRepository @Inject()(
                                                   mongoComponent: MongoComponent,
                                                   bufferRepository: PayloadBufferRepository,
                                                   @Named("deletionThrottleElements") elements: Int,
-                                                  @Named("deletionThrottlePer") per: FiniteDuration
+                                                  @Named("deletionThrottlePer") per: FiniteDuration,
+                                                  val configuration: Configuration
                                                 )(implicit val executionContext: ExecutionContext) extends
   PlayMongoRepository[Wrapper](
     mongoComponent = mongoComponent,
@@ -67,9 +67,44 @@ class VatRegisteredCompaniesRepository @Inject()(
     )
   ) with Logging {
 
+  private val prepareUniqueEnabled : Boolean = configuration.getOptional[Boolean]("microservice.services.vatRegisteredCompanies.prepare-unique.enabled").getOrElse(false)
+
+  def applyPrepareUnique() : Future[Unit] = {
+    if (!prepareUniqueEnabled) {
+      logger.info("prepare Unique Disabled: vatNumber index not created")
+      Future.unit
+    } else {
+      (for {
+        _ <- collection.createIndex(
+          Indexes.ascending("vatNumber"),
+          IndexOptions().name("vatNumber_prepare_unique_idx").background(true)
+        ).toFuture()
+        _ <- mongoComponent.database.runCommand(
+          BsonDocument(
+            "collMod" -> "vatregisteredcompanies",
+            "index" -> BsonDocument(
+              "name" -> "vatNumber_prepare_unique_idx",
+              "prepareUnique" -> true
+            )
+          )
+        ).toFuture()
+      } yield logger.info(s"vatNumber index status, prepareUniqueIndexFlag= $prepareUniqueEnabled")).recover {
+        case e => logger.warn(s"failed to apply prepareUnique on vatNumber index: ${e.getMessage}", e)
+      }
+    }
+  }
+
+  private val prepareUniqueInit: Future[Unit] = applyPrepareUnique()
+
+  def awaitPrepareUnique: Future[Unit] = prepareUniqueInit
+  
   def deleteOld(n: Int): Future[Unit] = {
     for {
       vatRegCompId <- findOld(n)
+      _ = if (vatRegCompId.isEmpty)
+        logger.info(s"Reconciliation complete: no duplicate vatNumbers remaining")
+      else
+        logger.info(s"Reconciliation in progress: ${vatRegCompId.size} duplicate groups found")
       _ <- deleteById(vatRegCompId)
     } yield ()
   }
@@ -82,13 +117,46 @@ class VatRegisteredCompaniesRepository @Inject()(
   }
 
   private def insert(entries: List[Wrapper]): Future[Unit] = {
-    if (entries.nonEmpty) {
-      logger.info(s"inserting ${entries.length} entries")
-      collection.insertMany(entries).headOption().map(_ => ())
-    } else {
-      Future.successful(())
+    val latest = entries.reverse.distinctBy(_.vatNumber).reverse
+    if (latest.isEmpty) Future.unit
+    else {
+      logger.info(s"upserting ${entries.length} entries")
+
+      latest.grouped(50).foldLeft(Future.unit) { (previousBatch, batch) =>
+        previousBatch.flatMap { _ => upsertBatch(batch)
+        }
+      }
     }
   }
+
+  private def upsertBatch(batch : List[Wrapper]) : Future[Unit] =
+    Future.traverse(batch){ entry =>
+      upsertOne(entry).map(_ => Right(entry.vatNumber)).recover{case e => Left((entry.vatNumber,e))}
+      }.flatMap{ results=>
+      val failures = results.collect{ case Left(f) => f }
+      if (failures.isEmpty) Future.unit
+      else {
+        logger.error(s"Upsert batch failed: ${failures.size} of ${batch.size} writes failed", failures.head._2)
+        Future.failed(failures.head._2)
+      }
+    }
+
+
+  private def upsertOne(entry:Wrapper): Future[Unit] = {
+
+        val filter = Filters.equal ("vatNumber", entry.vatNumber)
+
+        val update = Updates.combine(
+          Updates.set("vatNumber", entry.vatNumber),
+          Updates.set("company", Codecs.toBson(entry.company))
+        )
+        collection.findOneAndUpdate(
+          filter,
+          update,
+          FindOneAndUpdateOptions().sort(Sorts.descending("_id")).upsert(true)
+          ).headOption().map(_=> ())
+    }
+
 
   private def streamingDelete(deletes: List[VatNumber], payload: PayloadWrapper): Future[Unit] = {
     deletes match {

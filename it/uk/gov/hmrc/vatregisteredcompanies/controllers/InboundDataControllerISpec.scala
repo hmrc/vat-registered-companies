@@ -16,15 +16,19 @@
 
 package uk.gov.hmrc.vatregisteredcompanies.controllers
 
-import play.api.http.HeaderNames._
+import play.api.http.HeaderNames.*
 import play.api.libs.json.Json
 import uk.gov.hmrc.vatregisteredcompanies.helpers.IntegrationSpecBase
-import uk.gov.hmrc.vatregisteredcompanies.helpers.TestData.{invalidVatNo, testPayloadCreateAndUpdates}
+import uk.gov.hmrc.vatregisteredcompanies.helpers.TestData.{acmeTradingWithVatNo1, deltaTradingWithVatNo1, invalidVatNo, testPayloadCreateAndUpdates}
 import uk.gov.hmrc.vatregisteredcompanies.models.Payload
 import play.api.libs.ws.JsonBodyWritables.writeableOf_JsValue
 import play.api.libs.ws.DefaultBodyReadables.readableAsString
 
 class InboundDataControllerISpec extends IntegrationSpecBase {
+
+  override def beforeEach(): Unit = {
+    deleteAllBuffer()
+  }
 
   val path = "/vatregistrations"
 
@@ -68,6 +72,47 @@ class InboundDataControllerISpec extends IntegrationSpecBase {
             val body = Json.parse(resp.body)
             (body \ "outcome").as[String] shouldBe "FAILURE"
             (body \ "code").as[String] shouldBe "INVALID_PAYLOAD"
+          }
+        }
+
+        "not insert the payload in the buffer repository and return 400 with INVALID PAYLOAD when createandUpdates contains an exact duplicate" in {
+          stubAudit
+          val request = Json.toJson(Payload(List(acmeTradingWithVatNo1, acmeTradingWithVatNo1), List.empty)
+          )
+          val res = buildRequest(path)
+            .addHttpHeaders(
+              (AUTHORIZATION, AUTHORISATION_TOKEN),
+              (CONTENT_TYPE, "application/json")
+            )
+            .post(request)
+
+          whenReady(res) { resp =>
+            resp.status shouldBe 400
+            val body = Json.parse(resp.body)
+            (body \ "outcome").as[String] shouldBe "FAILURE"
+            (body \ "code").as[String] shouldBe "INVALID_PAYLOAD"
+            //buffer must stay empty
+            await(payloadBufferRepository.list) shouldBe empty
+          }
+        }
+
+        "accept the same vatNumber with different details and insert one paylaod in the buffer" in {
+          stubAudit
+          val request = Json.toJson(Payload(List(acmeTradingWithVatNo1, deltaTradingWithVatNo1), List.empty)
+          )
+          val res = buildRequest(path)
+            .addHttpHeaders(
+              (AUTHORIZATION, AUTHORISATION_TOKEN),
+              (CONTENT_TYPE, "application/json")
+            )
+            .post(request)
+
+          whenReady(res) { resp =>
+            resp.status shouldBe 200
+            val body = Json.parse(resp.body)
+            (body \ "outcome").as[String] shouldBe "SUCCESS"
+            //buffer must not be empty
+            await(payloadBufferRepository.list).size shouldBe 1
           }
         }
       }

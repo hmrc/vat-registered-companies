@@ -18,12 +18,14 @@ package uk.gov.hmrc.vatregisteredcompanies.helpers
 
 import org.mongodb.scala.model.Filters
 import uk.gov.hmrc.vatregisteredcompanies.models.VatRegisteredCompany
-import uk.gov.hmrc.vatregisteredcompanies.repositories.{VatRegisteredCompaniesRepository, Wrapper}
+import uk.gov.hmrc.vatregisteredcompanies.repositories.Wrapper
 import org.mongodb.scala.SingleObservableFuture
+import uk.gov.hmrc.http.HeaderCarrier
 
 trait VatRegisteredCompaniesDatabaseOperations {
 
   self: IntegrationSpecBase =>
+  implicit val hc: HeaderCarrier = HeaderCarrier()
 
   def insertOne(vatRegisteredCompany: VatRegisteredCompany): Unit = {
     val wrapper = Wrapper(vatRegisteredCompany.vatNumber, vatRegisteredCompany)
