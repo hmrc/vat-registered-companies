@@ -16,13 +16,24 @@
 
 package uk.gov.hmrc.vatregisteredcompanies.repository
 
+import org.mongodb.scala.{MongoCommandException, SingleObservableFuture}
+import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.vatregisteredcompanies.helpers.IntegrationSpecBase
-import uk.gov.hmrc.vatregisteredcompanies.helpers.TestData._
+import uk.gov.hmrc.vatregisteredcompanies.helpers.TestData.*
 import uk.gov.hmrc.vatregisteredcompanies.repositories.PayloadWrapper
 
 class VatRegisteredCompaniesRepositoryISpec extends IntegrationSpecBase {
+
+  def allowDuplicates(): Unit = {
+    await(vatRegisteredCompaniesRepository.collection.dropIndex("vatNumber_prepare_unique_idx").toFuture().map(_ => ()).recover {
+      case e: MongoCommandException if e.getErrorCode == 27 => ()
+    }
+    )
+  }
+
   override def beforeEach(): Unit = {
     deleteAll()
+    await(vatRegisteredCompaniesRepository.applyPrepareUnique())
   }
 
   "Method: process" when {
@@ -55,7 +66,22 @@ class VatRegisteredCompaniesRepositoryISpec extends IntegrationSpecBase {
           val result = vatRegisteredCompaniesRepository.process(payload)
           whenReady(result) { res =>
             res shouldBe ((): Unit)
-            totalCount shouldBe 4
+            totalCount shouldBe 3
+          }
+        }
+
+        "produce the same database state when the same payload is processed twice" in {
+          val payload = PayloadWrapper(payload = testPayloadCreateAndUpdates)
+          val firstResult = vatRegisteredCompaniesRepository.process(payload)
+          whenReady(firstResult) { first =>
+            first shouldBe ((): Unit)
+            totalCount shouldBe 2
+
+            val secondResult = vatRegisteredCompaniesRepository.process(payload)
+            whenReady(secondResult) { second =>
+              second shouldBe ((): Unit)
+              totalCount shouldBe 2
+            }
           }
         }
 
@@ -66,6 +92,7 @@ class VatRegisteredCompaniesRepositoryISpec extends IntegrationSpecBase {
   "Method: lookup" should {
     "return the latest lookup response with the vatRegisteredCompany" when {
       "the database has no records" in {
+        implicit val hc: HeaderCarrier = HeaderCarrier()
         val result = vatRegisteredCompaniesRepository.lookup(testVatNo1)
         whenReady(result) { res =>
           res shouldBe None
@@ -73,6 +100,7 @@ class VatRegisteredCompaniesRepositoryISpec extends IntegrationSpecBase {
       }
 
       "the database has a record with the matching vatNumber" in {
+        implicit val hc: HeaderCarrier = HeaderCarrier()
         insertOne(acmeTradingWithVatNo1)
         val result = vatRegisteredCompaniesRepository.lookup(testVatNo1)
 
@@ -84,12 +112,13 @@ class VatRegisteredCompaniesRepositoryISpec extends IntegrationSpecBase {
       }
 
       "the database has more than one record with the vatNumber" in {
+        allowDuplicates()
         val oldestRecord = acmeTradingWithVatNo1
         val newestRecord = oldestRecord.copy(name = "newCompany")
         insertOne(oldestRecord)
         Thread.sleep(100)
         insertOne(newestRecord)
-
+        implicit val hc: HeaderCarrier = HeaderCarrier()
         val result = vatRegisteredCompaniesRepository.lookup(testVatNo1)
         whenReady(result) {res =>
           res shouldBe defined

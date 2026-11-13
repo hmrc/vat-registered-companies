@@ -16,17 +16,32 @@
 
 package uk.gov.hmrc.vatregisteredcompanies.schedulers
 
+import org.mongodb.scala.model.*
+import play.api.Configuration
 import uk.gov.hmrc.vatregisteredcompanies.helpers.IntegrationSpecBase
-import uk.gov.hmrc.vatregisteredcompanies.helpers.TestData._
-import org.mongodb.scala.ObservableFuture
+import uk.gov.hmrc.vatregisteredcompanies.helpers.TestData.*
+import org.mongodb.scala.{MongoCommandException, ObservableFuture, documentToUntypedDocument}
+import uk.gov.hmrc.vatregisteredcompanies.models.Payload
 
 class PayloadConversionSchedulerISpec extends IntegrationSpecBase {
+
+  def allowDuplicates(): Unit = {
+    await(vatRegisteredCompaniesRepository.collection.dropIndex("vatNumber_prepare_unique_idx").toFuture().map(_ => ()).recover {
+      case e: MongoCommandException if e.getErrorCode == 27 => ()
+    }
+    )
+  }
+
+  private val prepareUniqueEnabled: Boolean = app.injector.instanceOf[Configuration].getOptional[Boolean]("microservice.services.vatRegisteredCompanies.prepare-unique.enabled").getOrElse(false)
 
   override def beforeEach(): Unit = {
     deleteAll()
     clearLock()
     deleteAllBuffer()
   }
+
+  def vatNumber(i: Int): String = (100000000000L + i).toString
+
   "processOneData" when {
     "the lock is not already acquired" should {
       "get the oldest payload from the buffer repository and process it then delete buffer record" when {
@@ -42,13 +57,13 @@ class PayloadConversionSchedulerISpec extends IntegrationSpecBase {
 
             val res = persistenceService.processOneData
 
-            whenReady(res) {result =>
+            whenReady(res) { result =>
               result shouldBe ((): Unit)
 
               //check records inserted into vatRegisteredCompanies database
               totalCount shouldBe 2
               val checkCompanyInserted = vatRegisteredCompaniesRepository.collection.find().toFuture()
-                Thread.sleep(100)
+              Thread.sleep(100)
               checkCompanyInserted.toString should include(testVatNo1)
               checkCompanyInserted.toString should include(testVatNo2)
               //check buffer record deleted
@@ -66,7 +81,7 @@ class PayloadConversionSchedulerISpec extends IntegrationSpecBase {
 
             val res = persistenceService.processOneData
 
-            whenReady(res) {result =>
+            whenReady(res) { result =>
               result shouldBe ((): Unit)
               //check records deleted from vatRegisteredCompanies database
               vatRegisteredCompaniesRepository.collection.find().toFuture().value shouldBe empty
@@ -79,36 +94,66 @@ class PayloadConversionSchedulerISpec extends IntegrationSpecBase {
             }
           }
 
+          "contains a payload with the same vat number more than once in createsAndUpdates" in {
+            //insert one record into buffer repository that has a payload with only deletes
+            insertOneBuffer(testVATNo1MultipleEntries)
+            Thread.sleep(100)
+            bufferTotalCount shouldBe 1
+            totalCount shouldBe 0
+
+            val res = persistenceService.processOneData
+
+            whenReady(res) { result =>
+              result shouldBe ((): Unit)
+
+              //one record per VAT number: vatNo1 once, vatNo2 once
+              totalCount shouldBe 2
+
+              //the Last entry in the payload wins for vatNo1
+              val record1 = getRecord(testVatNo1)
+              record1 shouldBe defined
+              record1.get.name shouldBe "Delta Trading"
+
+              val record2 = getRecord(testVatNo2)
+              record2 shouldBe defined
+              record2.get.name shouldBe "ACME Trading"
+
+              bufferTotalCount shouldBe 0
+              isLocked shouldBe false
+            }
+          }
+
+
           "contains a payload with both createsAndUpdates and deletes" in {
             //insert one record into buffer repository that has a payload with createAndUpdates and deletes
             bufferTotalCount shouldBe 0
             insertOneBuffer(testPayloadCreateAndDeletes)
-                //this inserts companies with vatNo1 and vatNo2
-                //deletes is deleting vatNo1 and vatNo3
+            //this inserts companies with vatNo1 and vatNo2
+            //deletes is deleting vatNo1 and vatNo3
             Thread.sleep(100)
             bufferTotalCount shouldBe 1
             totalCount shouldBe 0
 
             val payloadSentToBufferRepo = await(payloadBufferRepository.list)
-            payloadSentToBufferRepo.mkString should include (testVatNo1)
-            payloadSentToBufferRepo.mkString should include (testVatNo2)
+            payloadSentToBufferRepo.mkString should include(testVatNo1)
+            payloadSentToBufferRepo.mkString should include(testVatNo2)
 
             val res = persistenceService.processOneData
 
-            whenReady(res) {result =>
+            whenReady(res) { result =>
               result shouldBe ((): Unit)
               //check records inserted into vatRegisteredCompanies database
-                val checkCompanyInserted = vatRegisteredCompaniesRepository.collection.find().toFuture()
-                Thread.sleep(500)
-                checkCompanyInserted.toString should include(testVatNo2)
+              val checkCompanyInserted = vatRegisteredCompaniesRepository.collection.find().toFuture()
+              Thread.sleep(500)
+              checkCompanyInserted.toString should include(testVatNo2)
               //check records deleted from vatRegisteredCompanies database
-                checkCompanyInserted.toString shouldNot include(testVatNo1)
+              checkCompanyInserted.toString shouldNot include(testVatNo1)
 
               totalCount shouldBe 1
               val secondCompanyStillPresent = vatRegisteredCompaniesRepository.collection.find().toFuture()
               Thread.sleep(500)
-              secondCompanyStillPresent.toString shouldNot  include (testVatNo1)
-              secondCompanyStillPresent.toString should include (testVatNo2)
+              secondCompanyStillPresent.toString shouldNot include(testVatNo1)
+              secondCompanyStillPresent.toString should include(testVatNo2)
               //check buffer record deleted
               bufferTotalCount shouldBe 0
               //check lock has been removed
@@ -119,7 +164,164 @@ class PayloadConversionSchedulerISpec extends IntegrationSpecBase {
 
             }
           }
+
+          "contains a payload with more than 50 createsAndUpdates (multiple batches)" in {
+            //120 distinct VAT numbers -> batches of 50 , 50 , 20
+            val companies = (1 to 120).toList.map { i =>
+              getVatRegCompany((100000000000L + i).toString, s"Company $i")
+            }
+            insertOneBuffer(Payload(companies, List()))
+            Thread.sleep(100)
+            bufferTotalCount shouldBe 1
+            totalCount shouldBe 0
+
+            println(s"buffer details bufferCount=$bufferTotalCount total=$totalCount locked=$isLocked")
+            val res = persistenceService.processOneData
+            whenReady(res) { result =>
+              result shouldBe ((): Unit)
+
+              //all three batches ran
+              totalCount shouldBe 120
+
+              // check one record from each batch
+              getRecord("100000000001").get.name shouldBe "Company 1"
+              getRecord("100000000075").get.name shouldBe "Company 75"
+              getRecord("100000000120").get.name shouldBe "Company 120"
+
+              //buffer cleared and lock released only after everything finished
+              bufferTotalCount shouldBe 0
+              isLocked shouldBe false
+
+            }
+          }
+
+          "contains the same vatNumber twice in different batches" in {
+            val companies = (1 to 120).toList.map { i =>
+              //position 80 reuses vatNo1 with a different name
+              if (i == 80) getVatRegCompany(vatNumber(1), "Later name")
+              else getVatRegCompany(vatNumber(i), s"Company $i")
+            }
+            insertOneBuffer(Payload(companies, List()))
+            Thread.sleep(100)
+            bufferTotalCount shouldBe 1
+            whenReady(persistenceService.processOneData) { _ =>
+              totalCount shouldBe 119
+              getRecord(vatNumber(1)).get.name shouldBe "Later name"
+              bufferTotalCount shouldBe 0
+              isLocked shouldBe false
+            }
+          }
+
+          "reach the correct final state when deletes were already partly done" in {
+
+            //vatNumber(1) and vatNumber(2) are already deleted by an earlier attempt; vatNumber(3) is not
+            insertOne(getVatRegCompany(vatNumber(3), "pending delete"))
+            insertOne(getVatRegCompany(vatNumber(4), "unrelated"))
+
+
+            val payload = Payload(List(getVatRegCompany(vatNumber(10), "10th name")), List(vatNumber(1), vatNumber(2), vatNumber(3)))
+
+            insertOneBuffer(payload)
+            Thread.sleep(100)
+            whenReady(persistenceService.processOneData) { _ =>
+              val records = vatRegisteredCompaniesRepository.collection.find().toFuture()
+              records.futureValue.toString shouldNot include (vatNumber(3))
+             // getRecord(vatNumber(3)) shouldBe None
+              getRecord(vatNumber(4)).get.name shouldBe "unrelated"
+              getRecord(vatNumber(10)).get.name shouldBe "10th name"
+              totalCount shouldBe 2
+              bufferTotalCount shouldBe 0
+            }
+
+            //same payload again: every delete is now a no-op, final state unchanged
+            insertOneBuffer(payload)
+            Thread.sleep(100)
+            whenReady(persistenceService.processOneData) { _ =>
+              totalCount shouldBe 2
+              getRecord(vatNumber(10)).get.name shouldBe "10th name"
+              isLocked shouldBe false
+            }
+          }
+
+          "keep the payload for retry when a later upsert fails, then reach the right state on retry" in {
+            val coll = vatRegisteredCompaniesRepository.collection
+            val tmpIndex = "tmp_company_name_unique"
+            // clear any leftover from an earlier killed run
+            await(coll.dropIndex(tmpIndex).toFuture().map(_ => ()).recover { case e: MongoCommandException if e.getErrorCode == 27 => () })
+            // 120 entries = batches of 50, 50, 20.
+            // Entry 75 (batch 2) reuses entry 1's name, so it will violate the temporary unique index.
+            val companies = (1 to 120).toList.map { i =>
+              getVatRegCompany(vatNumber(i), if (i == 75) "Company 1" else s"Company $i")
+            }
+            insertOne(getVatRegCompany(vatNumber(200), "ToDelete")) // removed by the payload's deletes
+            insertOneBuffer(Payload(companies, List(vatNumber(200))))
+            Thread.sleep(100)
+            bufferTotalCount shouldBe 1
+            totalCount shouldBe 1
+            // temporary index that makes entry 75 fail
+            await(coll.createIndex(Indexes.ascending("company.name"),
+              IndexOptions().name(tmpIndex).unique(true)).toFuture())
+            try {
+              // first attempt fails in batch 2
+              persistenceService.processOneData.failed.futureValue
+              bufferTotalCount shouldBe 1 // payload kept for retry
+              isLocked shouldBe false
+              totalCount shouldBe 100 //seed + 50 (batch 1) + 49 (batch 2); batch 3 never ran
+              getRecord(vatNumber(200)) shouldBe defined // delete did not start
+            } finally {
+              await(coll.dropIndex(tmpIndex).toFuture()) // always clean up
+            }
+            // retry now succeeds
+            whenReady(persistenceService.processOneData) { _ =>
+              totalCount shouldBe 120 // 120 upserts, vatNo(200) deleted
+              val records = vatRegisteredCompaniesRepository.collection.find().toFuture()
+              records.futureValue.toString shouldNot include(vatNumber(200))
+              getRecord(vatNumber(1)).get.name shouldBe "Company 1"
+              getRecord(vatNumber(75)).get.name shouldBe "Company 1"
+              getRecord(vatNumber(120)).get.name shouldBe "Company 120" // batch 3 ran on retry
+              bufferTotalCount shouldBe 0
+              isLocked shouldBe false
+            }
+          }
+
+          "warn and continue when the prepareUnique index cannot be created" in {
+            val coll = vatRegisteredCompaniesRepository.collection
+            val idxName = "vatNumber_prepare_unique_idx"
+            if (prepareUniqueEnabled) {
+              allowDuplicates() // remove the real index first
+              // conflicting index: same name, different key, so setup cannot succeed
+              await(coll.createIndex(
+                Indexes.descending("vatNumber"),
+                IndexOptions().name(idxName)).toFuture())
+              try {
+                //awaiting this should not throw an exception.(warn and continue)
+                await(vatRegisteredCompaniesRepository.applyPrepareUnique())
+                // the conflicting index in place is NOT prepareUnique
+                val idx = await(coll.listIndexes().toFuture()).find(_.getString("name") == idxName)
+                idx shouldBe defined
+                idx.get.getBoolean("prepareUnique", false) shouldBe false
+                // 3. processing still works without the index (warn and continue)
+                insertOneBuffer(Payload(List(acmeTradingWithVatNo1), List()))
+                Thread.sleep(100)
+
+                whenReady(persistenceService.processOneData) { _ =>
+                  totalCount shouldBe 1
+                  bufferTotalCount shouldBe 0
+                  isLocked shouldBe false
+                }
+              } finally {
+                // always remove the conflicting index so beforeEach can restore the real one
+                await(coll.dropIndex(idxName).toFuture())
+              }
+            } else {
+              // flag off: setup is a no-op and no index is created
+              await(vatRegisteredCompaniesRepository.applyPrepareUnique())
+              val names = await(coll.listIndexes().toFuture()).map(_.getString("name"))
+              names should not contain idxName
+            }
+          }
         }
+
 
         "there is one record in the buffer" that {
           "contains a payload with only createsAndUpdates" in {
@@ -140,9 +342,9 @@ class PayloadConversionSchedulerISpec extends IntegrationSpecBase {
               //check records inserted into vatRegisteredCompanies database
                   val checkCompanyInserted = vatRegisteredCompaniesRepository.collection.find().toFuture()
                   Thread.sleep(500)
-              checkCompanyInserted.futureValue.head.company shouldBe deltaTradingWithVatNo1
+              checkCompanyInserted.futureValue.head.company shouldBe acmeTradingWithVatNo1
               checkCompanyInserted.futureValue.last.company shouldBe acmeTradingWithVatNo2
-              totalCount shouldBe 3
+              totalCount shouldBe 2
                   // 2 records in buffer were inserted.  1 record through vat company
               //check buffer record deleted
               bufferTotalCount shouldBe 0
@@ -201,10 +403,10 @@ class PayloadConversionSchedulerISpec extends IntegrationSpecBase {
               //check records deleted from vatRegisteredCompanies database
               val checkCompanyInserted = vatRegisteredCompaniesRepository.collection.find().toFuture()
                   // 2 companies were inserted, 1 present through VRC insertion = 3, 2 listed for delete, only 1 found = 2 companies present.
-              checkCompanyInserted.futureValue.head.company shouldBe deltaTradingWithVatNo1
+              checkCompanyInserted.futureValue.head.company shouldBe acmeTradingWithVatNo1
               checkCompanyInserted.futureValue.last.company shouldBe acmeTradingWithVatNo1
               Thread.sleep(100)
-              totalCount shouldBe 2
+              totalCount shouldBe 1
 
               //check buffer record deleted
               bufferTotalCount shouldBe 0
@@ -236,7 +438,8 @@ class PayloadConversionSchedulerISpec extends IntegrationSpecBase {
               //check records inserted into vatRegisteredCompanies database
               val checkCompanyInserted = vatRegisteredCompaniesRepository.collection.find().toFuture()
 //              // 2 companies were inserted
-              checkCompanyInserted.futureValue.head.company shouldBe acmeTradingWithVatNo3
+              val companies = checkCompanyInserted.futureValue
+              companies.map(_.vatNumber) should contain allOf (testVatNo3,testVatNo4)
               totalCount shouldBe 2
 
               //check buffer record with payload containing only createsandupdates is deleted
@@ -320,14 +523,13 @@ class PayloadConversionSchedulerISpec extends IntegrationSpecBase {
               result shouldBe ((): Unit)
 
               //check records inserted or deleted into vatRegisteredCompanies database
-              totalCount shouldBe 3
+              totalCount shouldBe 2
               //after buffer insert - there would be 6 companies (vat 1 x 2, vat 2 x 2, vat 3, vat 4
               // then the deletes would remove any vat2 and vat 3 companies (-3 records)
 
               val records = vatRegisteredCompaniesRepository.collection.find().toFuture()
               records.futureValue.apply(0).company shouldBe acmeTradingWithVatNo4
               records.futureValue.apply(1).company shouldBe acmeTradingWithVatNo1
-              records.futureValue.apply(2).company shouldBe acmeTradingWithVatNo1
               records.futureValue.toString shouldNot include (testVatNo2)
               records.futureValue.toString shouldNot include(testVatNo3)
 //              //check buffer record deleted with payload containing createsAndUpdates and deletes
