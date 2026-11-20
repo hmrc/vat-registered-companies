@@ -31,7 +31,7 @@ trait ExtraActions {
   def servicesConfig: ServicesConfig
   def messagesControllerComponents: MessagesControllerComponents
   val InboundDataAction: ActionBuilder[Request, AnyContent] = AuthorisedFilterAction
-  val bearerToken = s"Bearer ${servicesConfig.getConfString("mdg.inboundData.test.token", "")}"
+  val bearerToken = s"Bearer ${servicesConfig.getConfString("mdg.inboundData.token", "")}"
 
   object AuthorisedFilterAction extends ActionBuilder[Request, AnyContent] with ActionFilter[Request] {
     override protected def filter[A](request: Request[A]): Future[Option[Result]] = {
