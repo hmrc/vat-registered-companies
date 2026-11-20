@@ -50,7 +50,7 @@ class InboundDataControllerSpec extends AnyWordSpec
         "auditing.enabled" -> "false",
         "microservice.services.schedulers.old-data-deletion.enabled" -> false,
         "microservice.services.schedulers.payload.conversion.enabled" -> false,
-        "microservice.services.mdg.inboundData.token" -> token
+        "microservice.services.mdg.inboundData.test.token" -> token
       )
     ).build()
 
