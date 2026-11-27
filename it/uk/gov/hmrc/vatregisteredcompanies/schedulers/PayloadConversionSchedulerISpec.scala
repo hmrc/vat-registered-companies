@@ -16,23 +16,24 @@
 
 package uk.gov.hmrc.vatregisteredcompanies.schedulers
 
+import com.mongodb.MongoException
+import org.bson.conversions.Bson
+import org.mockito.ArgumentMatchers.any
+import org.mockito.Mockito.{doAnswer, doReturn, spy}
+import org.mongodb.scala.bson.BsonDocument
 import org.mongodb.scala.model.*
-import play.api.Configuration
 import uk.gov.hmrc.vatregisteredcompanies.helpers.IntegrationSpecBase
 import uk.gov.hmrc.vatregisteredcompanies.helpers.TestData.*
-import org.mongodb.scala.{MongoCommandException, ObservableFuture, documentToUntypedDocument}
+import org.mongodb.scala.{MongoCommandException, ObservableFuture, SingleObservableFuture}
 import uk.gov.hmrc.vatregisteredcompanies.models.Payload
+import uk.gov.hmrc.vatregisteredcompanies.repositories.Wrapper
+import uk.gov.hmrc.vatregisteredcompanies.services.PersistenceService
+
+import java.util.concurrent.ConcurrentLinkedQueue
+import java.util.concurrent.atomic.AtomicBoolean
+import scala.jdk.CollectionConverters.*
 
 class PayloadConversionSchedulerISpec extends IntegrationSpecBase {
-
-  def allowDuplicates(): Unit = {
-    await(vatRegisteredCompaniesRepository.collection.dropIndex("vatNumber_prepare_unique_idx").toFuture().map(_ => ()).recover {
-      case e: MongoCommandException if e.getErrorCode == 27 => ()
-    }
-    )
-  }
-
-  private val prepareUniqueEnabled: Boolean = app.injector.instanceOf[Configuration].getOptional[Boolean]("microservice.services.vatRegisteredCompanies.prepare-unique.enabled").getOrElse(false)
 
   override def beforeEach(): Unit = {
     deleteAll()
@@ -212,6 +213,81 @@ class PayloadConversionSchedulerISpec extends IntegrationSpecBase {
             }
           }
 
+          List(false, true).foreach { alreadyExists =>
+            s"let delete win and safely replay when the overlapping VAT number initially exists=$alreadyExists" in {
+              if (alreadyExists) insertOne(acmeTradingWithVatNo1)
+              insertOne(acmeTradingWithVatNo4)
+              val payload = Payload(List(deltaTradingWithVatNo1, acmeTradingWithVatNo2), List(testVatNo1))
+              val expected = Set(
+                Wrapper(testVatNo2, acmeTradingWithVatNo2), Wrapper(testVatNo4, acmeTradingWithVatNo4)
+              )
+
+              (1 to 2).foreach { _ =>
+                insertOneBuffer(payload)
+                persistenceService.processOneData.futureValue
+
+                vatRegisteredCompaniesRepository.collection.find().toFuture().futureValue.toSet shouldBe expected
+                totalCount shouldBe expected.size
+                vatRegisteredCompaniesRepository.lookup(testVatNo1).futureValue shouldBe None
+                listBuffer.futureValue shouldBe empty
+                isLocked shouldBe false
+              }
+            }
+          }
+
+          "retain the payload after a later delete fails and safely retry all completed operations" in {
+            val collection = vatRegisteredCompaniesRepository.collection
+            val firstDelete = getVatRegCompany(vatNumber(201), "First delete")
+            val failedDelete = getVatRegCompany(vatNumber(202), "Failing delete")
+            val lastDelete = getVatRegCompany(vatNumber(203), "Last delete")
+            val unrelated = getVatRegCompany(vatNumber(250), "Unrelated company")
+            val companies = (1 to 120).toList.map(i => getVatRegCompany(vatNumber(i), s"Company $i"))
+            insertMany(List(firstDelete, failedDelete, lastDelete, unrelated))
+            val payload = Payload(companies, List(firstDelete.vatNumber, failedDelete.vatNumber, lastDelete.vatNumber))
+            val buffered = createPayloadWrapper(payload)
+            payloadBufferRepository.collection.insertOne(buffered).toFuture().futureValue
+
+            val failNextDelete = new AtomicBoolean(true)
+            val attemptedDeletes = new ConcurrentLinkedQueue[String]()
+            val failingCollection = spy(collection)
+            doAnswer { invocation =>
+              val filter = invocation.getArgument[Bson](0)
+              val vrn = filter.toBsonDocument(classOf[BsonDocument], collection.codecRegistry)
+                .getString("vatNumber").getValue
+              attemptedDeletes.add(vrn)
+              if (vrn == failedDelete.vatNumber && failNextDelete.getAndSet(false)) {
+                collection.deleteMany(BsonDocument("$invalidDeleteFilter" -> 1))
+              } else collection.deleteMany(filter)
+            }.when(failingCollection).deleteMany(any[Bson]())
+
+            val repository = spy(vatRegisteredCompaniesRepository)
+            doReturn(failingCollection).when(repository).collection
+            val service = new PersistenceService(repository, payloadBufferRepository, lockRepository)
+
+            val failure = service.processOneData.failed.futureValue
+            failure shouldBe a[MongoException]
+            failure.asInstanceOf[MongoException].getCode shouldBe 2
+            attemptedDeletes.asScala.toList shouldBe List(firstDelete.vatNumber, failedDelete.vatNumber)
+            listBuffer.futureValue shouldBe List(buffered)
+            isLocked shouldBe false
+
+            val afterFailure = (companies ++ List(failedDelete, lastDelete, unrelated))
+              .map(company => Wrapper(company.vatNumber, company)).toSet
+            collection.find().toFuture().futureValue.toSet shouldBe afterFailure
+            totalCount shouldBe afterFailure.size
+
+            service.processOneData.futureValue
+            attemptedDeletes.asScala.toList shouldBe List(
+              firstDelete.vatNumber, failedDelete.vatNumber,
+              firstDelete.vatNumber, failedDelete.vatNumber, lastDelete.vatNumber
+            )
+            val expected = (companies :+ unrelated).map(company => Wrapper(company.vatNumber, company)).toSet
+            collection.find().toFuture().futureValue.toSet shouldBe expected
+            totalCount shouldBe expected.size
+            listBuffer.futureValue shouldBe empty
+            isLocked shouldBe false
+          }
+
           "reach the correct final state when deletes were already partly done" in {
 
             //vatNumber(1) and vatNumber(2) are already deleted by an earlier attempt; vatNumber(3) is not
@@ -284,42 +360,6 @@ class PayloadConversionSchedulerISpec extends IntegrationSpecBase {
             }
           }
 
-          "warn and continue when the prepareUnique index cannot be created" in {
-            val coll = vatRegisteredCompaniesRepository.collection
-            val idxName = "vatNumber_prepare_unique_idx"
-            if (prepareUniqueEnabled) {
-              allowDuplicates() // remove the real index first
-              // conflicting index: same name, different key, so setup cannot succeed
-              await(coll.createIndex(
-                Indexes.descending("vatNumber"),
-                IndexOptions().name(idxName)).toFuture())
-              try {
-                //awaiting this should not throw an exception.(warn and continue)
-                await(vatRegisteredCompaniesRepository.applyPrepareUnique())
-                // the conflicting index in place is NOT prepareUnique
-                val idx = await(coll.listIndexes().toFuture()).find(_.getString("name") == idxName)
-                idx shouldBe defined
-                idx.get.getBoolean("prepareUnique", false) shouldBe false
-                // 3. processing still works without the index (warn and continue)
-                insertOneBuffer(Payload(List(acmeTradingWithVatNo1), List()))
-                Thread.sleep(100)
-
-                whenReady(persistenceService.processOneData) { _ =>
-                  totalCount shouldBe 1
-                  bufferTotalCount shouldBe 0
-                  isLocked shouldBe false
-                }
-              } finally {
-                // always remove the conflicting index so beforeEach can restore the real one
-                await(coll.dropIndex(idxName).toFuture())
-              }
-            } else {
-              // flag off: setup is a no-op and no index is created
-              await(vatRegisteredCompaniesRepository.applyPrepareUnique())
-              val names = await(coll.listIndexes().toFuture()).map(_.getString("name"))
-              names should not contain idxName
-            }
-          }
         }
 
 

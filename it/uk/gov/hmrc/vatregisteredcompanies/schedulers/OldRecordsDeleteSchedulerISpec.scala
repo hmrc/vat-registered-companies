@@ -16,8 +16,6 @@
 
 package uk.gov.hmrc.vatregisteredcompanies.schedulers
 
-import org.mongodb.scala.{MongoCommandException, SingleObservableFuture}
-import play.api.Configuration
 import uk.gov.hmrc.vatregisteredcompanies.helpers.IntegrationSpecBase
 import uk.gov.hmrc.vatregisteredcompanies.helpers.TestData.{acmeTradingWithVatNo1, acmeTradingWithVatNo2, acmeTradingWithVatNo3, deltaTradingWithVatNo1, deltaTradingWithVatNo2, expiredTestLock, testLock, testVatNo1, testVatNo2}
 
@@ -25,19 +23,9 @@ class OldRecordsDeleteSchedulerISpec  extends IntegrationSpecBase {
 
   val limit = 2
 
-  def allowDuplicates(): Unit = {
-    await(vatRegisteredCompaniesRepository.collection.dropIndex("vatNumber_prepare_unique_idx").toFuture().map(_ => ()).recover {
-      case e: MongoCommandException if e.getErrorCode == 27 => ()
-    }
-    )
-  }
-
-  private val prepareUniqueEnabled: Boolean = app.injector.instanceOf[Configuration].getOptional[Boolean]("microservice.services.vatRegisteredCompanies.prepare-unique.enabled").getOrElse(false)
-
   override def beforeEach(): Unit = {
     deleteAll()
     clearLock()
-    await(vatRegisteredCompaniesRepository.applyPrepareUnique())
   }
 
   "deleteOld with limit 2" when {
@@ -59,11 +47,9 @@ class OldRecordsDeleteSchedulerISpec  extends IntegrationSpecBase {
       }
       "remove the oldest record(s)" when {
         "there is one VatNumber with more than one record associated with" in {
-          allowDuplicates()
           //insert into vatRegisteredCompanies records with different vatNumbers
           insertMany(List(acmeTradingWithVatNo1, acmeTradingWithVatNo2, acmeTradingWithVatNo3))
           Thread.sleep(100)
-          //duplicate exist so the index must not be there
 
           //insert into vatRegisteredCompanies a record with a vatNumber used above but slightly different details
           insertOne(deltaTradingWithVatNo1)
@@ -83,7 +69,6 @@ class OldRecordsDeleteSchedulerISpec  extends IntegrationSpecBase {
         "remove the oldest record(s)" when {
           "leave the data unchanged when reconciliation runs again" in {
 
-            allowDuplicates()
             //insert into vatRegisteredCompanies records with different vatNumbers
             insertMany(List(acmeTradingWithVatNo1, acmeTradingWithVatNo2, acmeTradingWithVatNo3))
             Thread.sleep(100)
@@ -115,26 +100,10 @@ class OldRecordsDeleteSchedulerISpec  extends IntegrationSpecBase {
             }
           }
 
-          "handle a second record for the same vatNumber according to the prepareUnique flag" in {
-
-            insertOne(acmeTradingWithVatNo1)
-            Thread.sleep(100)
-
-            if (prepareUniqueEnabled) {
-              intercept[Exception](insertOne(deltaTradingWithVatNo1)).getMessage should include("E11000")
-              totalCount shouldBe 1
-            }
-            else {
-              allowDuplicates()
-              insertOne(deltaTradingWithVatNo1)
-              totalCount shouldBe 2
-            }
-          }
         }
 
         "there are two VatNumber with more than one record associated with" in {
 
-          allowDuplicates()
           //insert into vatRegisteredCompanies records with different vatNumbers
           insertMany(List(acmeTradingWithVatNo1, deltaTradingWithVatNo2, acmeTradingWithVatNo3))
           Thread.sleep(100)
@@ -160,7 +129,6 @@ class OldRecordsDeleteSchedulerISpec  extends IntegrationSpecBase {
 
       "remove only two of the oldest record(s)" when {
         "there are three VatNumber with more than one record associated with and the limit is 2" in {
-          allowDuplicates()
           //insert into vatRegisteredCompanies records with different vatNumbers
           insertMany(List(acmeTradingWithVatNo1, acmeTradingWithVatNo2, acmeTradingWithVatNo3))
           Thread.sleep(100)
@@ -182,7 +150,6 @@ class OldRecordsDeleteSchedulerISpec  extends IntegrationSpecBase {
     "the lock is already acquired" when {
       "it is within the TTL" should {
         "not run the deleteOld job and return unit" in {
-          allowDuplicates()
           //insert into vatRegisteredCompanies records with different vatNumbers
           insertMany(List(acmeTradingWithVatNo1, acmeTradingWithVatNo2, acmeTradingWithVatNo3))
           Thread.sleep(100)
@@ -205,7 +172,6 @@ class OldRecordsDeleteSchedulerISpec  extends IntegrationSpecBase {
 
       "it is outside of the TTL" should {
         "not run the deleteOld job, remove the lock and return unit" in {
-          allowDuplicates()
           //insert into vatRegisteredCompanies records with different vatNumbers
           insertMany(List(acmeTradingWithVatNo1, acmeTradingWithVatNo2, acmeTradingWithVatNo3))
           Thread.sleep(100)

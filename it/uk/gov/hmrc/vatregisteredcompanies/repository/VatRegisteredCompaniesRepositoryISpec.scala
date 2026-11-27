@@ -16,7 +16,6 @@
 
 package uk.gov.hmrc.vatregisteredcompanies.repository
 
-import org.mongodb.scala.{MongoCommandException, SingleObservableFuture}
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.vatregisteredcompanies.helpers.IntegrationSpecBase
 import uk.gov.hmrc.vatregisteredcompanies.helpers.TestData.*
@@ -24,16 +23,8 @@ import uk.gov.hmrc.vatregisteredcompanies.repositories.PayloadWrapper
 
 class VatRegisteredCompaniesRepositoryISpec extends IntegrationSpecBase {
 
-  def allowDuplicates(): Unit = {
-    await(vatRegisteredCompaniesRepository.collection.dropIndex("vatNumber_prepare_unique_idx").toFuture().map(_ => ()).recover {
-      case e: MongoCommandException if e.getErrorCode == 27 => ()
-    }
-    )
-  }
-
   override def beforeEach(): Unit = {
     deleteAll()
-    await(vatRegisteredCompaniesRepository.applyPrepareUnique())
   }
 
   "Method: process" when {
@@ -112,7 +103,6 @@ class VatRegisteredCompaniesRepositoryISpec extends IntegrationSpecBase {
       }
 
       "the database has more than one record with the vatNumber" in {
-        allowDuplicates()
         val oldestRecord = acmeTradingWithVatNo1
         val newestRecord = oldestRecord.copy(name = "newCompany")
         insertOne(oldestRecord)
