@@ -46,7 +46,7 @@ class PersistenceService @Inject()(
 
   def processOneData: Future[Unit] = {
     val x = for {
-      _ <- OptionT.liftF(repository.awaitPrepareUnique)
+      _ <- OptionT.liftF(repository.initialised)
       bp <- OptionT(buffer.one)
       _  <- OptionT.liftF(withLock(1)(repository.process(bp)))
     } yield {}

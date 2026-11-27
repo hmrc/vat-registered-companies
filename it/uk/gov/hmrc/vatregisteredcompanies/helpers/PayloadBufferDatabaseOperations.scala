@@ -50,7 +50,7 @@ trait PayloadBufferDatabaseOperations {
     await(payloadBufferRepository.deleteOne(payloadWrapper))
   }
   def deleteAllBuffer(): Unit = {
-      payloadBufferRepository.collection.deleteMany(Filters.empty()).toFuture()
+      await(payloadBufferRepository.collection.deleteMany(Filters.empty()).toFuture())
   }
 
 }

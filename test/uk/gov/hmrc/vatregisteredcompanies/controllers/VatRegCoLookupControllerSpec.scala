@@ -49,6 +49,7 @@ class VatRegCoLookupControllerSpec extends AnyWordSpec with LogCapture
     new GuiceApplicationBuilder().configure(
       Map(
         "auditing.enabled" -> "false",
+        "microservice.services.vatRegisteredCompanies.unique-index.enabled" -> false,
         "microservice.services.schedulers.payload.conversion.enabled" -> false,
         "microservice.services.schedulers.old-data-deletion.enabled" -> false
       )

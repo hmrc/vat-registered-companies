@@ -32,7 +32,7 @@ import java.time.Instant
 import javax.inject.{Inject, Named, Singleton}
 import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.{ExecutionContext, Future}
-import org.mongodb.scala.{MongoServerException, MongoWriteException, ObservableFuture, SingleObservableFuture}
+import org.mongodb.scala.{ObservableFuture, SingleObservableFuture}
 import play.api.libs.json.OFormat.oFormatFromReadsAndOWrites
 import play.api.libs.json.Format.GenericFormat
 import uk.gov.hmrc.http.HeaderCarrier
@@ -53,51 +53,31 @@ class VatRegisteredCompaniesRepository @Inject()(
                                                   bufferRepository: PayloadBufferRepository,
                                                   @Named("deletionThrottleElements") elements: Int,
                                                   @Named("deletionThrottlePer") per: FiniteDuration,
-                                                  val configuration: Configuration
+                                                  configuration: Configuration
                                                 )(implicit val executionContext: ExecutionContext) extends
   PlayMongoRepository[Wrapper](
     mongoComponent = mongoComponent,
     collectionName = "vatregisteredcompanies",
     domainFormat = Wrapper.formats,
-    indexes = Seq(
-      IndexModel(
+    indexes = {
+      val uniqueIndexEnabled = configuration
+        .getOptional[Boolean]("microservice.services.vatRegisteredCompanies.unique-index.enabled")
+        .getOrElse(false)
+
+      val compoundIndex = IndexModel(
         ascending("vatNumber", "_id"),
         IndexOptions().name("vatNumber_id_compound_idx").background(true)
       )
-    )
+      val uniqueIndex = IndexModel(
+        ascending("vatNumber"),
+        IndexOptions().name("vatNumber_unique_idx").unique(true)
+      )
+
+      if (uniqueIndexEnabled) Seq(compoundIndex, uniqueIndex) else Seq(compoundIndex)
+    },
+    replaceIndexes = false
   ) with Logging {
 
-  private val prepareUniqueEnabled : Boolean = configuration.getOptional[Boolean]("microservice.services.vatRegisteredCompanies.prepare-unique.enabled").getOrElse(false)
-
-  def applyPrepareUnique() : Future[Unit] = {
-    if (!prepareUniqueEnabled) {
-      logger.info("prepare Unique Disabled: vatNumber index not created")
-      Future.unit
-    } else {
-      (for {
-        _ <- collection.createIndex(
-          Indexes.ascending("vatNumber"),
-          IndexOptions().name("vatNumber_prepare_unique_idx").background(true)
-        ).toFuture()
-        _ <- mongoComponent.database.runCommand(
-          BsonDocument(
-            "collMod" -> "vatregisteredcompanies",
-            "index" -> BsonDocument(
-              "name" -> "vatNumber_prepare_unique_idx",
-              "prepareUnique" -> true
-            )
-          )
-        ).toFuture()
-      } yield logger.info(s"vatNumber index status, prepareUniqueIndexFlag= $prepareUniqueEnabled")).recover {
-        case e => logger.warn(s"failed to apply prepareUnique on vatNumber index: ${e.getMessage}", e)
-      }
-    }
-  }
-
-  private val prepareUniqueInit: Future[Unit] = applyPrepareUnique()
-
-  def awaitPrepareUnique: Future[Unit] = prepareUniqueInit
-  
   def deleteOld(n: Int): Future[Unit] = {
     for {
       vatRegCompId <- findOld(n)
